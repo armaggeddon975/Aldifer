@@ -1,0 +1,80 @@
+/* ============================================================================
+   Folha global. Único ponto de entrada de CSS do site.
+   ========================================================================== */
+
+@import 'tailwindcss';
+@import './tokens.css';
+@import './fonts.css';
+
+/* ---------------------------------------------------------------------------
+   Utilities próprias
+   -------------------------------------------------------------------------- */
+
+/* "Archivo Expanded": o eixo wdth em 125% mais o tracking do design system.
+   Sem esta utility o token --display-stretch não tem efeito nenhum e a
+   tipografia de assinatura fica em largura normal. */
+@utility display-expanded {
+  font-family: var(--family-display);
+  font-stretch: var(--display-stretch);
+  letter-spacing: var(--display-tracking);
+}
+
+/* Alvo de toque mínimo exigido pelo CLAUDE.md no mobile. */
+@utility touch-target {
+  min-height: var(--touch-target);
+  min-width: var(--touch-target);
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--family-text);
+    font-size: var(--size-base);
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Números técnicos em coluna precisam de largura de dígito constante. */
+  table,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Foco visível em tudo que recebe foco, com contraste >= 3:1.
+     Seções escuras sobrescrevem --focus-ring para --accent-bright. */
+  :focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--paper);
+  }
+}
+
+/* CLAUDE.md: prefers-reduced-motion respeitado. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

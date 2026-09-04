@@ -1,0 +1,166 @@
+/* ============================================================================
+   Tokens do design system — Aldifer
+   Fonte de verdade: CLAUDE.md, seção "Design system".
+
+   Duas camadas:
+   1. :root  — os tokens com os nomes do CLAUDE.md, para uso em CSS escrito à mão.
+   2. @theme — mapeia esses tokens para os namespaces do Tailwind v4, gerando as
+               utilities. Os namespaces padrão do Tailwind são ZERADOS de propósito:
+               sem isso `bg-blue-600`, `text-5xl` e `rounded-lg` continuariam
+               disponíveis e a regra "nenhum hex solto / um acento só" viraria
+               questão de disciplina em vez de garantia do build.
+   ========================================================================== */
+
+:root {
+  /* --- Marca — extraídos dos pixels reais do logo. Não alterar. ----------- */
+  --brand-navy: #123053;
+  --brand-orange: #CD4116;
+
+  /* --- Base escura — identidade do site ---------------------------------- */
+  --steel-950: #0B1B2E;   /* fundo principal das seções escuras */
+  --steel-900: #122A45;   /* superfície, cards sobre fundo escuro */
+  --steel-700: #1E4A7A;   /* hover e links sobre escuro */
+  --border-dark: #24384F; /* divisores sobre fundo escuro */
+
+  /* --- Base clara --------------------------------------------------------- */
+  --paper: #FFFFFF;
+  --paper-alt: #F5F6F7;   /* faixas alternadas, fundo de tabela */
+  --border-light: #DDE2E8;
+
+  /* --- Texto -------------------------------------------------------------- */
+  --ink: #0B1B2E;         /* sobre fundo claro */
+  --ink-soft: #5A6472;    /* apoio sobre fundo claro — 6,0:1 no branco */
+  --on-dark: #E8EBEF;     /* sobre fundo escuro — 14,5:1 no steel-950 */
+  --on-dark-soft: #9AA6B8;/* apoio sobre escuro — 7,04:1 no steel-950 */
+
+  /* --- Acento — um só, sem concorrente ----------------------------------- */
+  /* REGRA DURA: --accent nunca sobre fundo escuro (cai para 3,6:1).
+     Sobre escuro use sempre --accent-bright. */
+  --accent: #CD4116;        /* CTA sobre claro — branco em cima dá 4,81:1 */
+  --accent-bright: #FF6A2B; /* CTA e destaque sobre escuro — 6,07:1 */
+
+  /* --- Famílias tipográficas --------------------------------------------- */
+  /* Nomeadas --family-* e não --font-* para não colidir com o namespace
+     --font-* do Tailwind, que geraria referência circular. */
+  --family-display: 'Archivo Variable', 'Arial Narrow', Arial, sans-serif;
+  --family-text: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --family-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  /* "Archivo Expanded" não é uma família separada: é o eixo wdth em 125%.
+     Aplicado pela utility `display-expanded` em global.css. */
+  --display-stretch: 125%;
+  --display-tracking: -0.02em;
+
+  /* --- Escala tipográfica — 12/14/16/20/26/34/46/62, razão ≈1,33 ---------- */
+  --size-xs: 0.75rem;    /* 12px */
+  --size-sm: 0.875rem;   /* 14px */
+  --size-base: 1rem;     /* 16px */
+  --size-lg: 1.25rem;    /* 20px */
+  --size-xl: 1.625rem;   /* 26px */
+  --size-2xl: 2.125rem;  /* 34px */
+  --size-3xl: 2.875rem;  /* 46px */
+  --size-4xl: 3.875rem;  /* 62px */
+
+  /* --- Espaçamento — 4/8/12/16/24/32/48/64/96/128 ------------------------- */
+  /* No Tailwind estes são p-1 p-2 p-3 p-4 p-6 p-8 p-12 p-16 p-24 p-32.
+     Passos fora da escala (p-5 = 20px, p-7 = 28px) existem tecnicamente
+     mas não devem ser usados. */
+  --space-4: 0.25rem;
+  --space-8: 0.5rem;
+  --space-12: 0.75rem;
+  --space-16: 1rem;
+  --space-24: 1.5rem;
+  --space-32: 2rem;
+  --space-48: 3rem;
+  --space-64: 4rem;
+  --space-96: 6rem;
+  --space-128: 8rem;
+
+  /* --- Raio — aço é reto -------------------------------------------------- */
+  /* Nomeados --corner-* e não --radius-* para não colidir com o namespace
+     --radius-* do Tailwind, que geraria referência circular. */
+  --corner-structural: 0;    /* seções, cards de produto, tabelas */
+  --corner-control: 4px;     /* botão, input, select */
+  --corner-pill: 999px;      /* PROIBIDO, exceto no badge de contagem do orçamento */
+
+  /* --- Foco visível — WCAG 2.2, contraste >= 3:1 ------------------------- */
+  /* --accent no branco dá 4,81:1. --accent-bright no branco daria só 2,86:1,
+     por isso o anel claro usa --accent e as seções escuras sobrescrevem
+     --focus-ring com --accent-bright (6,07:1 no steel-950). */
+  --focus-ring: var(--accent);
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+
+  /* --- Alvo de toque mínimo — CLAUDE.md exige 44x44px no mobile ---------- */
+  --touch-target: 44px;
+}
+
+@theme inline {
+  /* Zera os padrões do Tailwind para que só os tokens da Aldifer existam. */
+  /* --font-*: initial NAO entra aqui: o curinga arrastaria --font-weight-* e
+     derrubaria font-bold / font-semibold / font-medium. */
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --tracking-*: initial;
+
+  /* Cores */
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-orange: var(--brand-orange);
+
+  --color-steel-950: var(--steel-950);
+  --color-steel-900: var(--steel-900);
+  --color-steel-700: var(--steel-700);
+  --color-border-dark: var(--border-dark);
+
+  --color-paper: var(--paper);
+  --color-paper-alt: var(--paper-alt);
+  --color-border-light: var(--border-light);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-soft: var(--on-dark-soft);
+
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+
+  /* Famílias — geram font-display, font-text, font-mono */
+  --font-display: var(--family-display);
+  --font-text: var(--family-text);
+  --font-mono: var(--family-mono);
+
+  /* Corpo do documento em Inter por padrão (preflight do Tailwind v4) */
+  --default-font-family: var(--family-text);
+  --default-mono-font-family: var(--family-mono);
+
+  /* Escala tipográfica, com entrelinha pareada */
+  --text-xs: var(--size-xs);
+  --text-xs--line-height: 1.5;
+  --text-sm: var(--size-sm);
+  --text-sm--line-height: 1.5;
+  --text-base: var(--size-base);
+  --text-base--line-height: 1.6;   /* entrelinha de corpo do CLAUDE.md */
+  --text-lg: var(--size-lg);
+  --text-lg--line-height: 1.5;
+  --text-xl: var(--size-xl);
+  --text-xl--line-height: 1.3;
+  --text-2xl: var(--size-2xl);
+  --text-2xl--line-height: 1.2;
+  --text-3xl: var(--size-3xl);
+  --text-3xl--line-height: 1.1;
+  --text-4xl: var(--size-4xl);
+  --text-4xl--line-height: 1.05;
+
+  /* Raio — rounded-structural, rounded-control, rounded-pill */
+  --radius-structural: var(--corner-structural);
+  --radius-control: var(--corner-control);
+  --radius-pill: var(--corner-pill);
+
+  /* Tracking */
+  --tracking-display: var(--display-tracking);
+  --tracking-normal: 0em;
+}

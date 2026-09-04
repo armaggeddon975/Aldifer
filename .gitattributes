@@ -1,0 +1,15 @@
+# Normaliza fim de linha para LF no repositório.
+# O deploy é Linux (Vercel); sem isto o CRLF do Windows entra no commit e
+# transforma qualquer diff em ruído.
+* text=auto eol=lf
+
+# Binários — nunca normalizar
+*.woff2 binary
+*.woff  binary
+*.ico   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.avif  binary
+*.pdf   binary

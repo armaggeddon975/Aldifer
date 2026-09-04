@@ -1,0 +1,51 @@
+/* ============================================================================
+   Fontes auto-hospedadas. Nenhuma requisição a domínio externo.
+
+   Os arquivos vêm de @fontsource-variable via scripts/copy-fonts.mjs, copiados
+   para public/fonts/ em vez de importados pelo Vite. Motivo: o Vite adiciona
+   hash ao nome do arquivo, e o <link rel="preload"> da fonte do LCP precisa de
+   um caminho estável escrito à mão no layout.
+
+   Só o subset `latin`: o intervalo U+0000-00FF cobre todos os acentos do
+   português (ç ã õ á é í ó ú â ê ô), então `latin-ext` nunca seria baixado.
+   Itálico não entra — o design system não usa, e são 3 arquivos a menos.
+   ========================================================================== */
+
+/* Archivo — display. O arquivo `standard` traz peso E largura (wdth 62-125%),
+   necessário para o "Archivo Expanded" do design system. Custa 88KB contra
+   34KB da versão só-peso; ver README, seção de pendências técnicas. */
+@font-face {
+  font-family: 'Archivo Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url('/fonts/archivo-latin-standard-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Inter — texto corrido */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* JetBrains Mono — só tabelas de bitola e resultado da calculadora */
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url('/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
