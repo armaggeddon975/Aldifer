@@ -232,12 +232,29 @@ Vícios que denunciam página gerada por IA:
 - Props sempre tipadas explicitamente. Componente sem tipo não passa.
 - **Conteúdo nunca hardcoded no JSX.** Tudo em content collections ou JSON tipado.
   O componente recebe dados, não os contém.
-- Componente com mais de ~150 linhas deve ser quebrado.
+- Componente com mais de ~150 linhas deve ser quebrado. **O limite conta apenas
+  frontmatter e markup** — os blocos `<style>` e `<script>` co-localizados no `.astro`
+  não entram na conta (decidido em 04/09/2026; ver nota abaixo).
 - Nomes de arquivo, variável, classe e função em **inglês**.
   Strings visíveis ao usuário em **português do Brasil**.
 - Comentários, commits, README e documentação em **português do Brasil**.
 - Commit pequeno, mensagem no imperativo: `adiciona tabela de bitolas em chapas`.
 - `.env` nunca versionado. `.env.example` sempre versionado.
+
+### Nota — por que style e script não contam no limite de linhas
+
+Decidido em 04/09/2026, quando nove arquivos passavam de 150 linhas no total mas nenhum
+passava de 130 contando só markup: `QuoteList.astro` tinha 361 linhas, das quais 99 de
+markup, 75 de estilo e 187 de script.
+
+A classe de cada custom element consulta seletores definidos no markup imediatamente
+acima dela (`[data-empty]`, `[data-row]`, `[data-quantity]`). Separar os dois em arquivos
+diferentes faz o par sair de sincronia com o tempo, e nada no build acusa.
+
+**Quando a lógica merecer teste isolado, extraia-a como módulo PURO em `src/lib/`** — sem
+tocar em `astro:content` nem no DOM — e deixe no `.astro` apenas a ligação com a página.
+É o que já se fez com `dimension-label.ts`, `search.ts`, `quote.ts` e
+`cross-section-legend.ts`, que juntos respondem por boa parte dos 113 testes.
 
 ### HTML e acessibilidade (não negociável)
 
