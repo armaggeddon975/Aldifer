@@ -1,0 +1,48 @@
+---
+import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
+import QuoteList from '@/components/quote/QuoteList.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import { quotePage } from '@/lib/quote-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * Página da lista de orçamento.
+ *
+ * Title e description vêm da linha "Orçamento" da seção 10 do
+ * docs/CONTEUDO.md.
+ *
+ * O formulário de envio é a Etapa 6. Até ele existir, esta página termina com
+ * o caminho por telefone — e diz isso, em vez de mostrar um botão que não
+ * envia nada.
+ */
+const site = await getSite();
+---
+
+<Base title={quotePage.seoTitle} description={quotePage.seoDescription}>
+  <Section tone="light" spacing="md" labelledBy="orcamento">
+    <Breadcrumb items={[{ label: 'Orçamento' }]} />
+
+    <div class="mt-6">
+      <Heading level={1} id="orcamento">{quotePage.heading}</Heading>
+      <p class="mt-4 max-w-2xl text-surface-fg-soft">{quotePage.description}</p>
+    </div>
+
+    <div class="mt-10">
+      <QuoteList />
+    </div>
+  </Section>
+
+  <Section tone="alt" spacing="md" labelledBy="envio">
+    <div class="max-w-2xl">
+      <Heading level={2} id="envio">{quotePage.formPendingHeading}</Heading>
+      <p class="mt-4 text-surface-fg-soft">{quotePage.formPendingBody}</p>
+      <p class="mt-6">
+        <a href={`tel:${site.phoneE164}`} class="font-mono text-lg hover:text-surface-hover">
+          {site.phone}
+        </a>
+      </p>
+    </div>
+  </Section>
+</Base>

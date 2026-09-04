@@ -1,0 +1,361 @@
+---
+import Button from '@/components/ui/Button.astro';
+import Table from '@/components/ui/Table.astro';
+import { categoryNav } from '@/lib/navigation';
+import { quotePage } from '@/lib/quote-content';
+
+/**
+ * Lista de orçamento editável.
+ *
+ * As linhas são estado do cliente (localStorage), então elas não podem vir
+ * renderizadas do servidor. O markup da linha fica num <template> aqui no
+ * HTML — autoria do servidor, com os rótulos em português e o estilo aplicado —
+ * e o script apenas clona. Montar HTML como string no script colocaria texto
+ * de interface dentro do JavaScript, o que o CLAUDE.md proíbe.
+ *
+ * Cada campo recebe <label for> com o texto completo ("Quantidade de barra
+ * chata 50 × 6 mm"), visualmente oculto porque o cabeçalho da coluna já dá o
+ * contexto na tela. Quem usa leitor de tela precisa da versão longa.
+ */
+---
+
+<quote-list>
+  <noscript>
+    <div class="quote-notice">
+      <p class="font-semibold">{quotePage.noScriptHeading}</p>
+      <p class="mt-2">{quotePage.noScriptBody}</p>
+    </div>
+  </noscript>
+
+  {/* Lista vazia: caminho de saída, não mensagem de erro. */}
+  <div data-empty hidden>
+    <div class="quote-notice">
+      <p class="font-semibold">{quotePage.emptyHeading}</p>
+      <p class="mt-2">{quotePage.emptyBody}</p>
+    </div>
+
+    <div class="mt-6">
+      <Button href="/produtos" size="lg">{quotePage.emptyCtaLabel}</Button>
+    </div>
+
+    <p class="mt-8 text-sm font-semibold text-surface-fg">{quotePage.emptyCategoriesLabel}</p>
+    <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+      {
+        categoryNav.map((item) => (
+          <li>
+            <a href={item.href} class="underline underline-offset-4 hover:text-surface-hover">
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div data-filled hidden>
+    <Table
+      caption={quotePage.tableCaption}
+      columns={[
+        { label: quotePage.columnProduct },
+        { label: quotePage.columnDimension },
+        { label: quotePage.columnQuantity, numeric: true },
+        { label: quotePage.columnNote },
+        { label: quotePage.columnActions },
+      ]}
+    />
+
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+      <button type="button" class="quote-list__clear" data-clear>{quotePage.clearLabel}</button>
+    </div>
+  </div>
+
+  {/* Anúncio das edições, sem tirar o foco do campo que está sendo editado. */}
+  <p class="sr-only" role="status" aria-live="polite" data-announce></p>
+
+  <template data-row>
+    <tr>
+      <td data-cell="product"></td>
+      <td data-cell="dimension"></td>
+      <td data-numeric>
+        <label class="sr-only" data-for="quantity"></label>
+        <span class="quote-list__qty">
+          <input type="number" min="1" step="1" inputmode="numeric" data-quantity />
+          <span data-cell="unit"></span>
+        </span>
+      </td>
+      <td>
+        <label class="sr-only" data-for="note"></label>
+        <input type="text" data-note placeholder={quotePage.notePlaceholder} />
+      </td>
+      <td>
+        <button type="button" class="quote-list__remove" data-remove>
+          {quotePage.removeLabel}
+        </button>
+      </td>
+    </tr>
+  </template>
+</quote-list>
+
+<style>
+  .quote-notice {
+    max-width: 68ch;
+    padding: var(--space-16);
+    border-inline-start: 4px solid var(--accent);
+    background-color: var(--paper-alt);
+    color: var(--ink);
+    font-size: var(--size-sm);
+  }
+
+  .quote-list__qty {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+  }
+
+  /* Campo estreito o suficiente para a coluna não esticar, e alto o bastante
+     para o alvo de toque de 44px. */
+  .quote-list__qty input {
+    width: 5rem;
+    min-height: var(--touch-target);
+    padding-inline: var(--space-8);
+    font-family: var(--family-mono);
+    font-size: var(--size-base);
+    text-align: right;
+    color: var(--ink);
+    background-color: var(--paper);
+    border: 1px solid var(--ink-soft);
+    border-radius: var(--corner-control);
+  }
+
+  .quote-list__qty span {
+    font-size: var(--size-sm);
+    color: var(--ink-soft);
+  }
+
+  input[data-note] {
+    width: 100%;
+    min-width: 12rem;
+    min-height: var(--touch-target);
+    padding-inline: var(--space-8);
+    font-family: var(--family-text);
+    font-size: var(--size-sm);
+    color: var(--ink);
+    background-color: var(--paper);
+    border: 1px solid var(--ink-soft);
+    border-radius: var(--corner-control);
+  }
+
+  input[data-note]::placeholder {
+    color: var(--ink-soft);
+  }
+
+  .quote-list__remove,
+  .quote-list__clear {
+    min-height: var(--touch-target);
+    padding-inline: var(--space-12);
+    font-family: var(--family-text);
+    font-size: var(--size-sm);
+    font-weight: 600;
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--ink-soft);
+    border-radius: var(--corner-control);
+    cursor: pointer;
+  }
+
+  .quote-list__remove:hover,
+  .quote-list__clear:hover {
+    color: var(--paper);
+    background-color: var(--accent);
+    border-color: var(--accent);
+  }
+</style>
+
+<script>
+  import { QUOTE_CHANGED, clear, getAll, remove, updateNote, updateQuantity } from '@/lib/quote';
+  import { quotePage } from '@/lib/quote-content';
+
+  class QuoteListElement extends HTMLElement {
+    #empty!: HTMLElement;
+    #filled!: HTMLElement;
+    #body!: HTMLTableSectionElement;
+    #template!: HTMLTemplateElement;
+    #announce!: HTMLElement;
+
+    #say(message: string) {
+      this.#announce.textContent = message;
+    }
+
+    /** Índice da linha a partir do elemento que recebeu o evento. */
+    #indexOf(target: HTMLElement): number {
+      const row = target.closest('tr');
+      if (!row) return -1;
+      return [...this.#body.children].indexOf(row);
+    }
+
+    #render = () => {
+      const items = getAll();
+
+      this.#empty.hidden = items.length > 0;
+      this.#filled.hidden = items.length === 0;
+      this.#body.replaceChildren();
+
+      items.forEach((item, index) => {
+        const fragment = this.#template.content.cloneNode(true) as DocumentFragment;
+        const row = fragment.querySelector('tr');
+        if (!row) return;
+
+        const set = (name: string, text: string) => {
+          const cell = row.querySelector(`[data-cell="${name}"]`);
+          if (cell) cell.textContent = text;
+        };
+
+        set('product', item.productName);
+        set('dimension', item.length ? `${item.dimension} · ${item.length}` : item.dimension);
+        set('unit', item.unit);
+
+        const quantity = row.querySelector('[data-quantity]');
+        const note = row.querySelector('[data-note]');
+        const removeButton = row.querySelector('[data-remove]');
+
+        if (quantity instanceof HTMLInputElement) {
+          quantity.value = String(item.quantity);
+          quantity.id = `quote-qty-${index}`;
+          const label = row.querySelector('[data-for="quantity"]');
+          if (label instanceof HTMLLabelElement) {
+            label.htmlFor = quantity.id;
+            label.textContent = quotePage.quantityLabelTemplate(item.productName, item.dimension);
+          }
+        }
+
+        if (note instanceof HTMLInputElement) {
+          note.value = item.note ?? '';
+          note.id = `quote-note-${index}`;
+          const label = row.querySelector('[data-for="note"]');
+          if (label instanceof HTMLLabelElement) {
+            label.htmlFor = note.id;
+            label.textContent = quotePage.noteLabelTemplate(item.productName, item.dimension);
+          }
+        }
+
+        if (removeButton instanceof HTMLButtonElement) {
+          removeButton.setAttribute(
+            'aria-label',
+            quotePage.removeLabelTemplate(item.productName, item.dimension),
+          );
+        }
+
+        this.#body.append(row);
+      });
+    };
+
+    connectedCallback() {
+      const empty = this.querySelector('[data-empty]');
+      const filled = this.querySelector('[data-filled]');
+      const body = this.querySelector('tbody');
+      const template = this.querySelector('template[data-row]');
+      const announce = this.querySelector('[data-announce]');
+
+      if (
+        !(empty instanceof HTMLElement) ||
+        !(filled instanceof HTMLElement) ||
+        !(body instanceof HTMLTableSectionElement) ||
+        !(template instanceof HTMLTemplateElement) ||
+        !(announce instanceof HTMLElement)
+      ) {
+        return;
+      }
+
+      this.#empty = empty;
+      this.#filled = filled;
+      this.#body = body;
+      this.#template = template;
+      this.#announce = announce;
+
+      this.#render();
+
+      // `change`, e não `input`: salvar a cada tecla digitada na observação
+      // encheria o localStorage de escritas e anunciaria a cada letra.
+      this.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const index = this.#indexOf(target);
+        if (index < 0) return;
+
+        const items = getAll();
+        const item = items[index];
+        if (!item) return;
+
+        if (target instanceof HTMLInputElement && target.matches('[data-quantity]')) {
+          const wanted = Number(target.value);
+          if (!updateQuantity(index, wanted)) {
+            this.#say(quotePage.announceStorageFailed);
+            return;
+          }
+          if (wanted <= 0) {
+            this.#say(quotePage.announceRemoved(item.productName, item.dimension, items.length - 1));
+          } else {
+            this.#say(
+              quotePage.announceQuantity(
+                item.productName,
+                item.dimension,
+                Math.floor(wanted),
+                item.unit,
+              ),
+            );
+          }
+          this.#render();
+          return;
+        }
+
+        if (target instanceof HTMLInputElement && target.matches('[data-note]')) {
+          this.#say(
+            updateNote(index, target.value)
+              ? quotePage.announceNoteSaved
+              : quotePage.announceStorageFailed,
+          );
+        }
+      });
+
+      this.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+
+        if (target.closest('[data-remove]')) {
+          const index = this.#indexOf(target);
+          const item = getAll()[index];
+          if (!item) return;
+
+          if (!remove(index)) {
+            this.#say(quotePage.announceStorageFailed);
+            return;
+          }
+          this.#say(
+            quotePage.announceRemoved(item.productName, item.dimension, getAll().length),
+          );
+          this.#render();
+          return;
+        }
+
+        if (target.closest('[data-clear]')) {
+          // Esvaziar a lista é destrutivo e não tem desfazer: confirma.
+          if (!window.confirm(quotePage.clearConfirm)) return;
+          this.#say(clear() ? quotePage.announceCleared : quotePage.announceStorageFailed);
+          this.#render();
+        }
+      });
+
+      document.addEventListener(QUOTE_CHANGED, this.#render);
+      window.addEventListener('storage', this.#render);
+    }
+
+    disconnectedCallback() {
+      document.removeEventListener(QUOTE_CHANGED, this.#render);
+      window.removeEventListener('storage', this.#render);
+    }
+  }
+
+  if (!customElements.get('quote-list')) {
+    customElements.define('quote-list', QuoteListElement);
+  }
+</script>

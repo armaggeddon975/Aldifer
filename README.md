@@ -97,7 +97,6 @@ com valor `null`. Campo nulo não renderiza.
 | **`www` ou apex** | Fixado em `https://www.aldifer.com.br` no `astro.config.mjs`, para casar com o JSON-LD. Se mudar, muda nos dois lugares. | 13 |
 | **Fonte Archivo** | O arquivo com eixo de largura custa 88 KB contra 34 KB da versão só-peso. É o preço do "Expanded". Candidata nº 1 de otimização. | 12 |
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
-| **Header fixo + QuoteBar** | Duas barras fixas comem a viewport de um celular. Decidir quando a QuoteBar existir. | 5 |
 | **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
 
 ---
@@ -145,6 +144,19 @@ intermitente no axe, que amostrava a página no meio do fade.
 
 A animação agora move **apenas `transform`**. Nunca `opacity`.
 
+### Duas barras fixas não cabem num celular
+
+Medido em 360×640: o header fixo tem 73px e a barra da lista 69px — 22% da altura da
+tela, com os dois carregando CTA para o **mesmo** destino.
+
+A solução: quando há medida na lista, a barra de baixo assume o CTA persistente e o
+header **solta** no mobile (`html[data-quote="ativo"]`, só abaixo de 768px). Resultado
+medido: a área de conteúdo vai de 567px sem lista para 571px com lista — a segunda barra
+não custa nada.
+
+A barra também reserva o próprio espaço com `padding-bottom` no `<body>`, que estende a
+rolagem sem deslocar elemento visível — então o rodapé nunca fica atrás dela e não há CLS.
+
 ### Custom element precisa de `display: block`
 
 Custom element nasce `display: inline`, e um pai inline esmaga a largura do filho de
@@ -191,6 +203,7 @@ src/lib/dimension-label.ts    rótulo de bitola como o mercado a nomeia
 src/lib/products.ts           consultas ao catálogo e montagem das tabelas
 src/lib/search.ts             busca rápida, parte pura (roda no navegador)
 src/lib/quote.ts              lista de orçamento sobre localStorage
+src/lib/quote-content.ts      copy da lista de orçamento
 src/lib/cross-section-legend.ts  liga as cotas do desenho às colunas da tabela
 src/lib/catalog-content.ts    copy do catálogo
 src/lib/home-content.ts       copy da home, das seções 2 e 3 do CONTEUDO.md
@@ -198,6 +211,7 @@ src/lib/navigation.ts         navegação e rota ativa
 src/lib/*.test.ts             82 testes (fórmulas, rótulos, busca)
 
 src/pages/produtos/           catálogo, categoria e produto
+src/pages/orcamento.astro     lista de orçamento
 src/pages/indice-de-busca.json.ts   índice da busca, gerado em build
 
 src/components/
@@ -206,6 +220,8 @@ src/components/
   ui/                         Button, Container, Section, Heading, Table
   home/                       as 8 seções da home, na ordem do CONTEUDO.md
   catalog/                    Breadcrumb, ProductCard, CatalogFilter, GaugeTable
+  quote/QuoteList.astro       lista editável de /orcamento
+  QuoteBar.astro              barra fixa, única ilha global
   QuickSearch.astro           busca rápida (custom element, sem framework)
   Header · MobileMenu · Footer · DraftNotice · Pending
 
@@ -255,7 +271,7 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 2 — Content collections | ✅ |
 | 3 — Home | ✅ |
 | 4 — Catálogo | ✅ |
-| 5 — Lista de orçamento | ◐ `src/lib/quote.ts` já existe e os botões "Adicionar" funcionam; falta a barra fixa, a página /orcamento e a edição de itens |
+| 5 — Lista de orçamento | ✅ |
 | 6 — Formulário, servidor e LGPD | ⬜ bloqueada pela cor de feedback e pela pergunta 10 |
 | 7 — Calculadora de peso | ⬜ |
 | 8 — Páginas restantes | ⬜ |

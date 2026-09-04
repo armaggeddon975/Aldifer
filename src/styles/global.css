@@ -113,7 +113,14 @@
   quick-search,
   gauge-adder,
   table-scroller,
-  catalog-filter {
+  catalog-filter,
+  quote-list {
+    display: block;
+  }
+
+  /* A quote-bar tem position:fixed, que já a torna bloco — mas declarar
+     mantém a regra explícita para quem ler depois. */
+  quote-bar {
     display: block;
   }
 
@@ -151,6 +158,24 @@
   ::selection {
     background-color: var(--accent);
     color: var(--paper);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Duas barras fixas não cabem num celular
+
+   Medido em 360×640: header fixo de 73px mais a barra da lista de 69px comem
+   22% da altura da tela, e os dois carregam CTA para o MESMO destino
+   (/orcamento). Com a lista ativa, a barra de baixo assume esse papel e o
+   header solta, devolvendo 73px de conteúdo — que é onde o espaço é escasso.
+
+   Só abaixo de 768px: no desktop a altura não é o recurso escasso e o header
+   fixo continua útil pela navegação e pelo telefone.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 47.9375rem) {
+  html[data-quote='ativo'] body > header {
+    position: static;
   }
 }
 

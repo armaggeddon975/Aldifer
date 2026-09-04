@@ -1,0 +1,158 @@
+---
+import { quoteBar } from '@/lib/quote-content';
+
+/**
+ * Barra fixa da lista de orçamento. Única ilha GLOBAL do site.
+ *
+ * Aparece a partir de 1 item. O conteúdo dela é estado do cliente
+ * (localStorage), então o servidor entrega a barra escondida e o script a
+ * revela — não há como saber em build quantas medidas o visitante escolheu.
+ *
+ * SOBRE COBRIR CONTEÚDO: a barra é `fixed`, e ao aparecer ela acrescenta
+ * padding-bottom no <body>. Isso NÃO desloca nenhum elemento visível — só
+ * estende a altura de rolagem — então não gera CLS, e ao mesmo tempo garante
+ * que o rodapé não fique atrás da barra no fim da página.
+ *
+ * O badge de contagem é o ÚNICO lugar do site onde o raio 999px é permitido,
+ * conforme a seção de espaçamento e raio do CLAUDE.md.
+ */
+---
+
+<quote-bar hidden aria-label={quoteBar.regionLabel} role="region">
+  <div class="quote-bar__inner">
+    <p class="quote-bar__count">
+      <span class="quote-bar__badge" data-count aria-hidden="true">0</span>
+      <span data-label>{quoteBar.itemsPlural}</span>
+    </p>
+
+    <a href="/orcamento" class="quote-bar__cta">{quoteBar.ctaLabel}</a>
+  </div>
+</quote-bar>
+
+<style>
+  quote-bar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 50;
+    background-color: var(--steel-950);
+    color: var(--on-dark);
+    border-top: 1px solid var(--border-dark);
+    /* Barra escura: o anel de foco tem de ser o claro, senão cai para 3,6:1. */
+    --focus-ring: var(--accent-bright);
+    /* iPhone com barra de gestos: sem isto o conteúdo encosta na borda. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .quote-bar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+    max-width: var(--width-content);
+    margin-inline: auto;
+    padding: var(--space-12) var(--space-16);
+  }
+
+  .quote-bar__count {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--size-sm);
+    color: var(--on-dark-soft);
+  }
+
+  .quote-bar__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding-inline: var(--space-8);
+    /* A única exceção de raio 999px permitida pelo CLAUDE.md. */
+    border-radius: var(--corner-pill);
+    background-color: var(--accent-bright);
+    color: var(--steel-950);
+    font-family: var(--family-mono);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .quote-bar__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--touch-target);
+    padding-inline: var(--space-16);
+    border-radius: var(--corner-control);
+    background-color: var(--accent-bright);
+    /* Texto escuro sobre --accent-bright: 5,61:1. Branco daria 2,86:1. */
+    color: var(--steel-950);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .quote-bar__cta:hover {
+    background-color: color-mix(in oklab, var(--accent-bright) 82%, var(--accent));
+  }
+</style>
+
+<script>
+  import { QUOTE_CHANGED, count } from '@/lib/quote';
+  import { quoteBar } from '@/lib/quote-content';
+
+  class QuoteBarElement extends HTMLElement {
+    #badge!: HTMLElement;
+    #label!: HTMLElement;
+
+    #render = () => {
+      const total = count();
+
+      if (total === 0) {
+        this.hidden = true;
+        document.body.style.removeProperty('padding-bottom');
+        // Sem lista, o header volta a ser fixo no mobile.
+        delete document.documentElement.dataset.quote;
+        return;
+      }
+
+      this.#badge.textContent = String(total);
+      this.#label.textContent = total === 1 ? quoteBar.itemsSingular : quoteBar.itemsPlural;
+      this.hidden = false;
+
+      // Reserva o espaço DEPOIS de revelar, para medir a altura real (que
+      // varia com a safe-area do aparelho). padding-bottom no body só estende
+      // a rolagem: nenhum elemento visível se move, então não há CLS.
+      document.body.style.paddingBottom = `${this.offsetHeight}px`;
+
+      // Marca o documento: com lista ativa, esta barra passa a ser o CTA
+      // persistente e o header não precisa mais ficar fixo no mobile.
+      // Ver a regra em src/styles/global.css.
+      document.documentElement.dataset.quote = 'ativo';
+    };
+
+    connectedCallback() {
+      const badge = this.querySelector('[data-count]');
+      const label = this.querySelector('[data-label]');
+      if (!(badge instanceof HTMLElement) || !(label instanceof HTMLElement)) return;
+
+      this.#badge = badge;
+      this.#label = label;
+
+      this.#render();
+      document.addEventListener(QUOTE_CHANGED, this.#render);
+
+      // Outra aba do mesmo site pode ter mexido na lista.
+      window.addEventListener('storage', this.#render);
+    }
+
+    disconnectedCallback() {
+      document.removeEventListener(QUOTE_CHANGED, this.#render);
+      window.removeEventListener('storage', this.#render);
+    }
+  }
+
+  if (!customElements.get('quote-bar')) {
+    customElements.define('quote-bar', QuoteBarElement);
+  }
+</script>
