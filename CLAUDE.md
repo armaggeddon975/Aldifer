@@ -42,7 +42,7 @@ reais, e deixar o pedido pronto em um clique.
 | Camada | Escolha | Versão verificada em 03/09/2026 |
 |---|---|---|
 | Framework | Astro | `7.3.1` |
-| Linguagem | TypeScript `strict` | `7.0.2` |
+| Linguagem | TypeScript `strict` | `6.0.3` — ver nota abaixo |
 | Estilo | Tailwind via `@tailwindcss/vite` | `4.3.3` |
 | CMS | Keystatic (Git-based) | `@keystatic/astro 6.0.0` · `@keystatic/core 0.6.9` |
 | Validação | Zod | `4.5.4` |
@@ -51,11 +51,33 @@ reais, e deixar o pedido pronto em um clique.
 | E-mail transacional | Resend | `6.26.0` |
 | Imagens | `sharp` (embutido no Astro) | `0.35.4` |
 | Hospedagem | Vercel (`@astrojs/vercel 11.0.10`) | — |
+| Typecheck de `.astro` | `@astrojs/check` | `0.9.10` |
 
 Node **>= 22.12.0** é obrigatório (requisito do Astro 7).
 
 **Confirme as versões com `npm view <pacote> version` antes de instalar.** Se alguma
 divergir do que está acima, use a atual e anote a mudança neste arquivo.
+
+### Nota de versão — TypeScript 6, não 7 (registrado em 03/09/2026)
+
+A tabela original pedia TypeScript `7.0.2`, que é mesmo a versão atual. Ele foi
+**deliberadamente rebaixado para `6.0.3`** pelo seguinte motivo técnico:
+
+O TypeScript 7 é a reescrita nativa em Go. O pacote npm virou um invólucro fino sobre
+o binário — seu `lib/` contém apenas `tsc.js`, `getExePath.js` e `version.cjs`.
+A **API JavaScript do compilador deixou de existir**, e toda a cadeia de ferramentas
+baseada em Volar depende dela: `astro check`, os diagnósticos da extensão do Astro no
+editor, `vue-tsc`, `svelte-check`. Com TS 7 instalado, `@astrojs/check` não instala
+(conflito de peer) e, forçado, quebra em execução.
+
+O que o TS 7 entrega é velocidade de compilação — irrelevante num site estático de
+~15 páginas. O que ele custa é verificação de tipos em **todo componente `.astro`**,
+que é justamente onde vivem as props tipadas exigidas por este arquivo, mais os
+diagnósticos no editor. A troca não se paga.
+
+O Astro 7 **não exige** TypeScript 7: não declara peer de `typescript` nenhum.
+
+Revisitar quando `@astrojs/check` migrar para a nova API do TS 7.
 
 ### Por que Astro e não Next
 
