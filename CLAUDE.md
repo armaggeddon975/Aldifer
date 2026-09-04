@@ -47,7 +47,7 @@ reais, e deixar o pedido pronto em um clique.
 | CMS | Keystatic (Git-based) | `@keystatic/astro 6.0.0` · `@keystatic/core 0.6.9` |
 | Validação | Zod | `4.5.4` |
 | Sitemap | `@astrojs/sitemap` | `3.7.4` |
-| Ilhas interativas | `@astrojs/react` | `6.0.5` |
+| Ilhas interativas | custom elements em JS puro — ver nota abaixo | — |
 | E-mail transacional | Resend | `6.26.0` |
 | Imagens | `sharp` (embutido no Astro) | `0.35.4` |
 | Hospedagem | Vercel (`@astrojs/vercel 11.0.10`) | — |
@@ -78,6 +78,29 @@ diagnósticos no editor. A troca não se paga.
 O Astro 7 **não exige** TypeScript 7: não declara peer de `typescript` nenhum.
 
 Revisitar quando `@astrojs/check` migrar para a nova API do TS 7.
+
+### Nota de stack — ilhas em JS puro, não React (registrado em 04/09/2026)
+
+A tabela original trazia `@astrojs/react` para as ilhas interativas. Ele foi
+**removido** na Etapa 3, por decisão tomada diante de medição do build de produção.
+
+A home com a busca rápida como ilha React carregava **62,7 KB de JS gzip**, dos quais
+**57,2 KB eram o runtime do React e 1,8 KB a busca em si** — 91% do peso era framework.
+Como a barra de orçamento da Etapa 5 é global, esse custo passaria a valer em todas as
+páginas do site.
+
+O princípio já está enunciado neste arquivo para dependências: "antes de instalar
+pacote, pergunte: dá para fazer em 20 linhas? Se sim, faça." Vale igual para hidratação.
+E a seção "Por que Astro e não Next" diz que o cliente acessa em 4G de obra, num Android
+de entrada, e que cada KB conta.
+
+**Toda ilha deste site é um custom element sobre markup renderizado no servidor pelo
+Astro**, com o comportamento sem JS preservado. Vale para o filtro do catálogo
+(Etapa 4), a QuoteBar (Etapa 5), o formulário de orçamento (Etapa 6) e a calculadora
+(Etapa 7).
+
+A contrapartida aceita: código de formulário e de calculadora fica mais verboso sem
+framework.
 
 ### Por que Astro e não Next
 

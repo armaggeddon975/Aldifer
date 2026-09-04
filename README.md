@@ -95,11 +95,37 @@ com valor `null`. Campo nulo não renderiza.
 | **Cor de erro e de sucesso** | A paleta do `CLAUDE.md` define "um acento só, sem concorrente" e não prevê cor de feedback. O formulário precisa de vermelho de erro, que não pode ser o mesmo laranja do CTA. | 6 (bloqueia) |
 | **Onde persistir o lead** | E-mail sozinho perde lead. Ordem de preferência: Google Sheets → Notion → Supabase. Depende da pergunta 10. | 6 |
 | **`www` ou apex** | Fixado em `https://www.aldifer.com.br` no `astro.config.mjs`, para casar com o JSON-LD. Se mudar, muda nos dois lugares. | 13 |
-| **Orçamento de JS** | **MEDIDO na Etapa 3:** a home usa 62,7 KB gzip de um teto de 100 KB, e 57,2 KB disso é só o runtime do React. A busca em si pesa 1,8 KB — 91% do JS é framework. Trocar a ilha React por um custom element em JS puro levaria a home a ~5 KB, sem mudar a funcionalidade (o `<form>` já funciona sem JS). A decisão vale também para as Etapas 5, 6 e 7. | 3 · 5 · 6 · 7 |
 | **Fonte Archivo** | O arquivo com eixo de largura custa 88 KB contra 34 KB da versão só-peso. É o preço do "Expanded". Candidata nº 1 de otimização. | 12 |
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
 | **Header fixo + QuoteBar** | Duas barras fixas comem a viewport de um celular. Decidir quando a QuoteBar existir. | 5 |
 | **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
+
+---
+
+## As ilhas são JS puro, não React
+
+`@astrojs/react` foi **removido** na Etapa 3. Toda parte interativa deste site é um
+custom element sobre markup renderizado no servidor pelo Astro.
+
+O motivo é uma medição, não preferência. A busca rápida como ilha React:
+
+| | JS da home (gzip) |
+|---|---|
+| Com ilha React | 62,7 KB — dos quais 57,2 KB só de runtime |
+| Com custom element | **1,9 KB** |
+
+A busca em si sempre pesou 1,8 KB. O restante era framework. Como a barra de orçamento
+da Etapa 5 é global, esse custo passaria a valer em todas as páginas — e o público
+acessa de Android de entrada em 4G de obra.
+
+**Regra para as próximas ilhas** (filtro do catálogo, QuoteBar, formulário, calculadora):
+o markup vem do servidor e funciona sem JS; o script apenas melhora. A busca é o modelo —
+o `<form>` faz GET para `/produtos` e funciona com o script bloqueado; o custom element
+só acrescenta as sugestões, e o índice de 22 KB é baixado no primeiro toque no campo.
+
+A contrapartida aceita: código de formulário e de calculadora fica mais verboso.
+
+O registro completo, com o motivo, está na nota de stack do [`CLAUDE.md`](./CLAUDE.md).
 
 ---
 
@@ -151,7 +177,7 @@ src/components/
   cross-sections/             13 perfis + 3 auxiliares de cota
   ui/                         Button, Container, Section, Heading, Table
   home/                       as 8 seções da home, na ordem do CONTEUDO.md
-  QuickSearch.tsx             ilha da busca rápida
+  QuickSearch.astro           busca rápida (custom element, sem framework)
   Header · MobileMenu · Footer · DraftNotice · Pending
 
 src/layouts/Base.astro        layout raiz

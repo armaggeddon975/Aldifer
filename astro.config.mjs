@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -11,7 +10,11 @@ export default defineConfig({
   // da seção 11 do docs/CONTEUDO.md.
   site: 'https://www.aldifer.com.br',
 
-  integrations: [react(), sitemap()],
+  // Sem @astrojs/react: as ilhas deste site são custom elements em JS puro.
+  // Medido na Etapa 3, o runtime do React custava 57,2 KB gzip para hospedar
+  // 1,8 KB de busca, e a QuoteBar global da Etapa 5 espalharia esse custo por
+  // todas as páginas. O público acessa de Android de entrada em 4G de obra.
+  integrations: [sitemap()],
 
   vite: {
     // Tailwind v4 entra como plugin do Vite. NÃO usar @astrojs/tailwind,

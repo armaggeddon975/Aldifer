@@ -33,8 +33,11 @@ export const hero = {
 
 export const quickSearch = {
   heading: 'Já sabe a medida?',
-  description:
-    'Digite a bitola e vá direto para a tabela, sem passar pelo catálogo inteiro.',
+  description: 'Digite a bitola e vá direto para a tabela, sem passar pelo catálogo inteiro.',
+  inputLabel: 'Busque pela medida que você precisa',
+  placeholder: 'chapa 1/8, tubo 30x30, cantoneira 25',
+  submitLabel: 'Buscar',
+  hint: 'Aceita polegada e milímetro. Sem resultado na lista, o botão leva ao catálogo completo.',
 } as const;
 
 export const categories = {

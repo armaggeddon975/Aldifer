@@ -1,5 +1,5 @@
 ---
-import QuickSearch from '@/components/QuickSearch';
+import QuickSearch from '@/components/QuickSearch.astro';
 import Heading from '@/components/ui/Heading.astro';
 import Section from '@/components/ui/Section.astro';
 import { quickSearch } from '@/lib/home-content';
@@ -8,9 +8,9 @@ import { quickSearch } from '@/lib/home-content';
  * Busca rápida. Ataca a objeção nº 1 do CLAUDE.md diretamente: "não sei se
  * vocês têm essa bitola e vou perder tempo ligando".
  *
- * client:idle porque a busca não é o primeiro gesto de todo visitante — ela
- * pode esperar a thread principal ficar livre. O <form> já vem funcionando do
- * servidor, então nada fica quebrado durante a espera.
+ * O componente é um custom element sobre markup renderizado no servidor, e
+ * não uma ilha de framework: medido na Etapa 3, a versão React custava 60 KB
+ * gzip para entregar 1,8 KB de funcionalidade.
  */
 ---
 
@@ -24,7 +24,7 @@ import { quickSearch } from '@/lib/home-content';
     </div>
 
     <div class="w-full lg:max-w-2xl">
-      <QuickSearch client:idle />
+      <QuickSearch />
     </div>
   </div>
 </Section>

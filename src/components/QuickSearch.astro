@@ -1,0 +1,241 @@
+---
+import { quickSearch } from '@/lib/home-content';
+
+/**
+ * Busca rápida — custom element sobre markup renderizado no servidor.
+ *
+ * MELHORIA PROGRESSIVA DE VERDADE: o que o servidor entrega é um <form> que
+ * faz GET para /produtos. Sem JS, digitar e apertar Enter leva ao catálogo
+ * filtrado e a busca funciona. O script só acrescenta a lista de sugestões.
+ *
+ * POR QUE NÃO É REACT: medido no build da Etapa 3, a ilha React custava
+ * 60 KB gzip para entregar 1,8 KB de funcionalidade — 91% do peso era
+ * framework. Como a QuoteBar da Etapa 5 é global, esse custo se espalharia
+ * para todas as páginas. O público acessa de Android de entrada em 4G de obra.
+ *
+ * O índice (~24 KB) é baixado SÓ no primeiro foco ou na primeira tecla. Quem
+ * passa pela home sem usar a busca não paga por ele.
+ */
+const LISTBOX_ID = 'busca-sugestoes';
+const INPUT_ID = 'busca-rapida-campo';
+const HINT_ID = 'busca-rapida-dica';
+---
+
+<quick-search data-index-url="/indice-de-busca.json" data-limit="8">
+  <form action="/produtos" method="get" role="search" class="quick-search">
+    <label for={INPUT_ID} class="quick-search__label">{quickSearch.inputLabel}</label>
+
+    <div class="quick-search__row">
+      <div class="quick-search__field">
+        {/*
+          Padrão combobox da ARIA 1.2. aria-expanded e aria-activedescendant
+          são atualizados pelo script; sem script eles ficam no estado inicial
+          e o campo continua sendo um input de busca comum dentro de um form.
+        */}
+        <input
+          id={INPUT_ID}
+          name="q"
+          type="search"
+          autocomplete="off"
+          enterkeyhint="search"
+          placeholder={quickSearch.placeholder}
+          aria-describedby={HINT_ID}
+          role="combobox"
+          aria-expanded="false"
+          aria-controls={LISTBOX_ID}
+          aria-autocomplete="list"
+        />
+
+        <ul id={LISTBOX_ID} role="listbox" class="quick-search__results" hidden></ul>
+      </div>
+
+      <button type="submit" class="quick-search__submit">{quickSearch.submitLabel}</button>
+    </div>
+
+    <p id={HINT_ID} class="quick-search__hint">{quickSearch.hint}</p>
+
+    {/* Contagem anunciada ao leitor de tela sem roubar o foco do campo. */}
+    <p class="sr-only" role="status" aria-live="polite" data-announce></p>
+  </form>
+</quick-search>
+
+<script>
+  import { search, type SearchIndex, type SearchResult } from '@/lib/search';
+
+  class QuickSearchElement extends HTMLElement {
+    #index: SearchIndex | null = null;
+    #loading = false;
+    #results: SearchResult[] = [];
+    #active = -1;
+
+    #input!: HTMLInputElement;
+    #listbox!: HTMLUListElement;
+    #announce!: HTMLElement;
+    #limit = 8;
+
+    connectedCallback() {
+      const input = this.querySelector('input[name="q"]');
+      const listbox = this.querySelector('[role="listbox"]');
+      const announce = this.querySelector('[data-announce]');
+
+      // Sem os três, o form continua funcionando por conta própria.
+      if (
+        !(input instanceof HTMLInputElement) ||
+        !(listbox instanceof HTMLUListElement) ||
+        !(announce instanceof HTMLElement)
+      ) {
+        return;
+      }
+
+      this.#input = input;
+      this.#listbox = listbox;
+      this.#announce = announce;
+      this.#limit = Number(this.dataset.limit) || 8;
+
+      input.addEventListener('focus', () => void this.#loadIndex());
+      input.addEventListener('input', () => {
+        void this.#loadIndex();
+        this.#render();
+      });
+      input.addEventListener('keydown', (event) => this.#onKeyDown(event));
+
+      // mousedown, e não click: o blur do input fecharia a lista antes de o
+      // click chegar ao item.
+      listbox.addEventListener('mousedown', (event) => {
+        const option = (event.target as HTMLElement | null)?.closest('[role="option"]');
+        if (!(option instanceof HTMLElement)) return;
+        event.preventDefault();
+        this.#go(Number(option.dataset.position));
+      });
+
+      listbox.addEventListener('mouseover', (event) => {
+        const option = (event.target as HTMLElement | null)?.closest('[role="option"]');
+        if (!(option instanceof HTMLElement)) return;
+        this.#active = Number(option.dataset.position);
+        this.#paintActive();
+      });
+    }
+
+    async #loadIndex() {
+      if (this.#index || this.#loading) return;
+      this.#loading = true;
+      try {
+        const response = await fetch(this.dataset.indexUrl ?? '/indice-de-busca.json');
+        if (!response.ok) throw new Error(String(response.status));
+        this.#index = (await response.json()) as SearchIndex;
+        this.#render();
+      } catch {
+        // Falhar aqui não pode derrubar a busca: o form continua submetendo
+        // para /produtos, que é o caminho sem JS.
+        this.#announce.textContent = 'A lista de sugestões não carregou. Use o botão Buscar.';
+      } finally {
+        this.#loading = false;
+      }
+    }
+
+    #render() {
+      this.#results = this.#index ? search(this.#index, this.#input.value, this.#limit) : [];
+      this.#active = -1;
+
+      const open = this.#results.length > 0;
+      this.#input.setAttribute('aria-expanded', String(open));
+      this.#listbox.hidden = !open;
+      this.#input.removeAttribute('aria-activedescendant');
+
+      this.#listbox.replaceChildren(
+        ...this.#results.map((result, position) => {
+          const item = document.createElement('li');
+          item.id = `${this.#listbox.id}-${position}`;
+          item.role = 'option';
+          item.className = 'quick-search__result';
+          item.dataset.position = String(position);
+          item.setAttribute('aria-selected', 'false');
+
+          const title = document.createElement('span');
+          title.className = 'quick-search__result-title';
+          title.textContent = result.titulo;
+          item.append(title);
+
+          if (result.detalhe) {
+            const detail = document.createElement('span');
+            detail.className = 'quick-search__result-detail';
+            detail.textContent = result.detalhe;
+            item.append(detail);
+          }
+
+          const category = document.createElement('span');
+          category.className = 'quick-search__result-category';
+          category.textContent = result.categoria;
+          item.append(category);
+
+          return item;
+        }),
+      );
+
+      this.#announce.textContent = open
+        ? `${this.#results.length} ${this.#results.length === 1 ? 'sugestão' : 'sugestões'}`
+        : '';
+    }
+
+    #paintActive() {
+      const options = [...this.#listbox.children];
+      options.forEach((option, position) => {
+        if (!(option instanceof HTMLElement)) return;
+        const isActive = position === this.#active;
+        option.setAttribute('aria-selected', String(isActive));
+        option.toggleAttribute('data-active', isActive);
+      });
+
+      const current = options[this.#active];
+      if (current instanceof HTMLElement) {
+        this.#input.setAttribute('aria-activedescendant', current.id);
+        current.scrollIntoView({ block: 'nearest' });
+      } else {
+        this.#input.removeAttribute('aria-activedescendant');
+      }
+    }
+
+    #close() {
+      this.#results = [];
+      this.#active = -1;
+      this.#listbox.hidden = true;
+      this.#listbox.replaceChildren();
+      this.#input.setAttribute('aria-expanded', 'false');
+      this.#input.removeAttribute('aria-activedescendant');
+    }
+
+    #go(position: number) {
+      const result = this.#results[position];
+      if (result) window.location.href = result.href;
+    }
+
+    #onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        this.#close();
+        return;
+      }
+      if (this.#results.length === 0) return;
+
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const step = event.key === 'ArrowDown' ? 1 : -1;
+        const next = this.#active + step;
+        this.#active =
+          next < 0 ? this.#results.length - 1 : next >= this.#results.length ? 0 : next;
+        this.#paintActive();
+        return;
+      }
+
+      // Só intercepta o Enter quando há sugestão escolhida. Sem escolha, o
+      // form submete normalmente para /produtos.
+      if (event.key === 'Enter' && this.#active >= 0) {
+        event.preventDefault();
+        this.#go(this.#active);
+      }
+    }
+  }
+
+  if (!customElements.get('quick-search')) {
+    customElements.define('quick-search', QuickSearchElement);
+  }
+</script>
