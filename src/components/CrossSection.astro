@@ -1,8 +1,10 @@
 ---
 import type { CrossSectionVariant } from './cross-sections/types';
 import Angle from './cross-sections/Angle.astro';
+import CorrugatedSheet from './cross-sections/CorrugatedSheet.astro';
 import FlatBar from './cross-sections/FlatBar.astro';
 import IBeam from './cross-sections/IBeam.astro';
+import Mesh from './cross-sections/Mesh.astro';
 import Plate from './cross-sections/Plate.astro';
 import RectTube from './cross-sections/RectTube.astro';
 import RoundBar from './cross-sections/RoundBar.astro';
@@ -49,6 +51,8 @@ const SHAPES = {
   'u-channel': UChannel,
   angle: Angle,
   tee: Tee,
+  mesh: Mesh,
+  'corrugated-sheet': CorrugatedSheet,
 } as const satisfies Record<CrossSectionVariant, unknown>;
 
 const TITLES: Record<CrossSectionVariant, string> = {
@@ -65,6 +69,9 @@ const TITLES: Record<CrossSectionVariant, string> = {
   'u-channel': 'Seção transversal de perfil U, com as cotas de altura, aba e alma',
   angle: 'Seção transversal de cantoneira, com as cotas das duas abas e da espessura',
   tee: 'Seção transversal de perfil T, com as cotas de aba, altura e espessura',
+  mesh: 'Trecho de tela em vista de face, com as cotas de abertura da malha e diâmetro do fio',
+  'corrugated-sheet':
+    'Seção transversal de telha ondulada, com as cotas de passo, altura da onda e espessura',
 };
 
 const Shape = SHAPES[variant];

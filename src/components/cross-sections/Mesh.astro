@@ -1,0 +1,26 @@
+---
+// Tela: vista de face de um trecho de malha quadrada. Não é corte, porque o
+// que o cliente especifica em tela são as duas medidas visíveis de frente —
+// a abertura da malha e o diâmetro do fio.
+// Fios como retângulos de espessura visível, passo 36, fio 6, malha 30.
+import DimH from './DimH.astro';
+import DimV from './DimV.astro';
+
+const WIRE = 6;
+const PITCH = 36;
+const COLS = [30, 66, 102, 138];
+const ROWS = [24, 60, 96, 132];
+const TOP = ROWS[0]!;
+const BOTTOM = ROWS[ROWS.length - 1]! + WIRE;
+const LEFT = COLS[0]!;
+const RIGHT = COLS[COLS.length - 1]! + WIRE;
+---
+
+{COLS.map((x) => <rect class="contour" x={x} y={TOP} width={WIRE} height={BOTTOM - TOP} />)}
+{ROWS.map((y) => <rect class="contour" x={LEFT} y={y} width={RIGHT - LEFT} height={WIRE} />)}
+
+{/* Abertura da malha: entre a face interna de dois fios vizinhos. */}
+<DimH x1={LEFT + WIRE} x2={LEFT + PITCH} y={168} from={BOTTOM} label="A" />
+
+{/* Diâmetro do fio: vão de 6, curto demais para seta por dentro. */}
+<DimV y1={TOP} y2={TOP + WIRE} x={178} from={RIGHT} label="Ø" outside />

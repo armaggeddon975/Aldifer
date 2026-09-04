@@ -1,0 +1,63 @@
+---
+import { SHOW_DRAFTS } from '@/lib/products';
+
+/**
+ * Aviso de conteúdo em conferência. Aparece SÓ em desenvolvimento — produto
+ * com status "rascunho" não entra no build de produção.
+ *
+ * Sobre o `⚠`: o CLAUDE.md proíbe emoji no site, e o texto deste aviso está
+ * especificado com o símbolo na seção 4 do docs/CONTEUDO.md. Não há conflito,
+ * porque este componente nunca é publicado: é instrumentação de
+ * desenvolvimento, não conteúdo do site.
+ */
+interface Props {
+  /** O que precisa de conferência. Aparece na segunda linha. */
+  detail?: string;
+}
+
+const { detail }: Props = Astro.props;
+---
+
+{
+  SHOW_DRAFTS && (
+    <aside role="note" class="draft-notice">
+      <p class="draft-notice__headline">
+        ⚠ Tabela em conferência — validar com a Aldifer antes de publicar
+      </p>
+      {detail && <p class="draft-notice__detail">{detail}</p>}
+      <p class="draft-notice__meta">
+        Visível apenas em desenvolvimento. Produtos em rascunho são excluídos do build de
+        produção.
+      </p>
+    </aside>
+  )
+}
+
+<style>
+  .draft-notice {
+    border: 2px solid var(--accent);
+    border-left-width: 6px;
+    background-color: var(--paper-alt);
+    color: var(--ink);
+    padding: var(--space-12) var(--space-16);
+    margin-block: var(--space-16);
+  }
+
+  .draft-notice__headline {
+    font-weight: 600;
+    font-size: var(--size-sm);
+  }
+
+  .draft-notice__detail {
+    margin-top: var(--space-8);
+    font-size: var(--size-sm);
+    color: var(--ink-soft);
+  }
+
+  .draft-notice__meta {
+    margin-top: var(--space-8);
+    font-family: var(--family-mono);
+    font-size: var(--size-xs);
+    color: var(--ink-soft);
+  }
+</style>

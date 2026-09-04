@@ -1,0 +1,32 @@
+---
+// Telha ondulada em corte. Duas curvas paralelas fecham a espessura da chapa;
+// as ondas são semicircunferências de raio 22, o que dá passo 88 entre cristas.
+// As setas de arco invertem o `sweep` na volta pela face inferior, senão a
+// barriga da onda sairia para o lado errado.
+import DimH from './DimH.astro';
+import DimV from './DimV.astro';
+import DimLeader from './DimLeader.astro';
+
+const SHEET = [
+  'M 20,90',
+  'A 22,22 0 0 1 64,90', // crista
+  'A 22,22 0 0 0 108,90', // vale
+  'A 22,22 0 0 1 152,90', // crista
+  'L 152,97', // topo da espessura na ponta direita
+  'A 22,22 0 0 0 108,97', // volta pela face inferior, sweep invertido
+  'A 22,22 0 0 1 64,97',
+  'A 22,22 0 0 0 20,97',
+  'Z',
+].join(' ');
+---
+
+<path class="contour" d={SHEET} />
+
+{/* Passo: crista a crista. */}
+<DimH x1={42} x2={130} y={168} from={119} label="A" />
+
+{/* Altura total da onda: topo da crista ao fundo do vale. */}
+<DimV y1={68} y2={119} x={178} from={152} label="B" />
+
+{/* Espessura, por chamada: o vão entre as duas curvas tem 7 unidades. */}
+<DimLeader x={42} y={71} lx={100} ly={26} label="e" />

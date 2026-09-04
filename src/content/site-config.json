@@ -1,0 +1,34 @@
+{
+  "legalName": "Aldifer Distribuidora de Ferro e Aço",
+  "shortName": "Aldifer",
+  "slogan": "A Loja do Aço",
+  "foundedYear": 2002,
+  "address": {
+    "street": "Estrada dos Alvarengas, 5338",
+    "district": "Núcleo São Jorge",
+    "city": "São Bernardo do Campo",
+    "state": "SP",
+    "postalCode": "09850-550"
+  },
+  "phone": "(11) 4344-1919",
+  "phoneE164": "+551143441919",
+  "email": "contato@aldifer.com.br",
+  "social": [
+    {
+      "label": "LinkedIn",
+      "href": "https://www.linkedin.com/company/aldifer/"
+    },
+    {
+      "label": "Instagram",
+      "href": "https://www.instagram.com/aldiferoficial/"
+    },
+    {
+      "label": "Facebook",
+      "href": "https://www.facebook.com/aldiferoficial/"
+    }
+  ],
+  "whatsapp": null,
+  "openingHours": null,
+  "cnpj": null,
+  "customCutting": null
+}

@@ -2,8 +2,10 @@
 import Button from './ui/Button.astro';
 import MobileMenu from './MobileMenu.astro';
 import Container from './ui/Container.astro';
-import { site } from '@/data/site';
+import { getSite } from '@/lib/site';
 import { isActiveRoute, mainNav } from '@/lib/navigation';
+
+const site = await getSite();
 
 // [CONFIRMAR] Falta o arquivo do logotipo. Até ele chegar, a marca é um
 // logotipo tipográfico em Archivo Expanded — que aliás é mais nítido e mais

@@ -1,7 +1,9 @@
 ---
 import Button from './ui/Button.astro';
-import { site } from '@/data/site';
+import { getSite } from '@/lib/site';
 import { categoryNav, isActiveRoute, mainNav } from '@/lib/navigation';
+
+const site = await getSite();
 
 interface Props {
   /** Caminho atual, para o aria-current. */

@@ -1,12 +1,26 @@
 ---
 import Base from '@/layouts/Base.astro';
 import CrossSection from '@/components/CrossSection.astro';
+import DraftNotice from '@/components/DraftNotice.astro';
 import Button from '@/components/ui/Button.astro';
 import Heading from '@/components/ui/Heading.astro';
 import Section from '@/components/ui/Section.astro';
 import Table from '@/components/ui/Table.astro';
 import type { SectionTone } from '@/components/ui/Section.astro';
 import { CROSS_SECTION_VARIANTS } from '@/components/cross-sections/types';
+import { getProductTable, getVisibleCategories, getVisibleProducts } from '@/lib/products';
+
+// As tabelas abaixo vêm do conteúdo real, não de valores digitados aqui.
+//
+// Em produção esta lista vem VAZIA de propósito: todos os 27 produtos estão em
+// rascunho, e rascunho não entra no build de produção. Por isso cada bloco é
+// condicional — a página não pode presumir que existe produto visível.
+const produtos = await getVisibleProducts();
+const categorias = await getVisibleCategories();
+const amostraCalculada = produtos.find((p) => p.id === 'barra-chata') ?? produtos.at(0);
+const amostraUsina = produtos.find((p) => p.id === 'perfil-i');
+const tabelaCalculada = amostraCalculada ? getProductTable(amostraCalculada) : null;
+const tabelaUsina = amostraUsina ? getProductTable(amostraUsina) : null;
 
 // ROTA TEMPORÁRIA. A Etapa 8 remove este arquivo antes do deploy.
 
@@ -178,42 +192,112 @@ const BUTTON_TONES: readonly SectionTone[] = ['light', 'alt', 'dark'];
   <Section tone="light" spacing="md" labelledBy="tabela">
     <Heading level={2} id="tabela">Tabela de bitolas</Heading>
     <p class="mt-4 max-w-2xl text-surface-fg-soft">
-      Estrutura apenas. Os valores reais entram na Etapa 2 e ficam em rascunho até a Aldifer
-      enviar a planilha de estoque.
+      Gerada a partir de <code class="font-mono">src/content/products/</code>. A coluna de peso é
+      calculada em build por <code class="font-mono">src/lib/steel.ts</code> — nenhum peso desta
+      página foi digitado à mão.
+    </p>
+
+    {
+      amostraCalculada && tabelaCalculada ? (
+        <>
+          <DraftNotice
+            detail={`Amostra: ${amostraCalculada.data.name}. As bitolas são faixa comercial padrão de mercado, não o estoque real da Aldifer.`}
+          />
+
+          <Table
+            caption={`${amostraCalculada.data.name} — bitolas e peso`}
+            columns={tabelaCalculada.columns}
+          >
+            {tabelaCalculada.rows.map((row) => (
+              <tr>
+                {row.map((cell) => (
+                  <td data-numeric={cell.numeric ? '' : undefined}>{cell.text}</td>
+                ))}
+              </tr>
+            ))}
+          </Table>
+        </>
+      ) : (
+        <p class="mt-6 max-w-2xl border border-surface-border p-4 text-sm text-surface-fg-soft">
+          Nenhum produto visível neste ambiente. Os 27 produtos estão em rascunho, e rascunho não
+          entra no build de produção — é o comportamento esperado até a Aldifer enviar a planilha
+          de estoque real.
+        </p>
+      )
+    }
+
+    {
+      amostraUsina && tabelaUsina && (
+        <div class="mt-10">
+          <Heading level={3} size={4}>Quando não existe fórmula</Heading>
+          <p class="mt-3 max-w-2xl text-surface-fg-soft">
+            Perfil I e U têm aba cônica e raio de concordância, e não admitem cálculo aproximado.
+            A coluna de peso mostra "consultar", e a tabela fica vazia até a tabela de usina
+            chegar — em vez de exibir número inventado.
+          </p>
+          <div class="mt-4">
+            <Table
+              caption={`${amostraUsina.data.name} — aguardando tabela de usina`}
+              columns={tabelaUsina.columns}
+            >
+              {
+                tabelaUsina.rows.length === 0 ? (
+                  <tr>
+                    <td colspan={tabelaUsina.columns.length}>
+                      Tabela de bitolas ainda não preenchida.
+                    </td>
+                  </tr>
+                ) : (
+                  tabelaUsina.rows.map((row) => (
+                    <tr>
+                      {row.map((cell) => (
+                        <td data-numeric={cell.numeric ? '' : undefined}>{cell.text}</td>
+                      ))}
+                    </tr>
+                  ))
+                )
+              }
+            </Table>
+          </div>
+          {amostraUsina.data.notes.map((note) => (
+            <p class="mt-3 max-w-2xl text-sm text-surface-fg-soft">{note}</p>
+          ))}
+        </div>
+      )
+    }
+  </Section>
+
+  <Section tone="alt" spacing="md" labelledBy="inventario">
+    <Heading level={2} id="inventario">Inventário do conteúdo</Heading>
+    <p class="mt-4 max-w-2xl text-surface-fg-soft">
+      {categorias.length} categorias e {produtos.length} produtos. Todos em rascunho.
     </p>
     <div class="mt-6">
       <Table
-        caption="Barra chata — exemplo de estrutura, valores não conferidos"
+        caption="Produtos modelados, por origem do peso"
         columns={[
-          { label: 'Largura (mm)', numeric: true },
-          { label: 'Espessura (mm)', numeric: true },
-          { label: 'Comprimento (m)', numeric: true },
-          { label: 'Peso (kg/m)', numeric: true },
-          { label: 'Ação' },
+          { label: 'Produto' },
+          { label: 'Categoria' },
+          { label: 'Seção' },
+          { label: 'Origem do peso' },
+          { label: 'Linhas', numeric: true },
+          { label: 'Status' },
         ]}
       >
-        <tr>
-          <td data-numeric>50</td>
-          <td data-numeric>6</td>
-          <td data-numeric>6,00</td>
-          <td data-numeric>2,355</td>
-          <td><Button variant="ghost">Adicionar</Button></td>
-        </tr>
-        <tr>
-          <td data-numeric>25</td>
-          <td data-numeric>3</td>
-          <td data-numeric>6,00</td>
-          <td data-numeric>0,589</td>
-          <td><Button variant="ghost">Adicionar</Button></td>
-        </tr>
-        <tr>
-          <td data-numeric>100</td>
-          <td data-numeric>12</td>
-          <td data-numeric>6,00</td>
-          <td data-numeric>9,420</td>
-          <td><Button variant="ghost">Adicionar</Button></td>
-        </tr>
+        {
+          produtos.map((product) => (
+            <tr>
+              <td>{product.data.name}</td>
+              <td>{product.data.category}</td>
+              <td class="font-mono">{product.data.crossSection ?? '—'}</td>
+              <td class="font-mono">{product.data.weightSource}</td>
+              <td data-numeric>{product.data.dimensions.length}</td>
+              <td>{product.data.status}</td>
+            </tr>
+          ))
+        }
       </Table>
     </div>
   </Section>
+
 </Base>
