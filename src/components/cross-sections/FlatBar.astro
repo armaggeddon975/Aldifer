@@ -1,0 +1,8 @@
+---
+// Barra chata: largura e espessura, as duas colunas da tabela de bitolas.
+import DimH from './DimH.astro';
+import DimV from './DimV.astro';
+---
+<rect class="contour" x="20" y="65" width="132" height="30" />
+<DimH x1={20} x2={152} y={168} from={95} label="A" />
+<DimV y1={65} y2={95} x={178} from={152} label="e" outside />

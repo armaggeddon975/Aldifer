@@ -1,0 +1,39 @@
+---
+/**
+ * Cota vertical. A letra fica à direita da linha e sem rotação (sistema
+ * unidirecional) porque texto girado é ilegível em tamanho de card.
+ */
+interface Props {
+  y1: number;
+  y2: number;
+  x: number;
+  from: number;
+  label: string;
+  outside?: boolean;
+}
+
+const { y1, y2, x, from, label, outside = false } = Astro.props;
+
+const HEAD = 8;
+const HALF = 2.6;
+const dir = x > from ? 1 : -1;
+const inner = outside ? -HEAD : HEAD;
+---
+
+<line class="dim" x1={from + 3 * dir} y1={y1} x2={x + 5 * dir} y2={y1} />
+<line class="dim" x1={from + 3 * dir} y1={y2} x2={x + 5 * dir} y2={y2} />
+
+{
+  outside ? (
+    <line class="dim" x1={x} y1={y1 - HEAD * 2} x2={x} y2={y2 + HEAD * 2} />
+  ) : (
+    <line class="dim" x1={x} y1={y1} x2={x} y2={y2} />
+  )
+}
+
+<path class="dim-fill" d={`M ${x},${y1} L ${x - HALF},${y1 + inner} L ${x + HALF},${y1 + inner} Z`} />
+<path class="dim-fill" d={`M ${x},${y2} L ${x - HALF},${y2 - inner} L ${x + HALF},${y2 - inner} Z`} />
+
+<text class="dim-text" x={x + 7} y={(y1 + y2) / 2} text-anchor="start" dominant-baseline="middle">
+  {label}
+</text>

@@ -1,0 +1,9 @@
+---
+// Tubo quadrado: lado externo e parede.
+import DimH from './DimH.astro';
+import DimLeader from './DimLeader.astro';
+---
+<rect class="contour" x="24" y="18" width="124" height="124" />
+<rect class="contour" x="38" y="32" width="96" height="96" />
+<DimH x1={24} x2={148} y={168} from={142} label="A" />
+<DimLeader x={86} y={25} lx={150} ly={12} label="e" />

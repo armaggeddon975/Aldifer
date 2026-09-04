@@ -1,0 +1,78 @@
+---
+import Button from './ui/Button.astro';
+import MobileMenu from './MobileMenu.astro';
+import Container from './ui/Container.astro';
+import { site } from '@/data/site';
+import { isActiveRoute, mainNav } from '@/lib/navigation';
+
+// [CONFIRMAR] Falta o arquivo do logotipo. Até ele chegar, a marca é um
+// logotipo tipográfico em Archivo Expanded — que aliás é mais nítido e mais
+// leve que um PNG. Ver lista de pendências do README.
+const pathname = Astro.url.pathname;
+---
+
+<header class="tone-light sticky top-0 z-40 border-b border-surface-border">
+  <Container class="flex items-center justify-between gap-4 py-3">
+    <a href="/" class="flex flex-col leading-none" aria-label={`${site.shortName}, página inicial`}>
+      <span class="display-expanded text-lg font-bold text-brand-navy">ALDIFER</span>
+      <span class="text-xs text-surface-fg-soft">{site.slogan}</span>
+    </a>
+
+    <nav aria-label="Navegação principal" class="hidden lg:block">
+      <ul class="flex items-center gap-6">
+        {
+          mainNav.map((item) => {
+            const active = isActiveRoute(item.href, pathname);
+            return (
+              <li>
+                <a
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  class:list={[
+                    'inline-flex items-center border-b-2 py-2 text-base hover:text-surface-hover',
+                    active ? 'border-accent font-semibold' : 'border-transparent',
+                  ]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a
+        href={`tel:${site.phoneE164}`}
+        class="hidden touch-target items-center px-2 font-mono text-sm md:inline-flex hover:text-surface-hover"
+      >
+        {site.phone}
+      </a>
+
+      {/* Ação primária do site: visível em toda largura. O rótulo encurta no
+          mobile por <span>, e não por classe `hidden` no próprio Button —
+          ver o caveat de conflito de classes em ui/Button.astro. */}
+      {/* aria-label explícito: o nome acessível não deve depender de qual
+          <span> está visível no breakpoint. "Pedir orçamento" contém o texto
+          visível "Orçamento", então atende a WCAG 2.5.3 (Label in Name). */}
+      <Button href="/orcamento" aria-label="Pedir orçamento">
+        <span class="sm:hidden">Orçamento</span>
+        <span class="hidden sm:inline">Pedir orçamento</span>
+      </Button>
+
+      <button
+        type="button"
+        id="menu-open"
+        class="touch-target inline-flex items-center justify-center lg:hidden"
+        aria-label="Abrir menu de navegação"
+      >
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none" />
+        </svg>
+      </button>
+    </div>
+  </Container>
+
+  <MobileMenu pathname={pathname} triggerId="menu-open" />
+</header>

@@ -93,6 +93,34 @@
 
   /* --- Alvo de toque mínimo — CLAUDE.md exige 44x44px no mobile ---------- */
   --touch-target: 44px;
+  --touch-target-lg: 52px;
+
+  /* --- Layout (adicionado na Etapa 1; não vem do CLAUDE.md) -------------- */
+  --width-content: 80rem;  /* 1280px */
+
+  /* --- Contexto de superfície -------------------------------------------
+     O padrão é a superfície clara. A utility `tone-dark` sobrescreve estes
+     valores, e todo componente dentro dela se adapta sem receber prop.
+
+     É isto que torna mecânica a regra dura da paleta: --accent sobre fundo
+     escuro cai para 3,6:1, então em tone-dark o --cta-bg passa a ser
+     --accent-bright, e o texto do CTA passa a ser escuro — porque branco
+     sobre --accent-bright daria só 2,86:1, abaixo do mínimo.
+     -------------------------------------------------------------------- */
+  --surface-bg: var(--paper);
+  --surface-fg: var(--ink);
+  --surface-fg-soft: var(--ink-soft);
+  --surface-border: var(--border-light);
+  /* Borda de CONTROLE é diferente de borda de divisor. O divisor é decorativo
+     e isento de contraste; o contorno de um botão é limite de componente de
+     interface e a WCAG 1.4.11 exige 3:1. --border-light no branco dá 1,30:1,
+     então não serve aqui. --ink-soft dá 6,0:1. */
+  --surface-control-border: var(--ink-soft);
+  --surface-hover: var(--accent);
+
+  --cta-bg: var(--accent);
+  --cta-fg: var(--paper);                                    /* 4,81:1 */
+  --cta-bg-hover: color-mix(in oklab, var(--accent) 88%, black);
 }
 
 @theme inline {
@@ -163,4 +191,18 @@
   /* Tracking */
   --tracking-display: var(--display-tracking);
   --tracking-normal: 0em;
+
+  /* Largura de conteúdo — gera max-w-content */
+  --container-content: var(--width-content);
+
+  /* Cores de contexto — permitem text-surface-fg, border-surface-border, etc.
+     em vez de repetir var(--surface-fg) em CSS solto. */
+  --color-surface-bg: var(--surface-bg);
+  --color-surface-fg: var(--surface-fg);
+  --color-surface-fg-soft: var(--surface-fg-soft);
+  --color-surface-border: var(--surface-border);
+  --color-surface-control-border: var(--surface-control-border);
+  --color-surface-hover: var(--surface-hover);
+  --color-cta-bg: var(--cta-bg);
+  --color-cta-fg: var(--cta-fg);
 }

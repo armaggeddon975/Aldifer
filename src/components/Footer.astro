@@ -1,0 +1,114 @@
+---
+import Container from './ui/Container.astro';
+import { site } from '@/data/site';
+import { categoryNav, mainNav } from '@/lib/navigation';
+
+// Ano do build. O site atual está com "© 2016" fixo, que é o erro mais visível
+// dele — todo visitante conclui que a empresa abandonou o site.
+const currentYear = new Date().getFullYear();
+
+const { address } = site;
+---
+
+<footer class="tone-dark">
+  <Container class="grid gap-10 py-12 md:grid-cols-2 lg:grid-cols-4 lg:py-16">
+    <div class="flex flex-col gap-3">
+      <span class="display-expanded text-lg font-bold">ALDIFER</span>
+      <p class="text-sm text-surface-fg-soft">{site.legalName}</p>
+      <address class="text-sm not-italic text-surface-fg-soft">
+        {address.street}<br />
+        {address.district}<br />
+        {address.city} / {address.state}<br />
+        CEP {address.postalCode}
+      </address>
+    </div>
+
+    <nav aria-label="Catálogo" class="flex flex-col gap-3">
+      <h2 class="text-xs font-semibold">Catálogo</h2>
+      <ul class="flex flex-col gap-2 text-sm">
+        {
+          categoryNav.map((item) => (
+            <li>
+              <a href={item.href} class="text-surface-fg-soft hover:text-surface-hover">
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <nav aria-label="Institucional" class="flex flex-col gap-3">
+      <h2 class="text-xs font-semibold">O site</h2>
+      <ul class="flex flex-col gap-2 text-sm">
+        {
+          mainNav.map((item) => (
+            <li>
+              <a href={item.href} class="text-surface-fg-soft hover:text-surface-hover">
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href="/orcamento" class="text-surface-fg-soft hover:text-surface-hover">
+            Pedir orçamento
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="flex flex-col gap-3">
+      <h2 class="text-xs font-semibold">Contato</h2>
+      <a href={`tel:${site.phoneE164}`} class="font-mono text-base hover:text-surface-hover">
+        {site.phone}
+      </a>
+      <a href={`mailto:${site.email}`} class="text-sm text-surface-fg-soft hover:text-surface-hover">
+        {site.email}
+      </a>
+
+      {/* Campo nulo não renderiza. Horário e WhatsApp são [CONFIRMAR]: seção
+          vazia é melhor que informação inventada. */}
+      {
+        site.openingHours && (
+          <ul class="text-sm text-surface-fg-soft">
+            {site.openingHours.map((line) => (
+              <li>{line}</li>
+            ))}
+          </ul>
+        )
+      }
+
+      <ul class="mt-2 flex flex-wrap gap-4 text-sm">
+        {
+          site.social.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                rel="noopener noreferrer"
+                target="_blank"
+                class="text-surface-fg-soft underline underline-offset-4 hover:text-surface-hover"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </Container>
+
+  <div class="border-t border-surface-border">
+    <Container
+      class="flex flex-col gap-2 py-6 text-xs text-surface-fg-soft md:flex-row md:items-center md:justify-between"
+    >
+      <p>
+        © {site.foundedYear}–{currentYear} {site.legalName}.
+        {site.cnpj && ` CNPJ ${site.cnpj}.`}
+      </p>
+      <a href="/politica-de-privacidade" class="underline underline-offset-4 hover:text-surface-hover">
+        Política de Privacidade
+      </a>
+    </Container>
+  </div>
+</footer>

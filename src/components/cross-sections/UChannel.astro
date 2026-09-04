@@ -1,0 +1,25 @@
+---
+// Perfil U, abertura à direita. A chamada da alma usa o vão interno do U,
+// que é o único espaço livre do desenho.
+import DimH from './DimH.astro';
+import DimV from './DimV.astro';
+import DimLeader from './DimLeader.astro';
+
+const U_CHANNEL = [
+  'M 40,18',
+  'L 140,18', // topo da aba superior
+  'L 140,31', // ponta da aba
+  'L 65,31', // volta pela face interna da aba
+  'A 9,9 0 0 0 56,40', // concordância aba/alma
+  'L 56,120', // face interna da alma
+  'A 9,9 0 0 0 65,129',
+  'L 140,129',
+  'L 140,142',
+  'L 40,142',
+  'Z', // costas da alma
+].join(' ');
+---
+<path class="contour" d={U_CHANNEL} />
+<DimV y1={18} y2={142} x={178} from={140} label="A" />
+<DimH x1={40} x2={140} y={168} from={142} label="B" />
+<DimLeader x={48} y={80} lx={95} ly={72} label="e" />

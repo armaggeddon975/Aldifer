@@ -1,0 +1,11 @@
+---
+// Tubo retangular: base, altura e parede.
+import DimH from './DimH.astro';
+import DimV from './DimV.astro';
+import DimLeader from './DimLeader.astro';
+---
+<rect class="contour" x="16" y="48" width="140" height="64" />
+<rect class="contour" x="28" y="60" width="116" height="40" />
+<DimH x1={16} x2={156} y={168} from={112} label="A" />
+<DimV y1={48} y2={112} x={178} from={156} label="B" />
+<DimLeader x={86} y={54} lx={40} ly={26} label="e" side="left" />

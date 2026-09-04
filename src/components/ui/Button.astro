@@ -1,0 +1,72 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+/**
+ * Botão ou link, decidido por `href`: com href sai um <a>, sem href sai um
+ * <button>. Nunca uma div com onClick.
+ *
+ * As cores vêm do contexto de superfície (--cta-bg / --cta-fg), não de props.
+ * Numa Section tone="dark" o primário troca sozinho para --accent-bright com
+ * texto escuro, porque branco sobre --accent-bright daria 2,86:1.
+ *
+ * O anel de foco vem da regra global :focus-visible, com 2px de offset — é o
+ * offset que garante o contraste, já que o anel passa a ficar sobre o fundo da
+ * seção e não sobre o preenchimento do próprio botão.
+ *
+ * CAVEAT — não passe por `class` utility que dispute propriedade com as classes
+ * base daqui (`hidden` contra `inline-flex`, `px-4` contra `px-6`). Em CSS,
+ * entre duas classes de mesma especificidade ganha a que vem depois na FOLHA,
+ * não na lista de classes do elemento — então a utility do consumidor perde
+ * silenciosamente. Para esconder, embrulhe: <div class="hidden sm:block">.
+ * Para variar espaçamento, use uma prop `size`.
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type ButtonSize = 'md' | 'lg';
+
+type Common = {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  class?: string;
+};
+
+type AsAnchor = Common & { href: string } & Omit<HTMLAttributes<'a'>, 'class' | 'href'>;
+type AsButton = Common & { href?: undefined } & Omit<HTMLAttributes<'button'>, 'class'>;
+
+type Props = AsAnchor | AsButton;
+
+const { variant = 'primary', size = 'md', class: className, ...rest } = Astro.props;
+const { href, ...attrs } = rest as { href?: string } & Record<string, unknown>;
+
+const BASE =
+  'inline-flex items-center justify-center gap-2 rounded-control text-center font-semibold transition-colors';
+
+const VARIANT: Record<ButtonVariant, string> = {
+  primary: 'bg-cta-bg text-cta-fg hover:bg-(--cta-bg-hover)',
+  secondary:
+    'border border-surface-control-border text-surface-fg hover:border-surface-hover hover:text-surface-hover',
+  ghost:
+    'text-surface-fg underline decoration-1 underline-offset-4 hover:text-surface-hover hover:decoration-2',
+};
+
+// md tem 44px de altura mínima — o alvo de toque exigido pelo CLAUDE.md.
+const SIZE: Record<ButtonSize, string> = {
+  md: 'touch-target px-6 text-base',
+  lg: 'min-h-(--touch-target-lg) px-8 text-lg',
+};
+
+// O ghost é um link no meio do texto: recuo lateral e altura mínima o
+// desalinhariam da linha de base.
+const classes = [BASE, VARIANT[variant], variant === 'ghost' ? '' : SIZE[size], className];
+---
+
+{
+  href ? (
+    <a href={href} class:list={classes} {...attrs}>
+      <slot />
+    </a>
+  ) : (
+    <button class:list={classes} {...attrs}>
+      <slot />
+    </button>
+  )
+}

@@ -1,0 +1,119 @@
+---
+/**
+ * Casca de tabela de dados. As linhas vêm por slot, para que a Etapa 4 possa
+ * pôr um botão "Adicionar" em cada uma sem que este componente saiba disso.
+ *
+ * Marque a célula com data-numeric para receber JetBrains Mono, alinhamento à
+ * direita e dígitos de largura fixa — número técnico só se lê em coluna quando
+ * os dígitos alinham.
+ */
+export type TableColumn = {
+  readonly label: string;
+  /** Coluna de número: mono, à direita, tabular. */
+  readonly numeric?: boolean;
+};
+
+interface Props {
+  /** Obrigatório: <caption> é o que dá nome à tabela no leitor de tela. */
+  caption: string;
+  columns: readonly TableColumn[];
+  /** Mantém o caption no leitor de tela mas o esconde da tela. */
+  captionHidden?: boolean;
+  class?: string;
+}
+
+const { caption, columns, captionHidden = false, class: className } = Astro.props;
+---
+
+{/* role="region" + tabindex="0" tornam a área rolável alcançável por teclado:
+    sem isso quem navega por Tab não consegue ver as colunas escondidas. */}
+<div
+  class:list={['table-shell', className]}
+  role="region"
+  aria-label={caption}
+  tabindex="0"
+>
+  <table>
+    <caption class:list={[captionHidden && 'sr-only']}>{caption}</caption>
+    <thead>
+      <tr>
+        {
+          columns.map((column) => (
+            <th scope="col" data-numeric={column.numeric ? '' : undefined}>
+              {column.label}
+            </th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      <slot />
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .table-shell {
+    overflow-x: auto;
+    /* Uma barra de rolagem só aparece no hover em alguns sistemas; a borda
+       deixa claro que a área é um recorte com mais conteúdo à direita. */
+    border: 1px solid var(--surface-border);
+
+    /* A tabela declara superfície clara, independente do tom da seção em que
+       está. Sem isto, numa Section tone="dark" o cabeçalho sairia claro e o
+       corpo escuro. Número técnico também se lê melhor em fundo claro. */
+    --surface-bg: var(--paper);
+    --surface-fg: var(--ink);
+    --surface-fg-soft: var(--ink-soft);
+    --surface-border: var(--border-light);
+    --surface-control-border: var(--ink-soft);
+    --surface-hover: var(--accent);
+    --cta-bg: var(--accent);
+    --cta-fg: var(--paper);
+    --focus-ring: var(--accent);
+    background-color: var(--surface-bg);
+    color: var(--surface-fg);
+  }
+
+  .table-shell table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--size-sm);
+  }
+
+  .table-shell caption {
+    padding: var(--space-12) var(--space-16);
+    text-align: left;
+    font-weight: 600;
+    color: var(--surface-fg);
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  .table-shell :global(th),
+  .table-shell :global(td) {
+    padding: var(--space-12) var(--space-16);
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  .table-shell :global(tbody tr:last-child th),
+  .table-shell :global(tbody tr:last-child td) {
+    border-bottom: 0;
+  }
+
+  .table-shell :global(thead th) {
+    background-color: var(--paper-alt);
+    font-weight: 600;
+    font-size: var(--size-xs);
+    letter-spacing: 0.01em;
+  }
+
+  /* Números técnicos: mono, à direita, largura de dígito constante. */
+  .table-shell :global(th[data-numeric]),
+  .table-shell :global(td[data-numeric]) {
+    font-family: var(--family-mono);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

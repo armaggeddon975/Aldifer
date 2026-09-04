@@ -1,0 +1,12 @@
+---
+// Tubo redondo: dois círculos concêntricos. A chamada sai de dentro da parede
+// e cruza o contorno na saída, como numa prancha real.
+import DimH from './DimH.astro';
+import DimLeader from './DimLeader.astro';
+---
+<line class="axis" x1="14" y1="80" x2="158" y2="80" />
+<line class="axis" x1="86" y1="8" x2="86" y2="152" />
+<circle class="contour" cx="86" cy="80" r="62" />
+<circle class="contour" cx="86" cy="80" r="48" />
+<DimH x1={24} x2={148} y={168} from={142} label="Ø" />
+<DimLeader x={86} y={25} lx={150} ly={14} label="e" />

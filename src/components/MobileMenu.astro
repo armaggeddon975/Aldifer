@@ -1,0 +1,122 @@
+---
+import Button from './ui/Button.astro';
+import { site } from '@/data/site';
+import { categoryNav, isActiveRoute, mainNav } from '@/lib/navigation';
+
+interface Props {
+  /** Caminho atual, para o aria-current. */
+  pathname: string;
+  /** id do botão que abre o menu, para devolver o foco no fechamento. */
+  triggerId: string;
+}
+
+const { pathname, triggerId } = Astro.props;
+---
+
+{/*
+  <dialog> nativo. O navegador entrega de graça: Esc fecha, o foco fica contido
+  enquanto está aberto e volta ao elemento de origem no fechamento. Nada disso
+  é escrito à mão, e por isso não há armadilha de foco possível.
+  Fechado, o elemento é display:none — nada aqui entra na ordem de tabulação.
+*/}
+<dialog
+  id="mobile-menu"
+  class="mobile-menu tone-light"
+  aria-label="Menu de navegação"
+  data-trigger={triggerId}
+>
+  <div class="flex items-center justify-between border-b border-surface-border px-4 py-3">
+    <span class="display-expanded text-base font-bold text-brand-navy">Menu</span>
+    <button
+      type="button"
+      id="menu-close"
+      class="touch-target inline-flex items-center justify-center"
+      aria-label="Fechar menu de navegação"
+    >
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+        <path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2" fill="none" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="flex flex-col gap-8 px-4 py-6">
+    {/* Rótulo distinto do <nav> do header: dois landmarks com o mesmo nome
+        deixam a navegação por regiões ambígua no leitor de tela. */}
+    <nav aria-label="Navegação principal do menu">
+      <ul class="flex flex-col">
+        {
+          mainNav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={isActiveRoute(item.href, pathname) ? 'page' : undefined}
+                class="flex touch-target items-center border-b border-surface-border text-lg aria-[current=page]:font-semibold"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <nav aria-label="Categorias do catálogo">
+      <p class="mb-2 text-xs font-semibold text-surface-fg-soft">Catálogo</p>
+      <ul class="flex flex-col">
+        {
+          categoryNav.map((item) => (
+            <li>
+              <a href={item.href} class="flex touch-target items-center border-b border-surface-border">
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="flex flex-col gap-3">
+      <a href={`tel:${site.phoneE164}`} class="flex touch-target items-center font-mono">
+        {site.phone}
+      </a>
+      <Button href="/orcamento" size="lg">Pedir orçamento</Button>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  /* Folha em tela cheia. Sem área de backdrop clicável, o menu tem exatamente
+     duas formas de fechar — botão e Esc — e nenhuma falha por clique errado. */
+  .mobile-menu {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--surface-fg);
+  }
+</style>
+
+<script>
+  // Sem define:vars de propósito: assim o Astro empacota este script em arquivo
+  // próprio, e a CSP restrita da Etapa 9 não precisa de 'unsafe-inline'.
+  // O id do botão de abrir vem do data-trigger do próprio dialog.
+  const dialog = document.getElementById('mobile-menu');
+  const closeButton = document.getElementById('menu-close');
+
+  if (dialog instanceof HTMLDialogElement && closeButton) {
+    const triggerId = dialog.dataset.trigger;
+    const openButton = triggerId ? document.getElementById(triggerId) : null;
+
+    openButton?.addEventListener('click', () => dialog.showModal());
+    closeButton.addEventListener('click', () => dialog.close());
+
+    // Se a janela crescer até o desktop com o menu aberto, o botão de abrir
+    // desaparece e o usuário ficaria preso numa folha sem contexto.
+    window.matchMedia('(min-width: 1024px)').addEventListener('change', (event) => {
+      if (event.matches && dialog.open) dialog.close();
+    });
+  }
+</script>

@@ -1,0 +1,25 @@
+---
+// Perfil T: aba no topo, alma descendo pelo meio, com concordância nos dois
+// encontros.
+import DimH from './DimH.astro';
+import DimV from './DimV.astro';
+import DimLeader from './DimLeader.astro';
+
+const TEE = [
+  'M 26,18',
+  'L 146,18', // topo da aba
+  'L 146,35', // ponta direita da aba
+  'L 103,35', // volta pela face interna da aba
+  'A 9,9 0 0 0 94,44', // concordância aba/alma
+  'L 94,142', // face direita da alma
+  'L 78,142', // base da alma
+  'L 78,44', // face esquerda da alma
+  'A 9,9 0 0 0 69,35',
+  'L 26,35',
+  'Z',
+].join(' ');
+---
+<path class="contour" d={TEE} />
+<DimH x1={26} x2={146} y={168} from={142} label="A" />
+<DimV y1={18} y2={142} x={178} from={146} label="B" />
+<DimLeader x={86} y={100} lx={40} ly={88} label="e" side="left" />

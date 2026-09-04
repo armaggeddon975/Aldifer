@@ -1,0 +1,78 @@
+---
+import '@/styles/global.css';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import { site } from '@/data/site';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Absoluta. Se omitida, é derivada de `site` no astro.config e do caminho. */
+  canonical?: string;
+  /** Caminho da imagem de compartilhamento. [ETAPA 8] criar /og-image.png. */
+  ogImage?: string;
+  noindex?: boolean;
+}
+
+const { title, description, canonical, ogImage, noindex = false } = Astro.props;
+
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+---
+
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    {/* Preload SÓ da Archivo: é a fonte do H1, que é o elemento de LCP.
+        Precarregar as três disputaria banda com o próprio conteúdo. */}
+    <link
+      rel="preload"
+      href="/fonts/archivo-latin-standard-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.legalName} />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    {
+      ogImage && (
+        <>
+          <meta property="og:image" content={new URL(ogImage, Astro.site ?? Astro.url).href} />
+          <meta name="twitter:card" content="summary_large_image" />
+        </>
+      )
+    }
+
+    {/* Dados estruturados. A Etapa 9 injeta LocalBusiness por aqui. */}
+    <slot name="jsonld" />
+  </head>
+
+  <body>
+    {/* PRIMEIRO elemento focável da página. */}
+    <a href="#conteudo" class="skip-link">Pular para o conteúdo</a>
+
+    <Header />
+
+    {/* tabindex="-1" é o que faz o foco realmente ir para cá ao usar o atalho:
+        sem ele o navegador rola a página mas deixa o foco onde estava. */}
+    <main id="conteudo" tabindex="-1">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>

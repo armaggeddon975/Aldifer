@@ -25,6 +25,77 @@
   min-width: var(--touch-target);
 }
 
+/* --- Contexto de superfície ------------------------------------------------
+   Cada tom redefine as variáveis de contexto. Componente dentro da seção
+   herda tudo: cor de texto, cor de borda, cor do CTA e cor do anel de foco.
+   -------------------------------------------------------------------------- */
+
+@utility tone-dark {
+  --surface-bg: var(--steel-950);
+  --surface-fg: var(--on-dark);
+  --surface-fg-soft: var(--on-dark-soft);
+  --surface-border: var(--border-dark);
+  --surface-control-border: var(--on-dark-soft);            /* 7,04:1 */
+  --surface-hover: var(--accent-bright);
+  --cta-bg: var(--accent-bright);
+  --cta-fg: var(--steel-950);                               /* 5,61:1 */
+  --cta-bg-hover: color-mix(in oklab, var(--accent-bright) 82%, var(--accent));
+  --focus-ring: var(--accent-bright);                       /* 6,07:1 */
+  background-color: var(--surface-bg);
+  color: var(--surface-fg);
+}
+
+/* Os dois tons claros também redefinem o contexto, e não só o fundo: sem isso
+   uma seção clara aninhada dentro de uma escura herdaria as cores erradas. */
+@utility tone-light {
+  --surface-bg: var(--paper);
+  --surface-fg: var(--ink);
+  --surface-fg-soft: var(--ink-soft);
+  --surface-border: var(--border-light);
+  --surface-control-border: var(--ink-soft);                /* 6,0:1 */
+  --surface-hover: var(--accent);
+  --cta-bg: var(--accent);
+  --cta-fg: var(--paper);
+  --cta-bg-hover: color-mix(in oklab, var(--accent) 88%, black);
+  --focus-ring: var(--accent);
+  background-color: var(--surface-bg);
+  color: var(--surface-fg);
+}
+
+@utility tone-alt {
+  --surface-bg: var(--paper-alt);
+  --surface-fg: var(--ink);
+  --surface-fg-soft: var(--ink-soft);
+  --surface-border: var(--border-light);
+  --surface-control-border: var(--ink-soft);
+  --surface-hover: var(--accent);
+  --cta-bg: var(--accent);
+  --cta-fg: var(--paper);
+  --cta-bg-hover: color-mix(in oklab, var(--accent) 88%, black);
+  --focus-ring: var(--accent);
+  background-color: var(--surface-bg);
+  color: var(--surface-fg);
+}
+
+/* Link "Pular para o conteúdo": invisível até receber foco. Não usa
+   display:none nem visibility:hidden, que o tirariam da ordem de tabulação. */
+@utility skip-link {
+  position: absolute;
+  left: var(--space-16);
+  top: var(--space-16);
+  z-index: 100;
+  translate: 0 -200%;
+  padding: var(--space-12) var(--space-16);
+  background-color: var(--accent);
+  color: var(--paper);
+  font-weight: 600;
+  border-radius: var(--corner-control);
+
+  &:focus-visible {
+    translate: 0 0;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Base
    -------------------------------------------------------------------------- */
@@ -33,6 +104,9 @@
   html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    /* O header é fixo no topo. Sem isto, tanto uma âncora quanto o atalho
+       "Pular para o conteúdo" param com o alvo escondido atrás dele. */
+    scroll-padding-top: 5rem;
   }
 
   body {

@@ -1,0 +1,219 @@
+---
+import Base from '@/layouts/Base.astro';
+import CrossSection from '@/components/CrossSection.astro';
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Table from '@/components/ui/Table.astro';
+import type { SectionTone } from '@/components/ui/Section.astro';
+import { CROSS_SECTION_VARIANTS } from '@/components/cross-sections/types';
+
+// ROTA TEMPORÁRIA. A Etapa 8 remove este arquivo antes do deploy.
+
+const COLOR_GROUPS: readonly { readonly title: string; readonly tokens: readonly string[] }[] = [
+  { title: 'Marca', tokens: ['--brand-navy', '--brand-orange'] },
+  { title: 'Base escura', tokens: ['--steel-950', '--steel-900', '--steel-700', '--border-dark'] },
+  { title: 'Base clara', tokens: ['--paper', '--paper-alt', '--border-light'] },
+  { title: 'Texto', tokens: ['--ink', '--ink-soft', '--on-dark', '--on-dark-soft'] },
+  { title: 'Acento', tokens: ['--accent', '--accent-bright'] },
+];
+
+const CONTRAST: readonly { readonly pair: string; readonly ratio: string }[] = [
+  { pair: '--on-dark sobre --steel-950', ratio: '14,5:1' },
+  { pair: 'branco sobre --brand-navy', ratio: '13,3:1' },
+  { pair: '--on-dark-soft sobre --steel-950', ratio: '7,04:1' },
+  { pair: '--accent-bright sobre --steel-950', ratio: '6,07:1' },
+  { pair: '--ink-soft sobre branco', ratio: '6,0:1' },
+  { pair: '--steel-950 sobre --accent-bright', ratio: '5,61:1' },
+  { pair: 'branco sobre --accent', ratio: '4,81:1' },
+];
+
+const TYPE_SCALE: readonly { readonly cls: string; readonly px: string }[] = [
+  { cls: 'text-4xl', px: '62px' },
+  { cls: 'text-3xl', px: '46px' },
+  { cls: 'text-2xl', px: '34px' },
+  { cls: 'text-xl', px: '26px' },
+  { cls: 'text-lg', px: '20px' },
+  { cls: 'text-base', px: '16px' },
+  { cls: 'text-sm', px: '14px' },
+  { cls: 'text-xs', px: '12px' },
+];
+
+const BUTTON_TONES: readonly SectionTone[] = ['light', 'alt', 'dark'];
+---
+
+<Base
+  title="Styleguide — Aldifer"
+  description="Rota temporária de revisão do design system. Removida antes do deploy."
+  noindex
+>
+  <Section tone="light" spacing="md">
+    <Heading level={1}>Styleguide</Heading>
+    <p class="mt-4 max-w-2xl text-surface-fg-soft">
+      Rota temporária para revisão dos primitivos e das seções transversais. Removida na Etapa 8.
+    </p>
+  </Section>
+
+  <Section tone="alt" spacing="md" labelledBy="paleta">
+    <Heading level={2} id="paleta">Paleta</Heading>
+    <div class="mt-6 flex flex-col gap-8">
+      {
+        COLOR_GROUPS.map((group) => (
+          <div>
+            <Heading level={3} size={4}>{group.title}</Heading>
+            <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {group.tokens.map((token) => (
+                <li class="border border-surface-border">
+                  <div class="h-16 w-full" style={`background-color: var(${token})`} />
+                  <p class="px-3 py-2 font-mono text-xs">{token}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="mt-10">
+      <Table
+        caption="Contrastes verificados — todos passam WCAG AA"
+        columns={[{ label: 'Par' }, { label: 'Razão', numeric: true }]}
+      >
+        {
+          CONTRAST.map((row) => (
+            <tr>
+              <td class="font-mono">{row.pair}</td>
+              <td data-numeric>{row.ratio}</td>
+            </tr>
+          ))
+        }
+      </Table>
+      <p class="mt-3 text-sm text-surface-fg-soft">
+        Regra dura: <code class="font-mono">--accent</code> nunca sobre fundo escuro — cai para
+        3,6:1. Sobre escuro, <code class="font-mono">--accent-bright</code>.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="light" spacing="md" labelledBy="tipografia">
+    <Heading level={2} id="tipografia">Tipografia</Heading>
+    <ul class="mt-6 flex flex-col gap-4">
+      {
+        TYPE_SCALE.map((step) => (
+          <li class="flex flex-col gap-1 border-b border-surface-border pb-4">
+            <span class="font-mono text-xs text-surface-fg-soft">
+              {step.cls} · {step.px}
+            </span>
+            <span class:list={['display-expanded font-bold', step.cls]}>Barra chata 50 × 6</span>
+          </li>
+        ))
+      }
+      <li class="flex flex-col gap-1 border-b border-surface-border pb-4">
+        <span class="font-mono text-xs text-surface-fg-soft">Inter · corpo · entrelinha 1,6</span>
+        <p class="max-w-2xl">
+          A linha completa de barras, tubos, chapas, perfis e telas fica no galpão de São Bernardo.
+          Você consulta a medida no site e confirma a retirada no mesmo dia.
+        </p>
+      </li>
+      <li class="flex flex-col gap-1">
+        <span class="font-mono text-xs text-surface-fg-soft">JetBrains Mono · tabular</span>
+        <p class="font-mono">1234567890 · 50 × 6 mm · Ø 30 · 2,36 kg/m</p>
+      </li>
+    </ul>
+  </Section>
+
+  {
+    BUTTON_TONES.map((tone) => (
+      <Section tone={tone} spacing="sm">
+        <Heading level={2} size={3}>Botões · tone {tone}</Heading>
+        <div class="mt-4 flex flex-wrap items-center gap-4">
+          <Button variant="primary" size="md">Montar lista</Button>
+          <Button variant="primary" size="lg">Montar lista</Button>
+          <Button variant="secondary" size="md">Ver medidas</Button>
+          <Button variant="secondary" size="lg">Ver medidas</Button>
+          <Button variant="ghost">Falar no WhatsApp</Button>
+          <Button href="/produtos" variant="primary" size="md">Como link</Button>
+          <Button variant="primary" size="md" disabled>Desabilitado</Button>
+        </div>
+      </Section>
+    ))
+  }
+
+  <Section tone="light" spacing="md" labelledBy="secoes">
+    <Heading level={2} id="secoes">Seções transversais</Heading>
+    <p class="mt-4 max-w-2xl text-surface-fg-soft">
+      Onze perfis, com linha de cota e letra da dimensão em mono. O traço usa <code
+        class="font-mono">currentColor</code
+      >, então herda a cor do contexto.
+    </p>
+    <ul class="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        CROSS_SECTION_VARIANTS.map((variant) => (
+          <li class="border border-surface-border p-4">
+            <CrossSection variant={variant} />
+            <p class="mt-2 font-mono text-xs text-surface-fg-soft">{variant}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section tone="dark" spacing="md" labelledBy="secoes-escuro">
+    <Heading level={2} id="secoes-escuro">As mesmas seções sobre fundo escuro</Heading>
+    <p class="mt-4 max-w-2xl text-surface-fg-soft">
+      Sem cota, no tamanho de card de categoria: abaixo de cerca de 180px de largura a letra da
+      dimensão fica ilegível, então o desenho entra com as cotas desligadas.
+    </p>
+    <ul class="mt-8 grid grid-cols-3 gap-6 sm:grid-cols-4 lg:grid-cols-6">
+      {
+        CROSS_SECTION_VARIANTS.map((variant) => (
+          <li>
+            <CrossSection variant={variant} dimensions={false} />
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section tone="light" spacing="md" labelledBy="tabela">
+    <Heading level={2} id="tabela">Tabela de bitolas</Heading>
+    <p class="mt-4 max-w-2xl text-surface-fg-soft">
+      Estrutura apenas. Os valores reais entram na Etapa 2 e ficam em rascunho até a Aldifer
+      enviar a planilha de estoque.
+    </p>
+    <div class="mt-6">
+      <Table
+        caption="Barra chata — exemplo de estrutura, valores não conferidos"
+        columns={[
+          { label: 'Largura (mm)', numeric: true },
+          { label: 'Espessura (mm)', numeric: true },
+          { label: 'Comprimento (m)', numeric: true },
+          { label: 'Peso (kg/m)', numeric: true },
+          { label: 'Ação' },
+        ]}
+      >
+        <tr>
+          <td data-numeric>50</td>
+          <td data-numeric>6</td>
+          <td data-numeric>6,00</td>
+          <td data-numeric>2,355</td>
+          <td><Button variant="ghost">Adicionar</Button></td>
+        </tr>
+        <tr>
+          <td data-numeric>25</td>
+          <td data-numeric>3</td>
+          <td data-numeric>6,00</td>
+          <td data-numeric>0,589</td>
+          <td><Button variant="ghost">Adicionar</Button></td>
+        </tr>
+        <tr>
+          <td data-numeric>100</td>
+          <td data-numeric>12</td>
+          <td data-numeric>6,00</td>
+          <td data-numeric>9,420</td>
+          <td><Button variant="ghost">Adicionar</Button></td>
+        </tr>
+      </Table>
+    </div>
+  </Section>
+</Base>

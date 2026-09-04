@@ -1,20 +1,18 @@
 ---
-// Placeholder da Etapa 0. A home real é construída na Etapa 3, a partir da
-// seção 3 do docs/CONTEUDO.md. Não adicionar conteúdo de negócio aqui.
-import '@/styles/global.css';
+// Placeholder. A home real é construída na Etapa 3, a partir das seções 2 e 3
+// do docs/CONTEUDO.md. Existe agora só para que header, footer e o atalho
+// "Pular para o conteúdo" sejam testáveis na raiz.
+import Base from '@/layouts/Base.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
 ---
 
-<html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Aldifer</title>
-  </head>
-  <body>
-    <main>
-      <h1 class="display-expanded font-bold text-3xl">Aldifer</h1>
-    </main>
-  </body>
-</html>
+<Base
+  title="Aldifer — Ferro e Aço em São Bernardo do Campo"
+  description="Distribuidora de ferro e aço no Grande ABC desde 2002. Barras, tubos, chapas, perfis e telas em pronta-entrega. Monte sua lista e peça orçamento."
+>
+  <Section tone="dark" spacing="lg">
+    <Heading level={1}>Aldifer</Heading>
+    <p class="mt-4 text-surface-fg-soft">Home em construção — Etapa 3.</p>
+  </Section>
+</Base>

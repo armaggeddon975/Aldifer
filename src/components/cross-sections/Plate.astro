@@ -1,0 +1,12 @@
+---
+// Chapa vista de topo. As extremidades em ziguezague são a linha de ruptura
+// do desenho técnico: dizem que a peça continua, e é por isso que só a
+// espessura é cotada — largura e comprimento de chapa são formato de folha,
+// não dimensão de seção.
+import DimV from './DimV.astro';
+
+const PLATE =
+  'M 22,76 L 150,76 L 145,80 L 155,85 L 145,90 L 150,94 L 22,94 L 27,90 L 17,85 L 27,80 Z';
+---
+<path class="contour" d={PLATE} />
+<DimV y1={76} y2={94} x={178} from={155} label="e" outside />

@@ -1,0 +1,57 @@
+---
+import Container from './Container.astro';
+
+/**
+ * Faixa horizontal do site. O `tone` troca o contexto de superfície inteiro
+ * (fundo, texto, borda, cor do CTA e cor do anel de foco), então os componentes
+ * de dentro se adaptam sem receber prop nenhuma.
+ */
+export type SectionTone = 'light' | 'alt' | 'dark';
+export type SectionSpacing = 'none' | 'sm' | 'md' | 'lg';
+
+interface Props {
+  tone?: SectionTone;
+  spacing?: SectionSpacing;
+  id?: string;
+  /** id do heading que dá nome à seção, para o aria-labelledby. */
+  labelledBy?: string;
+  /** false quando a seção precisa de conteúdo sangrando até a borda da tela. */
+  contained?: boolean;
+  class?: string;
+}
+
+const {
+  tone = 'light',
+  spacing = 'md',
+  id,
+  labelledBy,
+  contained = true,
+  class: className,
+} = Astro.props;
+
+const TONE: Record<SectionTone, string> = {
+  light: 'tone-light',
+  alt: 'tone-alt',
+  dark: 'tone-dark',
+};
+
+// Escala de espaçamento vertical: 32/48 · 48/64/96 · 64/96/128
+const SPACING: Record<SectionSpacing, string> = {
+  none: '',
+  sm: 'py-8 md:py-12',
+  md: 'py-12 md:py-16 lg:py-24',
+  lg: 'py-16 md:py-24 lg:py-32',
+};
+---
+
+<section id={id} aria-labelledby={labelledBy} class:list={[TONE[tone], SPACING[spacing], className]}>
+  {
+    contained ? (
+      <Container>
+        <slot />
+      </Container>
+    ) : (
+      <slot />
+    )
+  }
+</section>

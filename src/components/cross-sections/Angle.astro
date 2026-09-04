@@ -1,0 +1,23 @@
+---
+// Cantoneira: duas abas em ângulo reto, com espessura visível e um único raio
+// de concordância no canto interno. As duas abas são cotadas separadamente
+// porque a cantoneira pode ser de abas desiguais.
+import DimH from './DimH.astro';
+import DimV from './DimV.astro';
+import DimLeader from './DimLeader.astro';
+
+const ANGLE = [
+  'M 30,18',
+  'L 47,18', // espessura da aba vertical
+  'L 47,116', // face interna da aba vertical
+  'A 9,9 0 0 0 56,125', // concordância do canto interno
+  'L 148,125', // face interna da aba horizontal
+  'L 148,142', // ponta da aba horizontal
+  'L 30,142',
+  'Z', // costas da aba vertical
+].join(' ');
+---
+<path class="contour" d={ANGLE} />
+<DimV y1={18} y2={142} x={178} from={148} label="A" />
+<DimH x1={30} x2={148} y={168} from={142} label="B" />
+<DimLeader x={38} y={80} lx={95} ly={68} label="e" />

@@ -1,0 +1,45 @@
+---
+/**
+ * Cota horizontal em estilo de prancha: linha de extensão saindo da peça,
+ * linha de cota com seta nas duas pontas e a letra da dimensão em mono.
+ *
+ * `outside` põe as setas do lado de fora apontando para dentro — é o que se
+ * faz quando o vão é curto demais para as setas caberem entre as extensões.
+ */
+interface Props {
+  /** Extremos do vão medido. */
+  x1: number;
+  x2: number;
+  /** Posição da linha de cota. */
+  y: number;
+  /** Aresta da peça de onde saem as linhas de extensão. */
+  from: number;
+  label: string;
+  outside?: boolean;
+}
+
+const { x1, x2, y, from, label, outside = false } = Astro.props;
+
+const HEAD = 8;
+const HALF = 2.6;
+const dir = y > from ? 1 : -1;
+const inner = outside ? -HEAD : HEAD;
+---
+
+<line class="dim" x1={x1} y1={from + 3 * dir} x2={x1} y2={y + 5 * dir} />
+<line class="dim" x1={x2} y1={from + 3 * dir} x2={x2} y2={y + 5 * dir} />
+
+{
+  outside ? (
+    <>
+      <line class="dim" x1={x1 - HEAD * 2} y1={y} x2={x2 + HEAD * 2} y2={y} />
+    </>
+  ) : (
+    <line class="dim" x1={x1} y1={y} x2={x2} y2={y} />
+  )
+}
+
+<path class="dim-fill" d={`M ${x1},${y} L ${x1 + inner},${y - HALF} L ${x1 + inner},${y + HALF} Z`} />
+<path class="dim-fill" d={`M ${x2},${y} L ${x2 - inner},${y - HALF} L ${x2 - inner},${y + HALF} Z`} />
+
+<text class="dim-text" x={(x1 + x2) / 2} y={y - 7} text-anchor="middle">{label}</text>

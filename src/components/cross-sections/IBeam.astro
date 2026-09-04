@@ -1,0 +1,35 @@
+---
+// Perfil I laminado. Três coisas fazem o serralheiro reconhecer a peça:
+//   1. aba CÔNICA — 11mm na ponta, 20 na raiz, como sai da usina;
+//   2. alma de espessura própria, cotada separadamente;
+//   3. raio de concordância nos quatro encontros aba/alma. O centro de cada
+//      arco fica FORA do material, o que torna o filete concavo — filete
+//      convexo aqui seria um desenho errado.
+import DimH from './DimH.astro';
+import DimV from './DimV.astro';
+import DimLeader from './DimLeader.astro';
+
+const I_BEAM = [
+  'M 36,18',
+  'L 136,18', // topo da aba superior
+  'L 136,29', // ponta da aba, 11 de espessura
+  'L 103,38', // conicidade: engrossa até a raiz
+  'A 9,9 0 0 0 94,47', // concordância aba/alma
+  'L 94,113', // face direita da alma
+  'A 9,9 0 0 0 103,122',
+  'L 136,131',
+  'L 136,142',
+  'L 36,142',
+  'L 36,131',
+  'L 69,122',
+  'A 9,9 0 0 0 78,113',
+  'L 78,47', // face esquerda da alma
+  'A 9,9 0 0 0 69,38',
+  'L 36,29',
+  'Z',
+].join(' ');
+---
+<path class="contour" d={I_BEAM} />
+<DimV y1={18} y2={142} x={178} from={136} label="A" />
+<DimH x1={36} x2={136} y={168} from={142} label="B" />
+<DimLeader x={86} y={80} lx={40} ly={62} label="e" side="left" />

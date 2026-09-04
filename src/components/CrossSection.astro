@@ -1,0 +1,144 @@
+---
+import type { CrossSectionVariant } from './cross-sections/types';
+import Angle from './cross-sections/Angle.astro';
+import FlatBar from './cross-sections/FlatBar.astro';
+import IBeam from './cross-sections/IBeam.astro';
+import Plate from './cross-sections/Plate.astro';
+import RectTube from './cross-sections/RectTube.astro';
+import RoundBar from './cross-sections/RoundBar.astro';
+import RoundTube from './cross-sections/RoundTube.astro';
+import SquareBar from './cross-sections/SquareBar.astro';
+import SquareTube from './cross-sections/SquareTube.astro';
+import Tee from './cross-sections/Tee.astro';
+import UChannel from './cross-sections/UChannel.astro';
+
+/**
+ * Desenho de seção transversal em estilo de prancha técnica. É o elemento de
+ * assinatura do site: não são ícones decorativos, é o corte real do perfil,
+ * o mesmo que o serralheiro já lê no dia a dia.
+ *
+ * O traço usa currentColor e nenhum preenchimento sólido, então o desenho
+ * herda a cor do contexto — funciona igual sobre fundo claro e escuro.
+ *
+ * SOBRE TAMANHO: a letra da cota mede 13 unidades num viewBox de 210, então
+ * abaixo de ~180px de largura ela fica ilegível. Em card pequeno, ou como
+ * marca-d'água, use `dimensions={false}`.
+ */
+interface Props {
+  variant: CrossSectionVariant;
+  /** Sobrescreve o nome acessível padrão. */
+  label?: string;
+  /** Esconde do leitor de tela. Use na marca-d'água do hero. */
+  decorative?: boolean;
+  /** Mostra as linhas de cota. Desligue abaixo de ~180px de largura. */
+  dimensions?: boolean;
+  class?: string;
+}
+
+const { variant, label, decorative = false, dimensions = true, class: className } = Astro.props;
+
+const SHAPES = {
+  'round-bar': RoundBar,
+  'square-bar': SquareBar,
+  'flat-bar': FlatBar,
+  'round-tube': RoundTube,
+  'square-tube': SquareTube,
+  'rect-tube': RectTube,
+  plate: Plate,
+  'i-beam': IBeam,
+  'u-channel': UChannel,
+  angle: Angle,
+  tee: Tee,
+} as const satisfies Record<CrossSectionVariant, unknown>;
+
+const TITLES: Record<CrossSectionVariant, string> = {
+  'round-bar': 'Seção transversal de barra redonda, com a cota do diâmetro',
+  'square-bar': 'Seção transversal de barra quadrada, com a cota do lado',
+  'flat-bar': 'Seção transversal de barra chata, com as cotas de largura e espessura',
+  'round-tube':
+    'Seção transversal de tubo redondo, com as cotas de diâmetro externo e espessura de parede',
+  'square-tube': 'Seção transversal de tubo quadrado, com as cotas de lado e espessura de parede',
+  'rect-tube':
+    'Seção transversal de tubo retangular, com as cotas de base, altura e espessura de parede',
+  plate: 'Seção transversal de chapa, com a cota de espessura e linha de ruptura nas pontas',
+  'i-beam': 'Seção transversal de perfil I, com aba cônica e as cotas de altura, aba e alma',
+  'u-channel': 'Seção transversal de perfil U, com as cotas de altura, aba e alma',
+  angle: 'Seção transversal de cantoneira, com as cotas das duas abas e da espessura',
+  tee: 'Seção transversal de perfil T, com as cotas de aba, altura e espessura',
+};
+
+const Shape = SHAPES[variant];
+const accessibleName = label ?? TITLES[variant];
+---
+
+<svg
+  class:list={['cross-section', className]}
+  viewBox="0 0 210 190"
+  data-dimensions={dimensions ? 'on' : 'off'}
+  role={decorative ? 'presentation' : 'img'}
+  aria-hidden={decorative ? 'true' : undefined}
+  aria-label={decorative ? undefined : accessibleName}
+  focusable="false"
+>
+  {!decorative && <title>{accessibleName}</title>}
+  <Shape />
+</svg>
+
+<style is:global>
+  .cross-section {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: inherit;
+  }
+
+  /* Contorno: linha fina contínua. non-scaling-stroke mantém a espessura
+     constante em pixels de tela, então o traço não vira fio de cabelo no
+     desenho grande nem borrão no pequeno. */
+  .cross-section .contour {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Linha de cota e de extensão: mais fina que o contorno, como na prancha. */
+  .cross-section .dim {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 0.8;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Ponta de seta e ponto de chamada. */
+  .cross-section .dim-fill {
+    fill: currentColor;
+    stroke: none;
+  }
+
+  /* Letra da dimensão em mono. */
+  .cross-section .dim-text {
+    fill: currentColor;
+    font-family: var(--family-mono);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* Linha de centro traço-ponto, do desenho técnico. */
+  .cross-section .axis {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 0.8;
+    stroke-dasharray: 12 3 2 3;
+    opacity: 0.5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .cross-section[data-dimensions='off'] .dim,
+  .cross-section[data-dimensions='off'] .dim-fill,
+  .cross-section[data-dimensions='off'] .dim-text,
+  .cross-section[data-dimensions='off'] .axis {
+    display: none;
+  }
+</style>

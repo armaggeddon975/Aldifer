@@ -1,0 +1,35 @@
+---
+/**
+ * Linha de chamada com ponto na origem, para cotar espessura de parede — vão
+ * curto demais para linha de cota com seta. O ponto (e não a seta) é a
+ * convenção quando a chamada aponta para dentro do material, não para uma aresta.
+ */
+interface Props {
+  /** Ponto no material que está sendo apontado. */
+  x: number;
+  y: number;
+  /** Onde a chamada termina e o texto começa. */
+  lx: number;
+  ly: number;
+  label: string;
+  /** Lado em que o texto fica em relação ao patamar. */
+  side?: 'left' | 'right';
+}
+
+const { x, y, lx, ly, label, side = 'right' } = Astro.props;
+
+const SHOULDER = 10;
+const shoulderEnd = side === 'right' ? lx + SHOULDER : lx - SHOULDER;
+const textX = side === 'right' ? shoulderEnd + 4 : shoulderEnd - 4;
+---
+
+<circle class="dim-fill" cx={x} cy={y} r="2" />
+<line class="dim" x1={x} y1={y} x2={lx} y2={ly} />
+<line class="dim" x1={lx} y1={ly} x2={shoulderEnd} y2={ly} />
+<text
+  class="dim-text"
+  x={textX}
+  y={ly}
+  text-anchor={side === 'right' ? 'start' : 'end'}
+  dominant-baseline="middle">{label}</text
+>
