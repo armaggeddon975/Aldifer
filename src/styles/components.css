@@ -1,0 +1,199 @@
+/* ============================================================================
+   Estilos de componentes que não podem usar <style> escopado do Astro.
+
+   Ilha React não recebe o escopo do Astro, então o CSS dela vive aqui. Tudo
+   por token: nenhum hex solto.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Busca rápida
+   -------------------------------------------------------------------------- */
+
+.quick-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 44rem;
+}
+
+.quick-search__label {
+  font-weight: 600;
+  font-size: var(--size-sm);
+  color: var(--surface-fg);
+}
+
+.quick-search__row {
+  display: flex;
+  gap: var(--space-8);
+  align-items: stretch;
+}
+
+.quick-search__field {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.quick-search__field input {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-12);
+  font-family: var(--family-text);
+  font-size: var(--size-base);
+  color: var(--ink);
+  background-color: var(--paper);
+  border: 1px solid var(--surface-control-border);
+  border-radius: var(--corner-control);
+}
+
+.quick-search__field input::placeholder {
+  color: var(--ink-soft);
+}
+
+/* O X nativo do type="search" no WebKit tem alvo pequeno e estilo próprio. */
+.quick-search__field input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.quick-search__submit {
+  flex: 0 0 auto;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-16);
+  font-family: var(--family-text);
+  font-size: var(--size-base);
+  font-weight: 600;
+  color: var(--cta-fg);
+  background-color: var(--cta-bg);
+  border: 0;
+  border-radius: var(--corner-control);
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.quick-search__submit:hover {
+  background-color: var(--cta-bg-hover);
+}
+
+.quick-search__hint {
+  font-size: var(--size-xs);
+  color: var(--surface-fg-soft);
+}
+
+/* --- Lista de sugestões -------------------------------------------------- */
+
+.quick-search__results {
+  position: absolute;
+  z-index: 30;
+  inset-inline: 0;
+  top: calc(100% + 4px);
+  max-height: 60vh;
+  overflow-y: auto;
+  background-color: var(--paper);
+  border: 1px solid var(--border-light);
+  /* Sombra aqui tem função: separa a lista flutuante do conteúdo abaixo.
+     Não é a sombra decorativa de card que o CLAUDE.md proíbe. */
+  box-shadow: 0 8px 24px -8px color-mix(in oklab, var(--steel-950) 35%, transparent);
+}
+
+.quick-search__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-8);
+  min-height: var(--touch-target);
+  padding: var(--space-8) var(--space-12);
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.quick-search__result:last-child {
+  border-bottom: 0;
+}
+
+.quick-search__result[data-active] {
+  background-color: var(--paper-alt);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.quick-search__result-title {
+  font-weight: 600;
+  font-size: var(--size-sm);
+}
+
+.quick-search__result-detail {
+  font-family: var(--family-mono);
+  font-size: var(--size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.quick-search__result-category {
+  margin-inline-start: auto;
+  font-size: var(--size-xs);
+  color: var(--ink-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Provas do hero — texto separado por divisor vertical fino, sem card
+   -------------------------------------------------------------------------- */
+
+.hero-proofs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  font-size: var(--size-sm);
+  color: var(--surface-fg-soft);
+}
+
+@media (min-width: 48rem) {
+  .hero-proofs {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-16);
+  }
+
+  /* O divisor é uma borda de 1px entre os itens, não um caractere de texto:
+     assim o leitor de tela não o anuncia. */
+  .hero-proofs > li + li {
+    padding-inline-start: var(--space-16);
+    border-inline-start: 1px solid var(--border-dark);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Entrada do hero — UMA orquestração, e só aqui
+   -------------------------------------------------------------------------- */
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+  O H1 fica DE FORA da animação de propósito. Elemento com opacity 0 não conta
+  para o LCP, então animar a entrada do título empurraria a métrica para o fim
+  da animação. O título pinta imediatamente; o que entra em sequência é o que
+  vem depois dele.
+*/
+.hero-enter > * {
+  animation: hero-rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-enter > *:nth-child(1) {
+  animation-delay: 60ms;
+}
+.hero-enter > *:nth-child(2) {
+  animation-delay: 140ms;
+}
+.hero-enter > *:nth-child(3) {
+  animation-delay: 220ms;
+}
+
+/* O global.css já zera a duração em prefers-reduced-motion, e o `both` de
+   animation-fill-mode garante que o estado final se aplique de imediato. */

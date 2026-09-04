@@ -1,0 +1,30 @@
+---
+import QuickSearch from '@/components/QuickSearch';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import { quickSearch } from '@/lib/home-content';
+
+/**
+ * Busca rápida. Ataca a objeção nº 1 do CLAUDE.md diretamente: "não sei se
+ * vocês têm essa bitola e vou perder tempo ligando".
+ *
+ * client:idle porque a busca não é o primeiro gesto de todo visitante — ela
+ * pode esperar a thread principal ficar livre. O <form> já vem funcionando do
+ * servidor, então nada fica quebrado durante a espera.
+ */
+---
+
+<Section tone="alt" spacing="sm" labelledBy="busca-rapida">
+  <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
+    <div class="max-w-md">
+      <Heading level={2} size={3} id="busca-rapida">{quickSearch.heading}</Heading>
+      <p class="mt-2 text-surface-fg-soft">
+        {quickSearch.description}
+      </p>
+    </div>
+
+    <div class="w-full lg:max-w-2xl">
+      <QuickSearch client:idle />
+    </div>
+  </div>
+</Section>

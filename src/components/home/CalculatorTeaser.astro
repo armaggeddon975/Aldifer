@@ -1,0 +1,70 @@
+---
+import CrossSection from '@/components/CrossSection.astro';
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import { calculator } from '@/lib/home-content';
+import { WEIGHT_FORMULAS, formatWeight, squareTubeWeight } from '@/lib/steel';
+
+/**
+ * Calculadora em destaque, com resultado de exemplo visível.
+ *
+ * O número do exemplo é CALCULADO em build pela mesma função que a calculadora
+ * da Etapa 7 vai usar. Se a fórmula mudar, o exemplo acompanha; se eu tivesse
+ * digitado "1,758" aqui, ele viraria mentira na primeira alteração.
+ */
+const SIDE = 30;
+const WALL = 2;
+const LENGTH = 6;
+
+const perMeter = squareTubeWeight(SIDE, WALL);
+const perBar = perMeter * LENGTH;
+const formula = WEIGHT_FORMULAS['square-tube'];
+---
+
+<Section tone="dark" spacing="md" labelledBy="calculadora">
+  <div class="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16">
+    <div>
+      <Heading level={2} id="calculadora">{calculator.heading}</Heading>
+      <p class="mt-4 max-w-xl text-surface-fg-soft">{calculator.description}</p>
+      <div class="mt-8">
+        <Button href={calculator.cta.href} size="lg">{calculator.cta.label}</Button>
+      </div>
+    </div>
+
+    {/* Resultado de exemplo. Borda em vez de sombra, raio 0. */}
+    <div class="border border-surface-border">
+      <div class="flex items-center gap-4 border-b border-surface-border p-4">
+        <span class="block w-20 shrink-0 text-surface-fg-soft">
+          <CrossSection variant="square-tube" decorative dimensions={false} />
+        </span>
+        <p class="text-sm text-surface-fg-soft">{calculator.exampleCaption}</p>
+      </div>
+
+      <dl class="divide-y divide-surface-border">
+        <div class="flex items-baseline justify-between gap-4 p-4">
+          <dt class="text-sm text-surface-fg-soft">Peso por metro</dt>
+          <dd class="font-mono text-xl font-semibold text-surface-fg">
+            {formatWeight(perMeter)} <span class="text-sm font-normal">kg/m</span>
+          </dd>
+        </div>
+        <div class="flex items-baseline justify-between gap-4 p-4">
+          <dt class="text-sm text-surface-fg-soft">Barra de {LENGTH} metros</dt>
+          <dd class="font-mono text-xl font-semibold text-surface-fg">
+            {formatWeight(perBar)} <span class="text-sm font-normal">kg</span>
+          </dd>
+        </div>
+      </dl>
+
+      <p class="border-t border-surface-border p-4 font-mono text-xs text-surface-fg-soft">
+        {formula.expression}
+      </p>
+    </div>
+  </div>
+
+  <p class="mt-8 max-w-3xl text-sm text-surface-fg-soft">
+    O resultado é peso teórico. A laminação tem tolerância dimensional, então o peso real varia
+    tipicamente ±3%. Perfil I, U e H não entram no cálculo: a aba é cônica e há raio de
+    concordância, e esses consultam tabela de usina.
+  </p>
+</Section>

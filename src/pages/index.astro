@@ -1,18 +1,36 @@
 ---
-// Placeholder. A home real é construída na Etapa 3, a partir das seções 2 e 3
-// do docs/CONTEUDO.md. Existe agora só para que header, footer e o atalho
-// "Pular para o conteúdo" sejam testáveis na raiz.
+import Audience from '@/components/home/Audience.astro';
+import CalculatorTeaser from '@/components/home/CalculatorTeaser.astro';
+import CategoryGrid from '@/components/home/CategoryGrid.astro';
+import Closing from '@/components/home/Closing.astro';
+import Hero from '@/components/home/Hero.astro';
+import Location from '@/components/home/Location.astro';
+import QuickSearchSection from '@/components/home/QuickSearchSection.astro';
+import WhyAldifer from '@/components/home/WhyAldifer.astro';
 import Base from '@/layouts/Base.astro';
-import Heading from '@/components/ui/Heading.astro';
-import Section from '@/components/ui/Section.astro';
+
+/**
+ * Home. A ordem das seções é a da seção 3 do docs/CONTEUDO.md e não deve ser
+ * reorganizada: ela vai do "o que é" ao "peça agora", passando pela objeção
+ * nº 1 no meio.
+ *
+ * Ritmo de tom: escuro → alt → claro → alt → escuro → claro → alt → escuro.
+ * As faixas escuras marcam o começo, o meio e o fim.
+ *
+ * Título e descrição vêm da seção 10 do docs/CONTEUDO.md.
+ */
 ---
 
 <Base
   title="Aldifer — Ferro e Aço em São Bernardo do Campo"
   description="Distribuidora de ferro e aço no Grande ABC desde 2002. Barras, tubos, chapas, perfis e telas em pronta-entrega. Monte sua lista e peça orçamento."
 >
-  <Section tone="dark" spacing="lg">
-    <Heading level={1}>Aldifer</Heading>
-    <p class="mt-4 text-surface-fg-soft">Home em construção — Etapa 3.</p>
-  </Section>
+  <Hero />
+  <QuickSearchSection />
+  <CategoryGrid />
+  <WhyAldifer />
+  <CalculatorTeaser />
+  <Audience />
+  <Location />
+  <Closing />
 </Base>

@@ -1,0 +1,28 @@
+---
+import CrossSection from '@/components/CrossSection.astro';
+import Button from '@/components/ui/Button.astro';
+import Container from '@/components/ui/Container.astro';
+import Heading from '@/components/ui/Heading.astro';
+import { closing } from '@/lib/home-content';
+
+/** Fechamento: última chance de conversão, sobre fundo escuro. */
+---
+
+<section class="tone-dark relative overflow-hidden">
+  <div
+    class="pointer-events-none absolute -left-20 bottom-0 w-80 opacity-[0.05] md:w-96"
+    aria-hidden="true"
+  >
+    <CrossSection variant="u-channel" decorative dimensions={false} />
+  </div>
+
+  <Container class="relative py-16 md:py-24">
+    <div class="max-w-2xl">
+      <Heading level={2}>{closing.heading}</Heading>
+      <p class="mt-4 text-lg text-surface-fg-soft">{closing.description}</p>
+      <div class="mt-8">
+        <Button href={closing.cta.href} size="lg">{closing.cta.label}</Button>
+      </div>
+    </div>
+  </Container>
+</section>

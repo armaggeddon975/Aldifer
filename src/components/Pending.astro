@@ -1,0 +1,50 @@
+---
+import { SHOW_DRAFTS } from '@/lib/products';
+
+/**
+ * Marcador de informação que a Aldifer ainda não confirmou.
+ *
+ * Aparece SÓ em desenvolvimento. Em produção não renderiza nada — a regra do
+ * CLAUDE.md é que seção vazia é melhor que informação inventada, e um
+ * "[CONFIRMAR]" visível ao cliente final seria pior que as duas coisas.
+ *
+ * Todo uso deste componente tem de ter item correspondente na lista de
+ * pendências do README.
+ */
+interface Props {
+  /** O que falta confirmar. */
+  label: string;
+  /** Por que importa, se não for óbvio. */
+  detail?: string;
+}
+
+const { label, detail }: Props = Astro.props;
+---
+
+{
+  SHOW_DRAFTS && (
+    <p class="pending" role="note">
+      <strong>[CONFIRMAR]</strong> {label}
+      {detail && <span class="pending__detail">{detail}</span>}
+    </p>
+  )
+}
+
+<style>
+  .pending {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-block: var(--space-8);
+    padding: var(--space-8) var(--space-12);
+    border-inline-start: 4px solid var(--accent);
+    background-color: color-mix(in oklab, var(--accent) 10%, transparent);
+    color: var(--surface-fg);
+    font-family: var(--family-mono);
+    font-size: var(--size-xs);
+  }
+
+  .pending__detail {
+    color: var(--surface-fg-soft);
+  }
+</style>

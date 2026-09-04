@@ -1,5 +1,9 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 
+import {
+  type DimensionRow,
+  describeDimension as describeRow,
+} from './dimension-label';
 import { WEIGHT_FORMULAS, computeRowWeight, formatWeight } from './steel';
 
 export type Product = CollectionEntry<'products'>;
@@ -130,4 +134,25 @@ export function getProductTable(product: Product): ProductTable {
   });
 
   return { columns, rows, rawRows: dimensions };
+}
+
+// ---------------------------------------------------------------------------
+// Rótulo de bitola — a lógica vive em ./dimension-label.ts, que é puro e
+// testável; aqui fica só o invólucro que aceita uma entrada da coleção.
+// ---------------------------------------------------------------------------
+
+export function describeDimension(product: Product, row: DimensionRow): string {
+  return describeRow(product.data, row);
+}
+
+// ---------------------------------------------------------------------------
+// URLs — minúscula, hífen, sem acento, em português (regra do CONTEUDO.md)
+// ---------------------------------------------------------------------------
+
+export function categoryHref(categorySlug: string): string {
+  return `/produtos/${categorySlug}`;
+}
+
+export function productHref(product: Product): string {
+  return `/produtos/${product.data.category}/${product.id}`;
 }

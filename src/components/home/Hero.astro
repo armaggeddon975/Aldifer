@@ -1,0 +1,70 @@
+---
+import CrossSection from '@/components/CrossSection.astro';
+import Pending from '@/components/Pending.astro';
+import Button from '@/components/ui/Button.astro';
+import Container from '@/components/ui/Container.astro';
+import Heading from '@/components/ui/Heading.astro';
+import { hero } from '@/lib/home-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * Hero. Copy aprovada na seção 2 do docs/CONTEUDO.md — não reescrever.
+ *
+ * A CTA secundária é WhatsApp, mas o número ainda é [CONFIRMAR]. Enquanto não
+ * chegar, ela cai no telefone, que funciona: link quebrado para um número
+ * inexistente seria pior que não ter a CTA.
+ */
+const site = await getSite();
+---
+
+<section class="tone-dark relative overflow-hidden">
+  {/* Marca-d'água em traço, opacidade 0,06. aria-hidden e sem cotas. */}
+  <div
+    class="pointer-events-none absolute -right-24 top-1/2 w-[34rem] -translate-y-1/2 opacity-[0.06] md:-right-16 md:w-[42rem] lg:right-0"
+    aria-hidden="true"
+  >
+    <CrossSection variant="i-beam" decorative dimensions={false} />
+  </div>
+
+  <Container class="relative py-16 md:py-24 lg:py-32">
+    <div class="max-w-3xl">
+      {/* O H1 não entra na animação: ver a nota sobre LCP em components.css */}
+      <Heading level={1}>{hero.headline}</Heading>
+
+      <div class="hero-enter">
+        <p class="mt-6 max-w-2xl text-lg text-surface-fg-soft md:text-xl">
+          {hero.subheadline}
+        </p>
+
+        <div class="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <Button href={hero.ctaPrimary.href} size="lg">{hero.ctaPrimary.label}</Button>
+
+          {
+            site.whatsapp ? (
+              <Button href={`https://wa.me/${site.whatsapp}`} variant="ghost" rel="noopener">
+                {hero.ctaSecondaryLabel}
+              </Button>
+            ) : (
+              <Button href={`tel:${site.phoneE164}`} variant="ghost">
+                Ligar para {site.phone}
+              </Button>
+            )
+          }
+        </div>
+
+        <ul class="hero-proofs mt-10">
+          {hero.proofs.map((proof) => <li>{proof}</li>)}
+        </ul>
+      </div>
+
+      {
+        !site.whatsapp && (
+          <Pending
+            label="Número do WhatsApp do comercial."
+            detail="A CTA secundária do hero deveria ser WhatsApp; enquanto o número não chega, ela cai no telefone. O site atual manda para um linktr.ee."
+          />
+        )
+      }
+    </div>
+  </Container>
+</section>

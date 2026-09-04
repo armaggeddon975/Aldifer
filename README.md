@@ -47,6 +47,19 @@ simples para eles. A coluna de peso mostra "consultar" em vez de número inventa
 Outros quatro (`degraus`, `fechaduras`, `tintas-e-solventes`, `acessorios`) estão sem
 tabela porque as medidas dependem das linhas que a Aldifer trabalha.
 
+### 3. Uma promessa de prazo não confirmada está na copy
+
+A copy aprovada da home afirma, na seção "Por que a Aldifer":
+
+> Você consulta a medida no site e confirma a retirada **no mesmo dia**.
+
+O próprio `docs/CONTEUDO.md` marca esse bloco com `[CONFIRMAR: prazo e política de
+retirada]`. Mantivemos o texto porque ele está aprovado e o `PROMPTS.md` proíbe
+reescrever copy aprovada — mas é **promessa de prazo não verificada**, exatamente o
+tipo de afirmação que o `CLAUDE.md` classifica como passivo jurídico.
+
+Antes do lançamento: confirmar o prazo com a Aldifer, ou ajustar o texto.
+
 ---
 
 ## Pendências marcadas `[CONFIRMAR]`
@@ -82,7 +95,7 @@ com valor `null`. Campo nulo não renderiza.
 | **Cor de erro e de sucesso** | A paleta do `CLAUDE.md` define "um acento só, sem concorrente" e não prevê cor de feedback. O formulário precisa de vermelho de erro, que não pode ser o mesmo laranja do CTA. | 6 (bloqueia) |
 | **Onde persistir o lead** | E-mail sozinho perde lead. Ordem de preferência: Google Sheets → Notion → Supabase. Depende da pergunta 10. | 6 |
 | **`www` ou apex** | Fixado em `https://www.aldifer.com.br` no `astro.config.mjs`, para casar com o JSON-LD. Se mudar, muda nos dois lugares. | 13 |
-| **Orçamento de JS** | O runtime do React custa 58 KB gzip de um teto de 100 KB. A busca rápida da home talvez não deva ser ilha React. | 3 |
+| **Orçamento de JS** | **MEDIDO na Etapa 3:** a home usa 62,7 KB gzip de um teto de 100 KB, e 57,2 KB disso é só o runtime do React. A busca em si pesa 1,8 KB — 91% do JS é framework. Trocar a ilha React por um custom element em JS puro levaria a home a ~5 KB, sem mudar a funcionalidade (o `<form>` já funciona sem JS). A decisão vale também para as Etapas 5, 6 e 7. | 3 · 5 · 6 · 7 |
 | **Fonte Archivo** | O arquivo com eixo de largura custa 88 KB contra 34 KB da versão só-peso. É o preço do "Expanded". Candidata nº 1 de otimização. | 12 |
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
 | **Header fixo + QuoteBar** | Duas barras fixas comem a viewport de um celular. Decidir quando a QuoteBar existir. | 5 |
@@ -105,7 +118,7 @@ npm run dev
 | `npm run build` | Build de produção. **Exclui os rascunhos** e valida todos os schemas. |
 | `npm run preview` | Serve o build de produção, para medir performance de verdade. |
 | `npm run check` | Verificação de tipos, inclusive nos arquivos `.astro`. |
-| `npm test` | Testes das fórmulas de peso. |
+| `npm test` | 82 testes: fórmulas de peso, rótulos de bitola e busca. |
 | `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
 
 ---
@@ -124,15 +137,22 @@ src/content/
   products/*.md               27 produtos, todos em rascunho
 
 src/lib/steel.ts              fórmulas de peso teórico + registro
-src/lib/steel.test.ts         53 testes das fórmulas
+src/lib/dimension-label.ts    rótulo de bitola como o mercado a nomeia
 src/lib/products.ts           consultas ao catálogo e montagem das tabelas
+src/lib/search.ts             busca rápida, parte pura (roda no navegador)
+src/lib/home-content.ts       copy da home, das seções 2 e 3 do CONTEUDO.md
 src/lib/navigation.ts         navegação e rota ativa
+src/lib/*.test.ts             82 testes (fórmulas, rótulos, busca)
+
+src/pages/indice-de-busca.json.ts   índice da busca, gerado em build
 
 src/components/
   CrossSection.astro          o elemento de assinatura
   cross-sections/             13 perfis + 3 auxiliares de cota
   ui/                         Button, Container, Section, Heading, Table
-  Header · MobileMenu · Footer · DraftNotice
+  home/                       as 8 seções da home, na ordem do CONTEUDO.md
+  QuickSearch.tsx             ilha da busca rápida
+  Header · MobileMenu · Footer · DraftNotice · Pending
 
 src/layouts/Base.astro        layout raiz
 src/styles/tokens.css         TODOS os tokens do design system
@@ -146,6 +166,15 @@ corpo do arquivo é a descrição longa; o frontmatter tem o resto.
 
 A partir da Etapa 11 o mesmo arquivo também será editável pelo painel do Keystatic em
 `/admin` — uma fonte de verdade, duas portas de entrada.
+
+### A copy da home
+
+Fica em `src/lib/home-content.ts`, tipada, e não dentro dos componentes — a regra do
+`CLAUDE.md` é que o componente recebe dados, não os contém. O texto vem das seções 2 e
+3 do `docs/CONTEUDO.md` e está aprovado: não reescrever.
+
+Se a Aldifer quiser editar a home pelo painel, a Etapa 11 pode promover este módulo a
+content collection. Hoje o escopo do Keystatic é produto, categoria, configuração e aviso.
 
 ### A coluna de peso nunca é digitada
 
@@ -169,7 +198,7 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 0 — Fundação | ✅ |
 | 1 — Design system e primitivos | ✅ |
 | 2 — Content collections | ✅ |
-| 3 — Home | ⬜ |
+| 3 — Home | ✅ |
 | 4 — Catálogo | ⬜ |
 | 5 — Lista de orçamento | ⬜ |
 | 6 — Formulário, servidor e LGPD | ⬜ bloqueada pela cor de feedback e pela pergunta 10 |

@@ -1,0 +1,32 @@
+---
+import Pending from '@/components/Pending.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import { why } from '@/lib/home-content';
+
+/**
+ * "Por que a Aldifer" — a seção que ataca a objeção nº 1.
+ *
+ * Sem ícone decorativo, sem card, sem borda. A hierarquia é feita por ESPAÇO e
+ * TAMANHO: o título do bloco em Archivo, o corpo em Inter, e a largura de
+ * medida limitada para a leitura não perder a linha. Resolver hierarquia com
+ * cor e borda é o atalho que o CLAUDE.md manda evitar.
+ */
+---
+
+<Section tone="alt" spacing="md" labelledBy="por-que">
+  <Heading level={2} id="por-que">{why.heading}</Heading>
+
+  <div class="mt-10 grid gap-10 md:grid-cols-3 md:gap-8">
+    {
+      why.blocks.map((block) => (
+        <div class="max-w-prose">
+          <Heading level={3} size={4}>{block.title}</Heading>
+          <p class="mt-3 text-surface-fg-soft">{block.body}</p>
+        </div>
+      ))
+    }
+  </div>
+
+  <Pending label={why.pending.label} detail={why.pending.detail} />
+</Section>

@@ -1,0 +1,22 @@
+---
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import { audience } from '@/lib/home-content';
+
+/** "Para quem atendemos" — seção 6 do docs/CONTEUDO.md. Três blocos de texto. */
+---
+
+<Section tone="light" spacing="md" labelledBy="publico">
+  <Heading level={2} id="publico">{audience.heading}</Heading>
+
+  <div class="mt-10 grid gap-10 md:grid-cols-3 md:gap-8">
+    {
+      audience.blocks.map((block) => (
+        <div class="max-w-prose border-t border-surface-border pt-6">
+          <Heading level={3} size={4}>{block.title}</Heading>
+          <p class="mt-3 text-surface-fg-soft">{block.body}</p>
+        </div>
+      ))
+    }
+  </div>
+</Section>

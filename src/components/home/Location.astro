@@ -1,0 +1,121 @@
+---
+import Pending from '@/components/Pending.astro';
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import { location } from '@/lib/home-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * "Onde estamos".
+ *
+ * SEM iframe do Google Maps de imediato: embutido, ele baixa perto de 900 KB e
+ * arruína o carregamento de uma home que tem orçamento de 1 MB no total. O
+ * mapa entra sob clique.
+ *
+ * O link de rota é um <a> comum, sem JS e sem chave de API: quem quer chegar
+ * ao galpão consegue mesmo com o script bloqueado — e traçar rota é mais útil
+ * que ver o mapa parado.
+ */
+const site = await getSite();
+const { address } = site;
+
+const fullAddress = `${address.street}, ${address.city}, ${address.state}, ${address.postalCode}`;
+const query = encodeURIComponent(fullAddress);
+
+const routeUrl = `https://www.google.com/maps/dir/?api=1&destination=${query}`;
+const mapUrl = `https://www.google.com/maps?q=${query}&output=embed`;
+---
+
+<Section tone="alt" spacing="md" labelledBy="onde-estamos">
+  <div class="grid gap-10 lg:grid-cols-2 lg:gap-16">
+    <div>
+      <Heading level={2} id="onde-estamos">{location.heading}</Heading>
+      <p class="mt-4 text-surface-fg-soft">{location.description}</p>
+
+      <address class="mt-8 not-italic">
+        <span class="block font-semibold text-surface-fg">{site.legalName}</span>
+        <span class="mt-2 block text-surface-fg-soft">
+          {address.street}<br />
+          {address.district}<br />
+          {address.city} / {address.state} — CEP {address.postalCode}
+        </span>
+      </address>
+
+      <p class="mt-6">
+        <a href={`tel:${site.phoneE164}`} class="font-mono text-lg hover:text-surface-hover">
+          {site.phone}
+        </a>
+      </p>
+
+      {/* Campo nulo não renderiza: o horário é [CONFIRMAR]. */}
+      {
+        site.openingHours ? (
+          <div class="mt-6">
+            <h3 class="text-sm font-semibold text-surface-fg">Horário de funcionamento</h3>
+            <ul class="mt-2 text-surface-fg-soft">
+              {site.openingHours.map((line) => (
+                <li>{line}</li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <Pending label={location.hoursPending.label} detail={location.hoursPending.detail} />
+        )
+      }
+
+      <div class="mt-8">
+        <Button href={routeUrl} rel="noopener" target="_blank">{location.routeLabel}</Button>
+      </div>
+    </div>
+
+    {/* Espaço reservado do mapa. NÃO desenha um mapa falso: mostra o endereço
+        e o botão que carrega o mapa real. */}
+    <div class="border border-surface-border">
+      <div
+        id="mapa"
+        class="flex min-h-64 flex-col items-start justify-center gap-4 p-6 lg:min-h-full"
+        data-map-src={mapUrl}
+        data-map-title={`Mapa da localização da ${site.shortName}`}
+      >
+        <p class="text-sm text-surface-fg-soft">{location.mapNote}</p>
+        <button
+          type="button"
+          id="carregar-mapa"
+          class="touch-target inline-flex items-center rounded-control border border-surface-control-border px-6 font-semibold hover:border-surface-hover hover:text-surface-hover"
+        >
+          {location.mapButtonLabel}
+        </button>
+      </div>
+    </div>
+  </div>
+</Section>
+
+<script>
+  // Carrega o iframe do Google Maps só sob clique. O src vem de data-map-src
+  // para o script poder ser empacotado em arquivo, em vez de inline — a CSP
+  // restrita da Etapa 9 agradece.
+  const slot = document.getElementById('mapa');
+  const trigger = document.getElementById('carregar-mapa');
+
+  if (slot && trigger) {
+    trigger.addEventListener(
+      'click',
+      () => {
+        const src = slot.dataset.mapSrc;
+        if (!src) return;
+
+        const frame = document.createElement('iframe');
+        frame.src = src;
+        frame.title = slot.dataset.mapTitle ?? 'Mapa da localização';
+        frame.loading = 'lazy';
+        frame.referrerPolicy = 'no-referrer-when-downgrade';
+        frame.style.cssText = 'width:100%;height:100%;min-height:20rem;border:0;display:block';
+
+        slot.replaceChildren(frame);
+        slot.classList.remove('p-6', 'gap-4', 'items-start', 'justify-center');
+      },
+      { once: true },
+    );
+  }
+</script>

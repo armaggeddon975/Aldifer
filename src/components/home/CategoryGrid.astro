@@ -1,0 +1,59 @@
+---
+import CrossSection from '@/components/CrossSection.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import { categories as copy } from '@/lib/home-content';
+import { categoryHref, getVisibleCategories } from '@/lib/products';
+
+/**
+ * As 6 categorias, com o desenho de seção transversal.
+ *
+ * Blocos com raio 0 e BORDA em vez de sombra: aço é reto, e card com sombra
+ * suave repetido em toda seção é o vício de página gerada por IA que o
+ * CLAUDE.md proíbe explicitamente.
+ *
+ * O desenho entra sem cotas: o card tem menos de 180px de largura no mobile e
+ * a letra da dimensão ficaria ilegível.
+ */
+const categories = await getVisibleCategories();
+---
+
+<Section tone="light" spacing="md" labelledBy="categorias">
+  <Heading level={2} id="categorias">{copy.heading}</Heading>
+  <p class="mt-4 max-w-2xl text-surface-fg-soft">
+    {copy.description}
+  </p>
+
+  <ul class="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      categories.map((category) => (
+        <li>
+          <a
+            href={categoryHref(category.id)}
+            class="group flex h-full flex-col gap-4 border border-surface-border p-6 hover:border-surface-hover"
+          >
+            {
+              category.data.crossSection && (
+                <span class="block w-24 text-surface-fg-soft group-hover:text-surface-hover">
+                  <CrossSection
+                    variant={category.data.crossSection}
+                    decorative
+                    dimensions={false}
+                  />
+                </span>
+              )
+            }
+
+            <span class="display-expanded text-lg font-semibold text-surface-fg">
+              {category.data.name}
+            </span>
+
+            <span class="text-sm text-surface-fg-soft">{category.data.shortDescription}</span>
+
+            <span class="mt-auto text-sm font-semibold text-surface-hover">Ver medidas</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</Section>
