@@ -39,6 +39,22 @@
   --accent: #CD4116;        /* CTA sobre claro — branco em cima dá 4,81:1 */
   --accent-bright: #FF6A2B; /* CTA e destaque sobre escuro — 6,07:1 */
 
+  /* --- Feedback de formulário (acrescentado em 04/09/2026) ---------------
+     Carmim, escolhido por MEDIÇÃO e não por intuição: o que importa aqui é a
+     distância de MATIZ do laranja do CTA, porque um campo com erro não pode
+     parecer o botão de enviar — e razão de contraste não mede matiz nenhuma.
+
+     Em OKLCH o --accent está em 36°. Este carmim está em 13,7°, o que dá 22,4°
+     de separação. O vermelho-tijolo #B3261E, que parecia a escolha óbvia,
+     ficava a só 7,3° e se confundiria com o botão.
+
+     scripts/check-contrast.mjs verifica as duas coisas: contraste e separação
+     de matiz. Roda com `npm run contrast`. */
+  --danger: #9f1239;        /* erro sobre claro — 8,02:1 no branco */
+  --danger-bright: #ffb3c1; /* erro sobre escuro — 10,30:1 no steel-950 */
+  --success: #146c2e;       /* sucesso sobre claro */
+  --success-bright: #a6f4b0;/* sucesso sobre escuro */
+
   /* --- Famílias tipográficas --------------------------------------------- */
   /* Nomeadas --family-* e não --font-* para não colidir com o namespace
      --font-* do Tailwind, que geraria referência circular. */
@@ -117,6 +133,8 @@
      então não serve aqui. --ink-soft dá 6,0:1. */
   --surface-control-border: var(--ink-soft);
   --surface-hover: var(--accent);
+  --surface-danger: var(--danger);
+  --surface-success: var(--success);
 
   --cta-bg: var(--accent);
   --cta-fg: var(--paper);                                    /* 4,81:1 */
@@ -203,6 +221,12 @@
   --color-surface-border: var(--surface-border);
   --color-surface-control-border: var(--surface-control-border);
   --color-surface-hover: var(--surface-hover);
+  --color-surface-danger: var(--surface-danger);
+  --color-surface-success: var(--surface-success);
+  --color-danger: var(--danger);
+  --color-danger-bright: var(--danger-bright);
+  --color-success: var(--success);
+  --color-success-bright: var(--success-bright);
   --color-cta-bg: var(--cta-bg);
   --color-cta-fg: var(--cta-fg);
 }

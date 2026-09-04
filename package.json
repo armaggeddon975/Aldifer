@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "fonts": "node scripts/copy-fonts.mjs",
+    "contrast": "node scripts/check-contrast.mjs",
     "test": "node --test \"src/**/*.test.ts\"",
     "astro": "astro"
   },

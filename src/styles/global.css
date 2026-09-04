@@ -38,6 +38,8 @@
   --surface-border: var(--border-dark);
   --surface-control-border: var(--on-dark-soft);            /* 7,04:1 */
   --surface-hover: var(--accent-bright);
+  --surface-danger: var(--danger-bright);                   /* 10,2:1 */
+  --surface-success: var(--success-bright);                 /* 13,4:1 */
   --cta-bg: var(--accent-bright);
   --cta-fg: var(--steel-950);                               /* 5,61:1 */
   --cta-bg-hover: color-mix(in oklab, var(--accent-bright) 82%, var(--accent));
@@ -55,6 +57,8 @@
   --surface-border: var(--border-light);
   --surface-control-border: var(--ink-soft);                /* 6,0:1 */
   --surface-hover: var(--accent);
+  --surface-danger: var(--danger);                          /* 6,5:1 */
+  --surface-success: var(--success);                        /* 6,5:1 */
   --cta-bg: var(--accent);
   --cta-fg: var(--paper);
   --cta-bg-hover: color-mix(in oklab, var(--accent) 88%, black);
@@ -70,6 +74,8 @@
   --surface-border: var(--border-light);
   --surface-control-border: var(--ink-soft);
   --surface-hover: var(--accent);
+  --surface-danger: var(--danger);
+  --surface-success: var(--success);
   --cta-bg: var(--accent);
   --cta-fg: var(--paper);
   --cta-bg-hover: color-mix(in oklab, var(--accent) 88%, black);

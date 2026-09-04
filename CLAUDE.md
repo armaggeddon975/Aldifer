@@ -148,6 +148,12 @@ TEXTO
 ACENTO (um só, sem concorrente)
 --accent          #CD4116   CTA sobre fundo claro
 --accent-bright   #FF6A2B   CTA e destaque sobre fundo escuro
+
+FEEDBACK DE FORMULÁRIO (acrescentado em 04/09/2026 — ver nota abaixo)
+--danger          #9F1239   erro sobre fundo claro
+--danger-bright   #FFB3C1   erro sobre fundo escuro
+--success         #146C2E   sucesso sobre fundo claro
+--success-bright  #A6F4B0   sucesso sobre fundo escuro
 ```
 
 **Contrastes já verificados** (todos passam WCAG AA):
@@ -163,6 +169,31 @@ ACENTO (um só, sem concorrente)
 
 Regra: `--accent` (#CD4116) **nunca** sobre fundo escuro — ratio cai para 3,6:1.
 Sobre escuro use `--accent-bright`.
+
+**Os contrastes desta tabela não são mais afirmação: são verificados.** Rode
+`npm run contrast` — o script lê os tokens do próprio `tokens.css`, calcula 19 razões
+de contraste e 4 separações de matiz, e falha se alguma reprovar. Ele existe porque na
+Etapa 1 eu usei a cor de DIVISOR como contorno de CONTROLE, que dava 1,30:1 contra os
+3:1 da WCAG 1.4.11, e nada no build acusou.
+
+### Nota de paleta — cores de feedback (registrado em 04/09/2026)
+
+A paleta original definia "um acento só, sem concorrente" e não previa cor de erro. O
+formulário da Etapa 6 precisa de uma, e ela **não pode ser o laranja do CTA**: um campo
+com erro ficaria visualmente idêntico ao botão de enviar.
+
+As quatro cores foram escolhidas por MEDIÇÃO. O critério decisivo não é contraste — é
+**distância de matiz** do acento, porque razão de contraste mede luminosidade e dois
+matizes opostos de mesma luminosidade dão 1:1.
+
+Em OKLCH o `--accent` está em 36°. O vermelho-tijolo #B3261E, que parecia a escolha
+óbvia, está em 28,7° — a só **7,3°** de separação, e se confundiria com o botão. O
+carmim #9F1239 está a 22,4°, com 8,02:1 no branco e 7,41:1 na faixa alternada.
+
+Regra de uso, simétrica à do acento: `--danger` e `--success` só sobre fundo claro; sobre
+escuro use as variantes `-bright`. As utilities `tone-light`, `tone-alt` e `tone-dark`
+já trocam `--surface-danger` e `--surface-success` sozinhas, então o componente usa
+`text-surface-danger` e não precisa saber em que tom está.
 
 ### Tipografia
 

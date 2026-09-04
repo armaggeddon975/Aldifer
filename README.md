@@ -92,7 +92,6 @@ com valor `null`. Campo nulo não renderiza.
 | Item | Situação | Etapa |
 |---|---|---|
 | **Arquivo do logotipo** | Não temos. A marca hoje é um logotipo tipográfico em Archivo Expanded — mais nítido e mais leve que um PNG, mas não é a identidade oficial. | 8 |
-| **Cor de erro e de sucesso** | A paleta do `CLAUDE.md` define "um acento só, sem concorrente" e não prevê cor de feedback. O formulário precisa de vermelho de erro, que não pode ser o mesmo laranja do CTA. | 6 (bloqueia) |
 | **Onde persistir o lead** | E-mail sozinho perde lead. Ordem de preferência: Google Sheets → Notion → Supabase. Depende da pergunta 10. | 6 |
 | **`www` ou apex** | Fixado em `https://www.aldifer.com.br` no `astro.config.mjs`, para casar com o JSON-LD. Se mudar, muda nos dois lugares. | 13 |
 | **Fonte Archivo** | O arquivo com eixo de largura custa 88 KB contra 34 KB da versão só-peso. É o preço do "Expanded". Candidata nº 1 de otimização. | 12 |
@@ -180,7 +179,8 @@ npm run dev
 | `npm run build` | Build de produção. **Exclui os rascunhos** e valida todos os schemas. |
 | `npm run preview` | Serve o build de produção, para medir performance de verdade. |
 | `npm run check` | Verificação de tipos, inclusive nos arquivos `.astro`. |
-| `npm test` | 82 testes: fórmulas de peso, rótulos de bitola e busca. |
+| `npm test` | 113 testes: fórmulas, rótulos, busca, legendas e lista de orçamento. |
+| `npm run contrast` | Verifica os 19 contrastes e as 4 separações de matiz da paleta. |
 | `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
 
 ---
