@@ -10,7 +10,7 @@ applications:
   - 'Plataformas'
   - 'Passarelas'
 finishes:
-  - 'Aço carbono'
+  - 'Sem revestimento'
   - 'Galvanizado a fogo'
 dimensionColumns: []
 dimensions: []

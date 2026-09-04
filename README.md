@@ -129,6 +129,30 @@ O registro completo, com o motivo, está na nota de stack do [`CLAUDE.md`](./CLA
 
 ---
 
+## Duas regras que valem para todo o site
+
+Vieram de defeitos reais encontrados na verificação da Etapa 4, e valem para
+qualquer componente novo.
+
+### Conteúdo não depende de animação rodar para aparecer
+
+A animação de entrada do hero animava `opacity` de 0 a 1. Parece inofensivo e não é:
+o Chrome **não avança animações em aba oculta**, e com `animation-fill-mode: both` o
+estado inicial fica fixo. Quem abrisse o site em aba de fundo — Ctrl+clique, ou link do
+WhatsApp abrindo atrás — recebia o subtítulo, as duas CTAs e as provas do hero
+**invisíveis** até trocar de aba. Era também a causa de uma violação de contraste
+intermitente no axe, que amostrava a página no meio do fade.
+
+A animação agora move **apenas `transform`**. Nunca `opacity`.
+
+### Custom element precisa de `display: block`
+
+Custom element nasce `display: inline`, e um pai inline esmaga a largura do filho de
+bloco. A regra está declarada uma vez em `src/styles/global.css`, para a próxima ilha
+não repetir o erro — acrescente o nome do novo elemento lá.
+
+---
+
 ## Como rodar
 
 Requer **Node >= 22.12.0** (exigência do Astro 7).
@@ -166,10 +190,14 @@ src/lib/steel.ts              fórmulas de peso teórico + registro
 src/lib/dimension-label.ts    rótulo de bitola como o mercado a nomeia
 src/lib/products.ts           consultas ao catálogo e montagem das tabelas
 src/lib/search.ts             busca rápida, parte pura (roda no navegador)
+src/lib/quote.ts              lista de orçamento sobre localStorage
+src/lib/cross-section-legend.ts  liga as cotas do desenho às colunas da tabela
+src/lib/catalog-content.ts    copy do catálogo
 src/lib/home-content.ts       copy da home, das seções 2 e 3 do CONTEUDO.md
 src/lib/navigation.ts         navegação e rota ativa
 src/lib/*.test.ts             82 testes (fórmulas, rótulos, busca)
 
+src/pages/produtos/           catálogo, categoria e produto
 src/pages/indice-de-busca.json.ts   índice da busca, gerado em build
 
 src/components/
@@ -177,6 +205,7 @@ src/components/
   cross-sections/             13 perfis + 3 auxiliares de cota
   ui/                         Button, Container, Section, Heading, Table
   home/                       as 8 seções da home, na ordem do CONTEUDO.md
+  catalog/                    Breadcrumb, ProductCard, CatalogFilter, GaugeTable
   QuickSearch.astro           busca rápida (custom element, sem framework)
   Header · MobileMenu · Footer · DraftNotice · Pending
 
@@ -225,8 +254,8 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 1 — Design system e primitivos | ✅ |
 | 2 — Content collections | ✅ |
 | 3 — Home | ✅ |
-| 4 — Catálogo | ⬜ |
-| 5 — Lista de orçamento | ⬜ |
+| 4 — Catálogo | ✅ |
+| 5 — Lista de orçamento | ◐ `src/lib/quote.ts` já existe e os botões "Adicionar" funcionam; falta a barra fixa, a página /orcamento e a edição de itens |
 | 6 — Formulário, servidor e LGPD | ⬜ bloqueada pela cor de feedback e pela pergunta 10 |
 | 7 — Calculadora de peso | ⬜ |
 | 8 — Páginas restantes | ⬜ |

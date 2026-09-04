@@ -1,0 +1,90 @@
+---
+import { breadcrumb } from '@/lib/catalog-content';
+
+/**
+ * Trilha de navegação, com o JSON-LD de BreadcrumbList que a Etapa 9 pede.
+ *
+ * O JSON-LD sai aqui no corpo, junto da trilha que ele descreve, e não no
+ * <head>: é válido em qualquer lugar do documento, e mantê-lo ao lado da
+ * marcação evita que os dois divirjam quando alguém mudar a trilha.
+ *
+ * O último item é a página atual: sem link, com aria-current="page".
+ */
+export type Crumb = {
+  readonly label: string;
+  /** Ausente no último item, que é a página atual. */
+  readonly href?: string;
+};
+
+interface Props {
+  items: readonly Crumb[];
+}
+
+const { items }: Props = Astro.props;
+
+const trail: readonly Crumb[] = [{ label: breadcrumb.homeLabel, href: '/' }, ...items];
+
+const site = Astro.site ?? new URL('/', Astro.url);
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: trail.map((crumb, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: crumb.label,
+    // O último item não tem `item`: pela especificação do schema.org, a
+    // página atual não referencia a si mesma na trilha.
+    ...(crumb.href ? { item: new URL(crumb.href, site).href } : {}),
+  })),
+};
+---
+
+<nav aria-label={breadcrumb.navLabel} class="breadcrumb">
+  <ol>
+    {
+      trail.map((crumb, index) => {
+        const isLast = index === trail.length - 1;
+        return (
+          <li>
+            {crumb.href && !isLast ? (
+              <a href={crumb.href}>{crumb.label}</a>
+            ) : (
+              <span aria-current="page">{crumb.label}</span>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+
+<style>
+  .breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--size-sm);
+    color: var(--surface-fg-soft);
+  }
+
+  /* O separador é conteúdo gerado por CSS, então o leitor de tela não o
+     anuncia como texto da trilha. */
+  .breadcrumb li + li::before {
+    content: '/';
+    margin-inline-end: var(--space-8);
+    color: var(--surface-border);
+  }
+
+  .breadcrumb a:hover {
+    color: var(--surface-hover);
+  }
+
+  .breadcrumb [aria-current='page'] {
+    color: var(--surface-fg);
+    font-weight: 500;
+  }
+</style>

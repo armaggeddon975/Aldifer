@@ -10,7 +10,7 @@ applications:
   - 'Fechamento industrial'
   - 'Grades de ventilação'
 finishes:
-  - 'Aço carbono'
+  - 'Sem revestimento'
   - 'Galvanizado'
 dimensionColumns:
   - { key: 'mesh', label: 'Malha (mm)' }

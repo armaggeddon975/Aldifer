@@ -1,8 +1,9 @@
 /* ============================================================================
    Estilos de componentes que não podem usar <style> escopado do Astro.
 
-   Ilha React não recebe o escopo do Astro, então o CSS dela vive aqui. Tudo
-   por token: nenhum hex solto.
+   O <style> do Astro escopa por componente e não alcança elementos criados
+   por script nem markup de outro componente, então o CSS compartilhado vive
+   aqui. Tudo por token: nenhum hex solto.
    ========================================================================== */
 
 /* ---------------------------------------------------------------------------
@@ -164,22 +165,32 @@
    Entrada do hero — UMA orquestração, e só aqui
    -------------------------------------------------------------------------- */
 
+/*
+  A animação move APENAS o transform. Nunca a opacidade.
+
+  Animar opacity de 0 parece inofensivo e não é: se a animação não roda, o
+  estado inicial fica fixo pelo animation-fill-mode e o conteúdo permanece
+  INVISÍVEL. O Chrome não avança animações em aba oculta, então quem abre o
+  site em aba de fundo — Ctrl+clique, ou link do WhatsApp abrindo atrás —
+  recebia o subtítulo, as duas CTAs e as provas do hero invisíveis até trocar
+  de aba. Era também a causa de uma violação de contraste intermitente no axe,
+  que amostrava a página no meio do fade.
+
+  Regra que fica: conteúdo não depende de animação rodar para aparecer.
+*/
 @keyframes hero-rise {
   from {
-    opacity: 0;
     transform: translateY(12px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
 
 /*
-  O H1 fica DE FORA da animação de propósito. Elemento com opacity 0 não conta
-  para o LCP, então animar a entrada do título empurraria a métrica para o fim
-  da animação. O título pinta imediatamente; o que entra em sequência é o que
-  vem depois dele.
+  O H1 fica DE FORA da animação de propósito. É o elemento de LCP, e mesmo uma
+  animação de transform adia a estabilização da métrica. O título pinta
+  imediatamente; o que entra em sequência é o que vem depois dele.
 */
 .hero-enter > * {
   animation: hero-rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -197,3 +208,46 @@
 
 /* O global.css já zera a duração em prefers-reduced-motion, e o `both` de
    animation-fill-mode garante que o estado final se aplique de imediato. */
+
+/* ---------------------------------------------------------------------------
+   Corpo de texto vindo de markdown (descrição de produto e de categoria)
+
+   Não usamos plugin de tipografia: o conteúdo destas páginas é parágrafo,
+   ênfase e, ocasionalmente, lista. Cinco regras resolvem, e um plugin traria
+   dezenas de estilos para elementos que não usamos.
+   -------------------------------------------------------------------------- */
+
+.prose-aldifer > * + * {
+  margin-top: var(--space-16);
+}
+
+.prose-aldifer p {
+  /* Medida de leitura: acima de ~70 caracteres o olho perde a linha. */
+  max-width: 68ch;
+  color: var(--surface-fg-soft);
+}
+
+.prose-aldifer strong {
+  font-weight: 600;
+  color: var(--surface-fg);
+}
+
+.prose-aldifer ul,
+.prose-aldifer ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 68ch;
+  color: var(--surface-fg-soft);
+}
+
+.prose-aldifer li {
+  padding-inline-start: var(--space-12);
+  border-inline-start: 2px solid var(--surface-border);
+}
+
+.prose-aldifer a {
+  color: var(--surface-hover);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

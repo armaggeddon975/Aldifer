@@ -1,0 +1,313 @@
+---
+import ProductCard from './ProductCard.astro';
+import { filter } from '@/lib/catalog-content';
+import { categoryHref, type Category, type Product } from '@/lib/products';
+
+/**
+ * Filtro do catálogo, por categoria e por acabamento.
+ *
+ * MELHORIA PROGRESSIVA: a lista completa é renderizada em HTML. O script
+ * apenas ESCONDE o que não casa com os filtros. Sem JS, o visitante vê o
+ * catálogo inteiro e continua tendo os links de categoria — que levam a
+ * páginas reais, indexáveis, e são o caminho de filtragem sem script.
+ *
+ * O estado vai para a URL como parâmetro repetido
+ * (?categoria=chapas&categoria=tubos), lido de volta no carregamento, para o
+ * filtro ser compartilhável por WhatsApp.
+ *
+ * A saída estática não pode filtrar por query no servidor: /produtos?x é
+ * sempre o mesmo HTML. Por isso o parâmetro é aplicado no cliente, e por isso
+ * as páginas de categoria existem de verdade.
+ */
+interface Props {
+  products: readonly Product[];
+  categories: readonly Category[];
+}
+
+const { products, categories }: Props = Astro.props;
+
+const categoryName = new Map(categories.map((category) => [category.id, category.data.name]));
+
+/**
+ * Acabamentos que valem como filtro.
+ *
+ * Só entram os que aparecem em DOIS OU MAIS produtos. Um acabamento exclusivo
+ * de um produto não é filtro — é propriedade daquele produto, e quem a procura
+ * vai direto na página dele. Sem esta regra o filtro nascia com 23 caixas,
+ * incluindo "Corte convencional" (só discos) e "Embutir em perfil" (só
+ * fechaduras), o que é uma lista de propriedades disfarçada de filtro.
+ */
+const finishUsage = new Map<string, number>();
+for (const product of products) {
+  for (const finish of product.data.finishes) {
+    finishUsage.set(finish, (finishUsage.get(finish) ?? 0) + 1);
+  }
+}
+
+const finishes = [...finishUsage.entries()]
+  .filter(([, uses]) => uses >= 2)
+  .map(([finish]) => finish)
+  .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+/** Categorias que de fato têm produto visível — não oferecer filtro vazio. */
+const usedCategories = categories.filter((category) =>
+  products.some((product) => product.data.category === category.id),
+);
+---
+
+<catalog-filter data-total={products.length}>
+  <form class="catalog-filter" aria-label="Filtrar o catálogo">
+    <fieldset>
+      <legend>{filter.legendCategory}</legend>
+      <div class="catalog-filter__options">
+        {
+          usedCategories.map((category) => (
+            <label class="catalog-filter__option">
+              <input type="checkbox" name="categoria" value={category.id} />
+              <span>{category.data.name}</span>
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+
+    {
+      finishes.length > 0 && (
+        <fieldset>
+          <legend>{filter.legendFinish}</legend>
+          <div class="catalog-filter__options">
+            {finishes.map((finish) => (
+              <label class="catalog-filter__option">
+                <input type="checkbox" name="acabamento" value={finish} />
+                <span>{finish}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )
+    }
+
+    {/* Só faz sentido com script; o próprio script o revela. */}
+    <button type="reset" class="catalog-filter__clear" hidden data-clear>
+      {filter.clearLabel}
+    </button>
+  </form>
+
+  <noscript>
+    <p class="catalog-filter__noscript">{filter.noScriptNote}</p>
+  </noscript>
+
+  {/* Contagem anunciada sem roubar o foco de quem está marcando as caixas. */}
+  <p class="sr-only" role="status" aria-live="polite" data-count></p>
+
+  <ul class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" data-list>
+    {products.map((product) => <ProductCard product={product} />)}
+  </ul>
+
+  <div class="catalog-filter__empty" hidden data-empty>
+    <p class="font-semibold">{filter.emptyHeading}</p>
+    <p class="mt-2 text-sm text-surface-fg-soft">{filter.emptyBody}</p>
+    <ul class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+      {
+        usedCategories.map((category) => (
+          <li>
+            <a href={categoryHref(category.id)} class="underline underline-offset-4">
+              {categoryName.get(category.id)}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</catalog-filter>
+
+<style>
+  .catalog-filter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+  }
+
+  .catalog-filter fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    border: 0;
+  }
+
+  .catalog-filter legend {
+    font-size: var(--size-xs);
+    font-weight: 600;
+    color: var(--surface-fg);
+  }
+
+  .catalog-filter__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+  }
+
+  /* O rótulo inteiro é o alvo de toque, com os 44px exigidos no mobile. */
+  .catalog-filter__option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    min-height: var(--touch-target);
+    padding-inline: var(--space-12);
+    border: 1px solid var(--surface-control-border);
+    border-radius: var(--corner-control);
+    font-size: var(--size-sm);
+    cursor: pointer;
+  }
+
+  .catalog-filter__option:hover {
+    border-color: var(--surface-hover);
+  }
+
+  .catalog-filter__option:has(input:checked) {
+    border-color: var(--accent);
+    background-color: color-mix(in oklab, var(--accent) 10%, transparent);
+    font-weight: 600;
+  }
+
+  /* :focus-within porque o foco fica no input, que é pequeno; o anel precisa
+     aparecer em volta do rótulo todo. */
+  .catalog-filter__option:has(input:focus-visible) {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  .catalog-filter__clear {
+    align-self: flex-start;
+    min-height: var(--touch-target);
+    padding-inline: var(--space-12);
+    background: none;
+    border: 0;
+    color: var(--surface-fg);
+    font-family: var(--family-text);
+    font-size: var(--size-sm);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+  }
+
+  .catalog-filter__noscript,
+  .catalog-filter__empty {
+    margin-top: var(--space-16);
+    padding: var(--space-16);
+    border-inline-start: 4px solid var(--accent);
+    background-color: var(--paper-alt);
+    color: var(--ink);
+    font-size: var(--size-sm);
+  }
+</style>
+
+<script>
+  /**
+   * Filtro client-side. Esconde cards, não os remove: o conteúdo continua no
+   * DOM e a lista completa segue disponível sem script.
+   */
+  class CatalogFilterElement extends HTMLElement {
+    #form!: HTMLFormElement;
+    #items: HTMLElement[] = [];
+    #count!: HTMLElement;
+    #empty!: HTMLElement;
+
+    connectedCallback() {
+      const form = this.querySelector('form');
+      const list = this.querySelector('[data-list]');
+      const count = this.querySelector('[data-count]');
+      const empty = this.querySelector('[data-empty]');
+      const clear = this.querySelector('[data-clear]');
+
+      if (
+        !(form instanceof HTMLFormElement) ||
+        !(list instanceof HTMLElement) ||
+        !(count instanceof HTMLElement) ||
+        !(empty instanceof HTMLElement)
+      ) {
+        return;
+      }
+
+      this.#form = form;
+      this.#items = [...list.children].filter((item): item is HTMLElement => item instanceof HTMLElement);
+      this.#count = count;
+      this.#empty = empty;
+
+      if (clear instanceof HTMLElement) clear.hidden = false;
+
+      form.addEventListener('change', () => this.#apply(true));
+      // O reset limpa os campos depois do evento, daí o adiamento.
+      form.addEventListener('reset', () => queueMicrotask(() => this.#apply(true)));
+
+      this.#readUrl();
+      this.#apply(false);
+    }
+
+    /** Marca as caixas conforme os parâmetros repetidos da URL. */
+    #readUrl() {
+      const params = new URLSearchParams(window.location.search);
+      for (const name of ['categoria', 'acabamento']) {
+        const wanted = new Set(params.getAll(name));
+        if (wanted.size === 0) continue;
+        for (const input of this.#form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`)) {
+          input.checked = wanted.has(input.value);
+        }
+      }
+    }
+
+    #selected(name: string): Set<string> {
+      return new Set(
+        [...this.#form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]:checked`)].map(
+          (input) => input.value,
+        ),
+      );
+    }
+
+    #apply(syncUrl: boolean) {
+      const categories = this.#selected('categoria');
+      const wantedFinishes = this.#selected('acabamento');
+
+      let visible = 0;
+      for (const item of this.#items) {
+        const category = item.dataset.category ?? '';
+        const itemFinishes = (item.dataset.finishes ?? '').split('|').filter(Boolean);
+
+        const matchCategory = categories.size === 0 || categories.has(category);
+        const matchFinish =
+          wantedFinishes.size === 0 || itemFinishes.some((finish) => wantedFinishes.has(finish));
+
+        const show = matchCategory && matchFinish;
+        item.hidden = !show;
+        if (show) visible += 1;
+      }
+
+      const total = Number(this.dataset.total) || this.#items.length;
+      this.#empty.hidden = visible > 0;
+      this.#count.textContent =
+        visible === total
+          ? `Mostrando todos os ${total} produtos.`
+          : `Mostrando ${visible} de ${total} produtos.`;
+
+      if (syncUrl) this.#writeUrl(categories, wantedFinishes);
+    }
+
+    /** replaceState, e não pushState: filtrar não deveria encher o histórico. */
+    #writeUrl(categories: Set<string>, finishes: Set<string>) {
+      const params = new URLSearchParams();
+      for (const value of categories) params.append('categoria', value);
+      for (const value of finishes) params.append('acabamento', value);
+
+      const query = params.toString();
+      window.history.replaceState(
+        null,
+        '',
+        query ? `${window.location.pathname}?${query}` : window.location.pathname,
+      );
+    }
+  }
+
+  if (!customElements.get('catalog-filter')) {
+    customElements.define('catalog-filter', CatalogFilterElement);
+  }
+</script>

@@ -1,0 +1,228 @@
+---
+import Table from '@/components/ui/Table.astro';
+import { productPage } from '@/lib/catalog-content';
+import {
+  describeDimension,
+  getProductTable,
+  quoteUnitFor,
+  type Product,
+} from '@/lib/products';
+
+/**
+ * Tabela de bitolas com o botão "Adicionar" em cada linha. É o motivo de a
+ * pessoa estar na página.
+ *
+ * A coluna de peso é calculada em build por src/lib/steel.ts — ver
+ * src/lib/products.ts. Nenhum peso aqui vem do arquivo de conteúdo.
+ *
+ * O botão carrega todo o payload em data-*: o script não precisa reler a
+ * tabela nem adivinhar qual célula é qual. E o aria-label é completo, porque
+ * "Adicionar" sozinho não diz nada num leitor de tela.
+ */
+interface Props {
+  product: Product;
+}
+
+const { product }: Props = Astro.props;
+
+const table = getProductTable(product);
+const unit = quoteUnitFor(product);
+
+/**
+ * Comprimento em METROS vira campo próprio do item de orçamento ("6 m").
+ * Em chapa o comprimento é em milímetros e já faz parte do rótulo da medida,
+ * então não se repete aqui.
+ */
+const lengthColumn = product.data.dimensionColumns.find(
+  (column) => column.key === 'length' && column.label.includes('(m)'),
+);
+
+const rows = table.rawRows.map((raw, index) => {
+  const lengthValue = lengthColumn ? raw[lengthColumn.key] : undefined;
+  return {
+    cells: table.rows[index] ?? [],
+    dimension: describeDimension(product, raw),
+    length: typeof lengthValue === 'number' ? `${lengthValue.toLocaleString('pt-BR')} m` : undefined,
+  };
+});
+
+const hasRows = rows.length > 0;
+const columns = hasRows
+  ? [...table.columns, { label: productPage.addLabel, numeric: false }]
+  : table.columns;
+---
+
+<div class="gauge-table">
+  {
+    hasRows ? (
+      <gauge-adder
+        data-product-slug={product.id}
+        data-product-name={product.data.name}
+        data-unit={unit}
+      >
+        <Table
+          caption={`${product.data.name} — bitolas, comprimento e peso`}
+          columns={columns}
+          sticky
+        >
+          {rows.map((row) => (
+            <tr>
+              {row.cells.map((cell) => (
+                <td data-numeric={cell.numeric ? '' : undefined}>{cell.text}</td>
+              ))}
+              <td>
+                <button
+                  type="button"
+                  class="gauge-table__add"
+                  data-dimension={row.dimension}
+                  data-length={row.length}
+                  aria-label={productPage.addAriaTemplate(product.data.name, row.dimension)}
+                >
+                  {productPage.addLabel}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </Table>
+
+        {/* Confirmação discreta, sem modal e sem tirar o usuário da navegação. */}
+        <p class="sr-only" role="status" aria-live="polite" data-announce></p>
+      </gauge-adder>
+    ) : (
+      <p class="gauge-table__empty">
+        <strong>{productPage.emptyTableHeading}</strong>
+      </p>
+    )
+  }
+
+  {
+    product.data.notes.length > 0 && (
+      <div class="gauge-table__notes">
+        <h3>{productPage.notesHeading}</h3>
+        <ul>
+          {product.data.notes.map((note) => (
+            <li>{note}</li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .gauge-table__add {
+    min-height: var(--touch-target);
+    padding-inline: var(--space-12);
+    font-weight: 600;
+    font-size: var(--size-sm);
+    color: var(--accent);
+    background: none;
+    border: 1px solid var(--ink-soft);
+    border-radius: var(--corner-control);
+    cursor: pointer;
+  }
+
+  .gauge-table__add:hover {
+    color: var(--paper);
+    background-color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* Item já na lista: o botão continua clicável para somar quantidade, mas
+     diz que a medida já foi escolhida. */
+  .gauge-table__add[data-added] {
+    color: var(--ink-soft);
+    border-color: var(--border-light);
+  }
+
+  .gauge-table__empty {
+    padding: var(--space-16);
+    border: 1px solid var(--surface-border);
+    color: var(--surface-fg-soft);
+    font-size: var(--size-sm);
+  }
+
+  .gauge-table__notes {
+    margin-top: var(--space-24);
+  }
+
+  .gauge-table__notes h3 {
+    font-size: var(--size-sm);
+    font-weight: 600;
+    color: var(--surface-fg);
+  }
+
+  .gauge-table__notes ul {
+    margin-top: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    max-width: 68ch;
+    font-size: var(--size-sm);
+    color: var(--surface-fg-soft);
+  }
+
+  .gauge-table__notes li {
+    padding-inline-start: var(--space-12);
+    border-inline-start: 2px solid var(--surface-border);
+  }
+</style>
+
+<script>
+  import { add, type QuoteUnit } from '@/lib/quote';
+
+  /**
+   * Liga os botões "Adicionar" à lista de orçamento.
+   *
+   * Sem JS os botões não fazem nada, mas a TABELA — que é o conteúdo pelo qual
+   * a pessoa veio — está inteira no HTML. A lista de orçamento é conveniência
+   * sobre o conteúdo, não pré-requisito dele.
+   */
+  class GaugeAdder extends HTMLElement {
+    connectedCallback() {
+      const announce = this.querySelector('[data-announce]');
+      const slug = this.dataset.productSlug;
+      const name = this.dataset.productName;
+      const unit = this.dataset.unit as QuoteUnit | undefined;
+
+      if (!(announce instanceof HTMLElement) || !slug || !name || !unit) return;
+
+      this.addEventListener('click', (event) => {
+        const button = (event.target as HTMLElement | null)?.closest('.gauge-table__add');
+        if (!(button instanceof HTMLButtonElement)) return;
+
+        const dimension = button.dataset.dimension;
+        if (!dimension) return;
+
+        const result = add({
+          productSlug: slug,
+          productName: name,
+          dimension,
+          length: button.dataset.length,
+          quantity: 1,
+          unit,
+        });
+
+        if (result === null) {
+          announce.textContent =
+            'Não foi possível guardar o item. Verifique se o navegador permite armazenamento local.';
+          return;
+        }
+
+        button.toggleAttribute('data-added', true);
+
+        // A quantidade entra no anúncio: no clique repetido o total de linhas
+        // não muda, e sem ela pareceria que o clique não fez nada.
+        const doItem =
+          result.quantity > 1 ? `${result.quantity} unidades de ${dimension}` : dimension;
+        announce.textContent =
+          `${name} ${doItem} na lista. ` +
+          `${result.total} ${result.total === 1 ? 'medida' : 'medidas'} no orçamento.`;
+      });
+    }
+  }
+
+  if (!customElements.get('gauge-adder')) {
+    customElements.define('gauge-adder', GaugeAdder);
+  }
+</script>

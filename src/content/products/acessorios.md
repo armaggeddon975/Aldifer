@@ -9,7 +9,7 @@ applications:
   - 'Grades e cancelas'
   - 'Estruturas móveis'
 finishes:
-  - 'Aço carbono'
+  - 'Sem revestimento'
   - 'Galvanizado'
   - 'Zincado'
 dimensionColumns: []

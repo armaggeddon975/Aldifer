@@ -1,0 +1,52 @@
+---
+import CrossSection from '@/components/CrossSection.astro';
+import { productHref, type Product } from '@/lib/products';
+
+/**
+ * Card de produto do catálogo.
+ *
+ * Os `data-*` de categoria e acabamento são o que o filtro lê para esconder
+ * ou mostrar o item — o filtro não precisa consultar o servidor nem reler
+ * texto da tela.
+ *
+ * Borda em vez de sombra e raio 0: aço é reto, e card com sombra suave
+ * repetido em toda seção é o vício que o CLAUDE.md proíbe.
+ *
+ * O desenho entra sem cotas: o card é estreito e a letra da dimensão ficaria
+ * ilegível abaixo de ~180px.
+ */
+interface Props {
+  product: Product;
+}
+
+const { product }: Props = Astro.props;
+const { name, category, crossSection, shortDescription, finishes } = product.data;
+---
+
+<li data-category={category} data-finishes={finishes.join('|')}>
+  <a
+    href={productHref(product)}
+    class="group flex h-full flex-col gap-4 border border-surface-border p-5 hover:border-surface-hover"
+  >
+    {
+      crossSection && (
+        <span class="block w-20 text-surface-fg-soft group-hover:text-surface-hover">
+          <CrossSection variant={crossSection} decorative dimensions={false} />
+        </span>
+      )
+    }
+
+    <span class="display-expanded text-base font-semibold text-surface-fg">{name}</span>
+    <span class="text-sm text-surface-fg-soft">{shortDescription}</span>
+
+    {
+      finishes.length > 0 && (
+        <span class="mt-auto flex flex-wrap gap-x-3 gap-y-1 text-xs text-surface-fg-soft">
+          {finishes.map((finish) => (
+            <span>{finish}</span>
+          ))}
+        </span>
+      )
+    }
+  </a>
+</li>

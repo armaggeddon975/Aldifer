@@ -1,0 +1,43 @@
+---
+import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
+import CatalogFilter from '@/components/catalog/CatalogFilter.astro';
+import DraftNotice from '@/components/DraftNotice.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import { breadcrumb, catalogPage } from '@/lib/catalog-content';
+import { getVisibleCategories, getVisibleProducts, isDraft } from '@/lib/products';
+
+/**
+ * Catálogo completo, com filtro.
+ *
+ * Title e description vêm da linha "Produtos" da seção 10 do
+ * docs/CONTEUDO.md.
+ */
+const products = await getVisibleProducts();
+const categories = await getVisibleCategories();
+const draftCount = products.filter(isDraft).length;
+---
+
+<Base title={catalogPage.seoTitle} description={catalogPage.seoDescription}>
+  <Section tone="light" spacing="md" labelledBy="catalogo">
+    <Breadcrumb items={[{ label: breadcrumb.catalogLabel }]} />
+
+    <div class="mt-6">
+      <Heading level={1} id="catalogo">{catalogPage.heading}</Heading>
+      <p class="mt-4 max-w-2xl text-surface-fg-soft">{catalogPage.description}</p>
+    </div>
+
+    {
+      draftCount > 0 && (
+        <DraftNotice
+          detail={`${draftCount} de ${products.length} produtos estão em rascunho. As bitolas são faixa comercial padrão de mercado, não o estoque real da Aldifer.`}
+        />
+      )
+    }
+
+    <div class="mt-10">
+      <CatalogFilter products={products} categories={categories} />
+    </div>
+  </Section>
+</Base>

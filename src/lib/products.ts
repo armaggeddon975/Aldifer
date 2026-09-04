@@ -4,6 +4,7 @@ import {
   type DimensionRow,
   describeDimension as describeRow,
 } from './dimension-label';
+import type { QuoteUnit } from './quote';
 import { WEIGHT_FORMULAS, computeRowWeight, formatWeight } from './steel';
 
 export type Product = CollectionEntry<'products'>;
@@ -155,4 +156,29 @@ export function categoryHref(categorySlug: string): string {
 
 export function productHref(product: Product): string {
   return `/produtos/${product.data.category}/${product.id}`;
+}
+
+// ---------------------------------------------------------------------------
+// Unidade de venda
+// ---------------------------------------------------------------------------
+
+/**
+ * Como o produto é vendido, para o campo `unit` da lista de orçamento.
+ *
+ * Derivado da categoria em vez de virar campo do schema: barra, tubo e perfil
+ * saem em barra de comprimento comercial; chapa sai por chapa; tela sai em
+ * rolo; o resto é peça. Se algum produto fugir da regra da categoria, aí sim
+ * vale um campo próprio no frontmatter.
+ */
+const UNIT_BY_CATEGORY: Record<string, QuoteUnit> = {
+  barras: 'barra',
+  tubos: 'barra',
+  perfis: 'barra',
+  chapas: 'chapa',
+  telas: 'rolo',
+  diversos: 'peça',
+};
+
+export function quoteUnitFor(product: Product): QuoteUnit {
+  return UNIT_BY_CATEGORY[product.data.category] ?? 'peça';
 }

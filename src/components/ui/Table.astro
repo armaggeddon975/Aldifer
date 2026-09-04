@@ -1,11 +1,16 @@
 ---
 /**
- * Casca de tabela de dados. As linhas vêm por slot, para que a Etapa 4 possa
- * pôr um botão "Adicionar" em cada uma sem que este componente saiba disso.
+ * Casca de tabela de dados. As linhas vêm por slot, para que a página de
+ * produto possa pôr um botão "Adicionar" em cada uma sem que este componente
+ * saiba disso.
  *
  * Marque a célula com data-numeric para receber JetBrains Mono, alinhamento à
  * direita e dígitos de largura fixa — número técnico só se lê em coluna quando
  * os dígitos alinham.
+ *
+ * `sticky` fixa a primeira coluna na rolagem horizontal. Numa tabela de bitola
+ * em 360px, perder de vista a medida que identifica a linha torna as outras
+ * colunas inúteis.
  */
 export type TableColumn = {
   readonly label: string;
@@ -19,19 +24,33 @@ interface Props {
   columns: readonly TableColumn[];
   /** Mantém o caption no leitor de tela mas o esconde da tela. */
   captionHidden?: boolean;
+  /** Fixa a primeira coluna durante a rolagem horizontal. */
+  sticky?: boolean;
   class?: string;
 }
 
-const { caption, columns, captionHidden = false, class: className } = Astro.props;
+const {
+  caption,
+  columns,
+  captionHidden = false,
+  sticky = false,
+  class: className,
+}: Props = Astro.props;
 ---
 
-{/* role="region" + tabindex="0" tornam a área rolável alcançável por teclado:
-    sem isso quem navega por Tab não consegue ver as colunas escondidas. */}
-<div
+{/*
+  role="region" + tabindex="0" tornam a área rolável alcançável por teclado:
+  sem isso quem navega por Tab não consegue ver as colunas escondidas.
+
+  <table-scroller> é o custom element que acende a sombra de borda quando há
+  mais conteúdo para o lado. Sem JS a tabela rola igual, só sem a sombra.
+*/}
+<table-scroller
   class:list={['table-shell', className]}
   role="region"
   aria-label={caption}
   tabindex="0"
+  data-sticky={sticky ? '' : undefined}
 >
   <table>
     <caption class:list={[captionHidden && 'sr-only']}>{caption}</caption>
@@ -50,13 +69,12 @@ const { caption, columns, captionHidden = false, class: className } = Astro.prop
       <slot />
     </tbody>
   </table>
-</div>
+</table-scroller>
 
 <style>
   .table-shell {
+    display: block;
     overflow-x: auto;
-    /* Uma barra de rolagem só aparece no hover em alguns sistemas; a borda
-       deixa claro que a área é um recorte com mais conteúdo à direita. */
     border: 1px solid var(--surface-border);
 
     /* A tabela declara superfície clara, independente do tom da seção em que
@@ -73,6 +91,15 @@ const { caption, columns, captionHidden = false, class: className } = Astro.prop
     --focus-ring: var(--accent);
     background-color: var(--surface-bg);
     color: var(--surface-fg);
+  }
+
+  /* Sombra de borda quando há coluna escondida à direita. Não é decoração:
+     é a única pista de que a tabela continua além do recorte. Some sozinha
+     quando a rolagem chega ao fim.
+     box-shadow inset é pintado na caixa do elemento, e não no conteúdo
+     rolado, então fica fixo na borda durante a rolagem. */
+  .table-shell[data-more-right] {
+    box-shadow: inset -16px 0 14px -14px color-mix(in oklab, var(--steel-950) 55%, transparent);
   }
 
   .table-shell table {
@@ -116,4 +143,73 @@ const { caption, columns, captionHidden = false, class: className } = Astro.prop
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
+
+  /* --- Primeira coluna fixa ---------------------------------------------- */
+
+  .table-shell[data-sticky] :global(thead th:first-child),
+  .table-shell[data-sticky] :global(tbody td:first-child),
+  .table-shell[data-sticky] :global(tbody th:first-child) {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    /* Fundo próprio, senão o conteúdo rolado aparece por baixo. */
+    background-color: var(--paper);
+    border-right: 1px solid var(--surface-border);
+  }
+
+  .table-shell[data-sticky] :global(thead th:first-child) {
+    z-index: 2;
+    background-color: var(--paper-alt);
+  }
 </style>
+
+<script>
+  /**
+   * Acende a sombra da borda direita enquanto houver coluna escondida.
+   * Sem este script a tabela rola exatamente igual — só perde a pista visual.
+   */
+  class TableScroller extends HTMLElement {
+    /**
+     * A referência do observer PRECISA ser guardada.
+     *
+     * `new ResizeObserver(fn).observe(el)` sem guardar a instância é um
+     * footgun conhecido: sem ninguém referenciando o observer, o coletor de
+     * lixo o descarta e as chamadas param de acontecer sem erro nenhum. Foi
+     * assim que a sombra ficava acesa depois de a tabela deixar de transbordar.
+     */
+    #observer: ResizeObserver | null = null;
+
+    #update = () => {
+      // 2px de folga: zoom e escala fracionária deixam scrollWidth e
+      // clientWidth com diferença de arredondamento mesmo no fim da rolagem.
+      const restante = this.scrollWidth - this.clientWidth - this.scrollLeft;
+      this.toggleAttribute('data-more-right', restante > 2);
+    };
+
+    connectedCallback() {
+      this.#update();
+      this.addEventListener('scroll', this.#update, { passive: true });
+
+      // Dois gatilhos de mudança de largura, de propósito. O ResizeObserver
+      // pega o caso geral (zoom, mudança de fonte, container encolhendo), mas
+      // nao dispara em toda troca de viewport; o resize da janela cobre a
+      // rotacao do celular, que é o caso do público deste site.
+      if ('ResizeObserver' in window) {
+        this.#observer = new ResizeObserver(this.#update);
+        this.#observer.observe(this);
+      }
+      window.addEventListener('resize', this.#update, { passive: true });
+    }
+
+    disconnectedCallback() {
+      this.removeEventListener('scroll', this.#update);
+      window.removeEventListener('resize', this.#update);
+      this.#observer?.disconnect();
+      this.#observer = null;
+    }
+  }
+
+  if (!customElements.get('table-scroller')) {
+    customElements.define('table-scroller', TableScroller);
+  }
+</script>

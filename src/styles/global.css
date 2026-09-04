@@ -102,6 +102,21 @@
    -------------------------------------------------------------------------- */
 
 @layer base {
+  /*
+    Custom element nasce display:inline, e um pai inline esmaga a largura do
+    filho de bloco. Foi assim que a tabela de bitolas da pagina de produto
+    ficou com 2px de largura: o <gauge-adder> em volta dela era inline.
+
+    Declarar aqui, e nao em cada componente, para que a proxima ilha nao
+    repita o erro.
+  */
+  quick-search,
+  gauge-adder,
+  table-scroller,
+  catalog-filter {
+    display: block;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;

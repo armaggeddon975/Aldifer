@@ -1,0 +1,88 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+
+import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
+import ProductCard from '@/components/catalog/ProductCard.astro';
+import CrossSection from '@/components/CrossSection.astro';
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import { breadcrumb, categoryPage } from '@/lib/catalog-content';
+import { getVisibleCategories, getVisibleProducts } from '@/lib/products';
+import { getSite } from '@/lib/site';
+
+/**
+ * Página de categoria. Existe como rota real, e não como filtro na URL, por
+ * dois motivos: é o caminho de filtragem que funciona sem JavaScript, e é o
+ * destino dos redirects 301 da Etapa 10 (`/barras.php` → `/produtos/barras`).
+ */
+export const getStaticPaths = (async () => {
+  const categories = await getVisibleCategories();
+  return categories.map((category) => ({
+    params: { categoria: category.id },
+    props: { category },
+  }));
+}) satisfies GetStaticPaths;
+
+const { category } = Astro.props;
+const { Content } = await render(category);
+
+const products = await getVisibleProducts(category.id);
+const site = await getSite();
+---
+
+<Base title={category.data.seoTitle} description={category.data.seoDescription}>
+  <Section tone="light" spacing="md" labelledBy="categoria">
+    <Breadcrumb
+      items={[
+        { label: breadcrumb.catalogLabel, href: '/produtos' },
+        { label: category.data.name },
+      ]}
+    />
+
+    <div class="mt-6 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start lg:gap-16">
+      <div>
+        <Heading level={1} id="categoria">{category.data.name}</Heading>
+        <p class="mt-4 max-w-2xl text-lg text-surface-fg-soft">
+          {category.data.shortDescription}
+        </p>
+        <div class="prose-aldifer mt-6 max-w-2xl">
+          <Content />
+        </div>
+      </div>
+
+      {
+        category.data.crossSection && (
+          <div class="w-40 text-surface-fg-soft lg:w-56">
+            <CrossSection variant={category.data.crossSection} decorative />
+          </div>
+        )
+      }
+    </div>
+  </Section>
+
+  <Section tone="alt" spacing="md" labelledBy="produtos-da-categoria">
+    <Heading level={2} id="produtos-da-categoria">{categoryPage.productsHeading}</Heading>
+
+    {
+      products.length > 0 ? (
+        <ul class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <ProductCard product={product} />
+          ))}
+        </ul>
+      ) : (
+        <div class="mt-8 max-w-2xl border-l-4 border-accent bg-paper p-6">
+          <p class="font-semibold">{categoryPage.emptyHeading}</p>
+          <p class="mt-2 text-sm text-surface-fg-soft">{categoryPage.emptyBody}</p>
+          <div class="mt-6 flex flex-wrap gap-4">
+            <Button href={`tel:${site.phoneE164}`}>Ligar para {site.phone}</Button>
+            <Button href="/produtos" variant="secondary">Ver o catálogo completo</Button>
+          </div>
+        </div>
+      )
+    }
+  </Section>
+</Base>
