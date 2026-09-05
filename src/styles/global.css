@@ -120,7 +120,8 @@
   gauge-adder,
   table-scroller,
   catalog-filter,
-  quote-list {
+  quote-list,
+  quote-form {
     display: block;
   }
 

@@ -32,4 +32,6 @@ pnpm-debug.log*
 .vercel/
 
 # store de lead em arquivo (driver json da Etapa 6)
-/data/leads*.json
+# store de lead em arquivo (driver json da Etapa 6) — NUNCA versionar:
+# contem dado pessoal de cliente
+/data/

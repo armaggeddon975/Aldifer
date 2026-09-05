@@ -47,7 +47,42 @@ simples para eles. A coluna de peso mostra "consultar" em vez de número inventa
 Outros quatro (`degraus`, `fechaduras`, `tintas-e-solventes`, `acessorios`) estão sem
 tabela porque as medidas dependem das linhas que a Aldifer trabalha.
 
-### 3. Uma promessa de prazo não confirmada está na copy
+### 3. O formulário está pronto, mas o e-mail não sai
+
+Tudo do pedido de orçamento está implementado e verificado: validação por campo,
+honeypot, tempo de preenchimento, limite por IP, persistência do lead e a política de
+privacidade. **O que não consegui provar é que o e-mail chega**, porque não tenho as
+chaves.
+
+Sem elas o endpoint aceita o pedido, grava o lead e **carimba o aviso no assunto do
+e-mail** — mas o e-mail não é enviado. Cada degradação vai para o log com o nome exato
+da variável que falta.
+
+Faltam, todas cadastradas na Vercel e nunca no repositório:
+
+```
+RESEND_API_KEY              resend.com/api-keys
+QUOTE_MAIL_FROM             remetente de domínio verificado no Resend
+QUOTE_MAIL_TO               quem recebe os pedidos na Aldifer (pergunta 10)
+PUBLIC_TURNSTILE_SITE_KEY   Cloudflare Turnstile
+TURNSTILE_SECRET_KEY        Cloudflare Turnstile
+```
+
+E o SPF, o DKIM e o DMARC do domínio precisam estar configurados, senão o e-mail cai em
+spam e a Aldifer perde lead sem saber. Isso é a Etapa 13.
+
+### 4. O destino do lead ainda é provisório
+
+`LEAD_STORE_DRIVER` está em `json`, que grava num arquivo local. **Esse driver NÃO
+funciona na Vercel**: o disco é efêmero e o lead desaparece com a instância.
+
+Ele sabe disso — detecta o ambiente serverless, recusa a gravação e o aviso "LEAD NÃO
+GRAVADO" aparece no assunto do e-mail, para o problema não passar em silêncio.
+
+Depende da pergunta 10: descobrir se a Aldifer usa Google Sheets, Notion ou outra coisa,
+e implementar o driver. A interface `LeadStore` está pronta em `src/lib/lead-store.ts`.
+
+### 5. Uma promessa de prazo não confirmada está na copy
 
 A copy aprovada da home afirma, na seção "Por que a Aldifer":
 
@@ -96,6 +131,8 @@ com valor `null`. Campo nulo não renderiza.
 | **`www` ou apex** | Fixado em `https://www.aldifer.com.br` no `astro.config.mjs`, para casar com o JSON-LD. Se mudar, muda nos dois lugares. | 13 |
 | **Fonte Archivo** | O arquivo com eixo de largura custa 88 KB contra 34 KB da versão só-peso. É o preço do "Expanded". Candidata nº 1 de otimização. | 12 |
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
+| **Revisão da Política de Privacidade** | É MINUTA. O texto descreve com precisão o que o site tecnicamente faz, mas documento legal precisa de revisão de quem responde por ele. Faltam o CNPJ do controlador e a definição do prazo de retenção do lead. | 6 · 13 |
+| **Limite por IP é por instância** | O contador vive na memória do processo. Em serverless cada instância tem a sua, então o limite real é 5/hora **por instância**. Contra abuso distribuído o portão é o Turnstile. Um limite global exige Vercel KV ou Upstash Redis — decidir se vale a dependência. | 13 |
 | **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
 
 ---
@@ -164,6 +201,32 @@ não repetir o erro — acrescente o nome do novo elemento lá.
 
 ---
 
+## A política de falha do endpoint de orçamento
+
+Perder lead é o pior resultado possível para este site, então o endpoint **nunca recusa
+um pedido por falta de configuração**. Quando a persistência ou o anti-spam não estão
+disponíveis, o pedido segue e o aviso é **carimbado no assunto do e-mail**:
+
+| Situação | O que acontece |
+|---|---|
+| `TURNSTILE_SECRET_KEY` ausente | Aceita e carimba `[SEM VERIFICAÇÃO ANTI-SPAM]` |
+| Persistência falhou | Aceita e carimba `[LEAD NÃO GRAVADO]` |
+| E-mail falhou, mas o lead foi gravado | Devolve sucesso — o pedido não se perdeu |
+| **Os dois falharam** | Devolve 502 e pede para o cliente ligar |
+
+Toda degradação vai para o log com o nome exato da variável que falta. Nada é silencioso.
+
+### Uma inversão deliberada na ordem das checagens
+
+A seção 7 do `CONTEUDO.md` lista validação antes do honeypot. Testando, descobri que
+nessa ordem o schema recusa o campo `website` e a resposta sai com
+`fieldErrors.website` — dizendo ao robô exatamente qual campo o pegou.
+
+O honeypot passou a ser verificado **antes**, no payload cru, e a resposta é 200 com
+sucesso falso. Nenhuma checagem foi pulada, só invertida.
+
+---
+
 ## Como rodar
 
 Requer **Node >= 22.12.0** (exigência do Astro 7).
@@ -179,7 +242,7 @@ npm run dev
 | `npm run build` | Build de produção. **Exclui os rascunhos** e valida todos os schemas. |
 | `npm run preview` | Serve o build de produção, para medir performance de verdade. |
 | `npm run check` | Verificação de tipos, inclusive nos arquivos `.astro`. |
-| `npm test` | 113 testes: fórmulas, rótulos, busca, legendas e lista de orçamento. |
+| `npm test` | 155 testes: fórmulas, rótulos, busca, legendas e lista de orçamento. |
 | `npm run contrast` | Verifica os 19 contrastes e as 4 separações de matiz da paleta. |
 | `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
 
@@ -204,6 +267,13 @@ src/lib/products.ts           consultas ao catálogo e montagem das tabelas
 src/lib/search.ts             busca rápida, parte pura (roda no navegador)
 src/lib/quote.ts              lista de orçamento sobre localStorage
 src/lib/quote-content.ts      copy da lista de orçamento
+src/lib/schemas.ts            schema Zod único, usado no cliente E no servidor
+src/lib/lead-store.ts         interface LeadStore + driver de arquivo
+src/lib/rate-limit.ts         limite de envios por IP
+src/lib/turnstile.ts          verificação anti-robô no servidor
+src/lib/quote-email.ts        corpo do e-mail em texto e HTML
+src/lib/form-content.ts       copy do formulário e das respostas da API
+src/lib/privacy-content.ts    conteúdo da política de privacidade
 src/lib/cross-section-legend.ts  liga as cotas do desenho às colunas da tabela
 src/lib/catalog-content.ts    copy do catálogo
 src/lib/home-content.ts       copy da home, das seções 2 e 3 do CONTEUDO.md
@@ -211,7 +281,9 @@ src/lib/navigation.ts         navegação e rota ativa
 src/lib/*.test.ts             82 testes (fórmulas, rótulos, busca)
 
 src/pages/produtos/           catálogo, categoria e produto
-src/pages/orcamento.astro     lista de orçamento
+src/pages/orcamento.astro     lista de orçamento + formulário
+src/pages/politica-de-privacidade.astro
+src/pages/api/orcamento.ts    ÚNICA rota sob demanda; as outras são estáticas
 src/pages/indice-de-busca.json.ts   índice da busca, gerado em build
 
 src/components/
@@ -221,6 +293,7 @@ src/components/
   home/                       as 8 seções da home, na ordem do CONTEUDO.md
   catalog/                    Breadcrumb, ProductCard, CatalogFilter, GaugeTable
   quote/QuoteList.astro       lista editável de /orcamento
+  quote/QuoteForm.astro       formulário do pedido
   QuoteBar.astro              barra fixa, única ilha global
   QuickSearch.astro           busca rápida (custom element, sem framework)
   Header · MobileMenu · Footer · DraftNotice · Pending
@@ -272,7 +345,7 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 3 — Home | ✅ |
 | 4 — Catálogo | ✅ |
 | 5 — Lista de orçamento | ✅ |
-| 6 — Formulário, servidor e LGPD | ⬜ bloqueada pela cor de feedback e pela pergunta 10 |
+| 6 — Formulário, servidor e LGPD | ◐ implementado e verificado, EXCETO a entrega do e-mail — falta a chave do Resend |
 | 7 — Calculadora de peso | ⬜ |
 | 8 — Páginas restantes | ⬜ |
 | 9 — SEO técnico | ⬜ |

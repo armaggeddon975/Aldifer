@@ -1,0 +1,595 @@
+---
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import { formCopy } from '@/lib/form-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * Formulário do pedido de orçamento.
+ *
+ * Campos exatamente conforme a tabela da seção 7 do docs/CONTEUDO.md. Cada
+ * campo além destes derruba conversão, então não acrescente CPF nem "como nos
+ * conheceu".
+ *
+ * SEM JAVASCRIPT ESTE FORMULÁRIO NÃO FUNCIONA, e isso é inerente ao desenho:
+ * a lista de medidas mora no localStorage do navegador, então não existe
+ * requisição sem script que a carregue. O <noscript> da própria página
+ * /orcamento explica isso e oferece o telefone.
+ *
+ * Validação por Zod, não pela nativa do navegador: as mensagens precisam estar
+ * em português dizendo o que fazer. O `required` fica nos campos de propósito —
+ * ele informa o leitor de tela — mas o form leva `novalidate` para o navegador
+ * não interceptar com a mensagem genérica dele.
+ */
+const site = await getSite();
+
+// O widget do Turnstile só entra se a chave existir. Sem ela o servidor aceita
+// o envio e carimba o aviso no assunto do e-mail — ver src/lib/turnstile.ts.
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+---
+
+<quote-form
+  data-endpoint="/api/orcamento"
+  data-phone={site.phone}
+  data-phone-e164={site.phoneE164}
+  data-whatsapp={site.whatsapp ?? undefined}
+>
+  {/* Lista vazia: o pedido não tem o que enviar. */}
+  <div class="quote-form__notice" hidden data-no-items>
+    <p class="font-semibold">{formCopy.emptyListHeading}</p>
+    <p class="mt-2">{formCopy.emptyListBody}</p>
+  </div>
+
+  <form novalidate data-form>
+    <Heading level={2} size={3}>{formCopy.heading}</Heading>
+    <p class="mt-2 max-w-2xl text-surface-fg-soft">{formCopy.description}</p>
+
+    {/* Resumo anunciado ao leitor de tela quando a validação falha. */}
+    <p class="sr-only" role="status" aria-live="polite" data-summary></p>
+
+    <div class="quote-form__grid">
+      <p class="quote-form__field">
+        <label for="qf-name">{formCopy.labelName}</label>
+        <input id="qf-name" name="name" type="text" autocomplete="name" required
+          aria-describedby="qf-name-erro" />
+        <span class="quote-form__error" id="qf-name-erro" data-error-for="name"></span>
+      </p>
+
+      <p class="quote-form__field">
+        <label for="qf-company">
+          {formCopy.labelCompany} <span class="quote-form__optional">{formCopy.optional}</span>
+        </label>
+        <input id="qf-company" name="company" type="text" autocomplete="organization"
+          aria-describedby="qf-company-erro" />
+        <span class="quote-form__error" id="qf-company-erro" data-error-for="company"></span>
+      </p>
+
+      <p class="quote-form__field">
+        <label for="qf-email">{formCopy.labelEmail}</label>
+        <input id="qf-email" name="email" type="email" autocomplete="email" inputmode="email"
+          required aria-describedby="qf-email-erro" />
+        <span class="quote-form__error" id="qf-email-erro" data-error-for="email"></span>
+      </p>
+
+      <p class="quote-form__field">
+        <label for="qf-phone">{formCopy.labelPhone}</label>
+        <input id="qf-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required
+          aria-describedby="qf-phone-dica qf-phone-erro" />
+        <span class="quote-form__hint" id="qf-phone-dica">{formCopy.phoneHint}</span>
+        <span class="quote-form__error" id="qf-phone-erro" data-error-for="phone"></span>
+      </p>
+
+      <p class="quote-form__field">
+        <label for="qf-city">
+          {formCopy.labelCity} <span class="quote-form__optional">{formCopy.optional}</span>
+        </label>
+        <input id="qf-city" name="city" type="text" autocomplete="address-level2"
+          aria-describedby="qf-city-erro" />
+        <span class="quote-form__error" id="qf-city-erro" data-error-for="city"></span>
+      </p>
+    </div>
+
+    <p class="quote-form__field quote-form__field--wide">
+      <label for="qf-notes">
+        {formCopy.labelNotes} <span class="quote-form__optional">{formCopy.optional}</span>
+      </label>
+      <textarea id="qf-notes" name="notes" rows="4" autocomplete="off"
+        aria-describedby="qf-notes-dica qf-notes-erro"></textarea>
+      <span class="quote-form__hint" id="qf-notes-dica">{formCopy.notesHint}</span>
+      <span class="quote-form__error" id="qf-notes-erro" data-error-for="notes"></span>
+    </p>
+
+    {/*
+      Honeypot. Escondido por CSS e NÃO por type="hidden": campo hidden não é
+      preenchido por robô, então não pegaria ninguém. tabindex="-1" tira da
+      ordem de tabulação e aria-hidden esconde do leitor de tela, para não
+      confundir quem navega por áudio.
+    */}
+    <p class="quote-form__honeypot" aria-hidden="true">
+      <label for="qf-website">{formCopy.labelHoneypot}</label>
+      <input id="qf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+    </p>
+
+    <p class="quote-form__consent">
+      {/* NÃO pré-marcado: consentimento LGPD tem de ser ato do titular. */}
+      <input id="qf-consent" name="consent" type="checkbox" required
+        aria-describedby="qf-consent-erro" />
+      <label for="qf-consent">
+        {formCopy.labelConsent.replace(' Li a Política de Privacidade.', ' ')}
+        <a href="/politica-de-privacidade">Li a Política de Privacidade</a>.
+      </label>
+      <span class="quote-form__error" id="qf-consent-erro" data-error-for="consent"></span>
+    </p>
+
+    {
+      turnstileSiteKey && (
+        <div class="mt-6" data-turnstile data-sitekey={turnstileSiteKey}>
+          <div class="cf-turnstile" data-widget />
+        </div>
+      )
+    }
+
+    <div class="mt-8 flex flex-wrap items-center gap-4">
+      <button type="submit" class="quote-form__submit" data-submit>{formCopy.submitIdle}</button>
+    </div>
+
+    {/* Falha de envio. Os dados digitados permanecem no formulário. */}
+    <div class="quote-form__notice quote-form__notice--error" hidden data-send-error>
+      <p class="font-semibold" data-send-error-heading>{formCopy.errorHeading}</p>
+      <p class="mt-2" data-send-error-body></p>
+    </div>
+  </form>
+
+  {/* Sucesso. Substitui o formulário, não empilha mensagem acima dele. */}
+  <div class="quote-form__success" hidden data-success>
+    <Heading level={2} size={3}>{formCopy.successHeading}</Heading>
+    <p class="mt-3">{formCopy.successBody}</p>
+    <div class="mt-6 flex flex-wrap gap-4">
+      <a class="quote-form__submit" data-whatsapp-link hidden>{formCopy.successWhatsappLabel}</a>
+      <Button href="/produtos" variant="secondary">{formCopy.successNewLabel}</Button>
+    </div>
+  </div>
+</quote-form>
+
+{turnstileSiteKey && (
+  <script
+    is:inline
+    async
+    defer
+    src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+  />
+)}
+
+<style>
+  .quote-form__grid {
+    display: grid;
+    gap: var(--space-16);
+    margin-top: var(--space-24);
+  }
+
+  @media (min-width: 40rem) {
+    .quote-form__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .quote-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .quote-form__field--wide {
+    margin-top: var(--space-16);
+    max-width: 44rem;
+  }
+
+  .quote-form__field label {
+    font-size: var(--size-sm);
+    font-weight: 600;
+    color: var(--surface-fg);
+  }
+
+  .quote-form__optional {
+    font-weight: 400;
+    color: var(--surface-fg-soft);
+  }
+
+  .quote-form__field input,
+  .quote-form__field textarea {
+    min-height: var(--touch-target);
+    padding: var(--space-8) var(--space-12);
+    font-family: var(--family-text);
+    font-size: var(--size-base);
+    color: var(--ink);
+    background-color: var(--paper);
+    border: 1px solid var(--ink-soft);
+    border-radius: var(--corner-control);
+  }
+
+  .quote-form__field textarea {
+    min-height: 6rem;
+    resize: vertical;
+  }
+
+  /* Campo com erro: borda mais grossa E cor. A WCAG proíbe cor como único
+     meio de transmitir informação, então a espessura carrega a mensagem
+     junto — e o texto do erro fica abaixo, sempre. */
+  .quote-form__field input[aria-invalid='true'],
+  .quote-form__field textarea[aria-invalid='true'] {
+    border-width: 2px;
+    border-color: var(--surface-danger);
+  }
+
+  .quote-form__hint {
+    font-size: var(--size-xs);
+    color: var(--surface-fg-soft);
+  }
+
+  .quote-form__error {
+    font-size: var(--size-sm);
+    font-weight: 500;
+    color: var(--surface-danger);
+  }
+
+  .quote-form__error:empty {
+    display: none;
+  }
+
+  /* Honeypot: fora da tela, sem display:none — campo com display:none não é
+     preenchido por robô, e aí ele não pegaria nada. */
+  .quote-form__honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .quote-form__consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-8) var(--space-12);
+    align-items: start;
+    margin-top: var(--space-24);
+    max-width: 44rem;
+  }
+
+  .quote-form__consent input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.15rem;
+    accent-color: var(--accent);
+  }
+
+  .quote-form__consent label {
+    font-size: var(--size-sm);
+    color: var(--surface-fg);
+  }
+
+  .quote-form__consent a {
+    color: var(--surface-hover);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .quote-form__consent .quote-form__error {
+    grid-column: 2;
+  }
+
+  .quote-form__submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--touch-target-lg);
+    padding-inline: var(--space-32);
+    font-family: var(--family-text);
+    font-size: var(--size-lg);
+    font-weight: 600;
+    color: var(--cta-fg);
+    background-color: var(--cta-bg);
+    border: 0;
+    border-radius: var(--corner-control);
+    cursor: pointer;
+  }
+
+  .quote-form__submit:hover {
+    background-color: var(--cta-bg-hover);
+  }
+
+  .quote-form__submit[disabled] {
+    opacity: 0.65;
+    cursor: progress;
+  }
+
+  .quote-form__notice {
+    max-width: 68ch;
+    margin-top: var(--space-24);
+    padding: var(--space-16);
+    border-inline-start: 4px solid var(--accent);
+    background-color: var(--paper-alt);
+    color: var(--ink);
+    font-size: var(--size-sm);
+  }
+
+  .quote-form__notice--error {
+    border-inline-start-color: var(--surface-danger);
+  }
+
+  .quote-form__success {
+    max-width: 68ch;
+    padding: var(--space-24);
+    border: 1px solid var(--surface-border);
+    border-inline-start: 4px solid var(--surface-success);
+  }
+</style>
+
+<script>
+  import { formCopy } from '@/lib/form-content';
+  import { QUOTE_CHANGED, clear, getAll } from '@/lib/quote';
+  import { fieldErrors, quoteRequestSchema } from '@/lib/schemas';
+
+  type Estado = 'ocioso' | 'enviando' | 'sucesso' | 'erro';
+
+  class QuoteFormElement extends HTMLElement {
+    #form!: HTMLFormElement;
+    #submit!: HTMLButtonElement;
+    #summary!: HTMLElement;
+    #success!: HTMLElement;
+    #sendError!: HTMLElement;
+    #noItems!: HTMLElement;
+    #loadedAt = Date.now();
+    #turnstileToken: string | undefined;
+
+    // --- estado da interface -------------------------------------------------
+
+    #setEstado(estado: Estado, detalhe?: { message?: string; whatsappText?: string }) {
+      this.#submit.disabled = estado === 'enviando';
+      this.#submit.textContent =
+        estado === 'enviando' ? formCopy.submitSending : formCopy.submitIdle;
+
+      this.#sendError.hidden = estado !== 'erro';
+      this.#success.hidden = estado !== 'sucesso';
+      this.#form.hidden = estado === 'sucesso';
+
+      if (estado === 'erro') {
+        const body = this.#sendError.querySelector('[data-send-error-body]');
+        if (body) {
+          body.textContent =
+            detalhe?.message ?? formCopy.errorBodyTemplate(this.dataset.phone ?? '');
+        }
+      }
+
+      if (estado === 'sucesso') {
+        this.#mostrarWhatsapp(detalhe?.whatsappText ?? '');
+        // A lista foi enviada: mantê-la faria o cliente reenviar o mesmo pedido.
+        clear();
+      }
+    }
+
+    #mostrarWhatsapp(texto: string) {
+      const link = this.#success.querySelector('[data-whatsapp-link]');
+      if (!(link instanceof HTMLAnchorElement)) return;
+
+      const numero = this.dataset.whatsapp;
+      // Sem o número confirmado pela Aldifer, o botão não aparece: link para
+      // wa.me sem número não leva a lugar nenhum.
+      if (!numero || !texto) {
+        link.hidden = true;
+        return;
+      }
+
+      link.href = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+      link.rel = 'noopener';
+      link.target = '_blank';
+      link.hidden = false;
+    }
+
+    // --- erros por campo ----------------------------------------------------
+
+    #limparErros() {
+      for (const span of this.#form.querySelectorAll('[data-error-for]')) {
+        span.textContent = '';
+      }
+      for (const field of this.#form.querySelectorAll('[aria-invalid]')) {
+        field.removeAttribute('aria-invalid');
+      }
+      this.#summary.textContent = '';
+    }
+
+    #mostrarErros(erros: Partial<Record<string, string>>) {
+      this.#limparErros();
+
+      let primeiro: HTMLElement | null = null;
+      let total = 0;
+
+      for (const [campo, mensagem] of Object.entries(erros)) {
+        if (!mensagem) continue;
+        total += 1;
+
+        const span = this.#form.querySelector(`[data-error-for="${campo}"]`);
+        if (span) span.textContent = mensagem;
+
+        const input = this.#form.elements.namedItem(campo);
+        if (input instanceof HTMLElement) {
+          input.setAttribute('aria-invalid', 'true');
+          primeiro ??= input;
+        }
+      }
+
+      if (total > 0) {
+        this.#summary.textContent = formCopy.errorSummaryTemplate(total);
+        // Leva o foco ao primeiro campo com problema: sem isso, num formulário
+        // de seis campos, o usuário tem de caçar o erro.
+        primeiro?.focus();
+      }
+    }
+
+    // --- envio --------------------------------------------------------------
+
+    #coletar() {
+      const dados = new FormData(this.#form);
+      const texto = (campo: string) => {
+        const valor = dados.get(campo);
+        const limpo = typeof valor === 'string' ? valor.trim() : '';
+        return limpo === '' ? undefined : limpo;
+      };
+
+      return {
+        name: texto('name') ?? '',
+        company: texto('company'),
+        email: texto('email') ?? '',
+        phone: texto('phone') ?? '',
+        city: texto('city'),
+        notes: texto('notes'),
+        // Checkbox desmarcado não é enviado, daí a comparação explícita.
+        consent: dados.get('consent') !== null,
+        website: (dados.get('website') as string | null) ?? '',
+        loadedAt: this.#loadedAt,
+        turnstileToken: this.#turnstileToken,
+        items: getAll(),
+      };
+    }
+
+    async #enviar() {
+      const payload = this.#coletar();
+
+      // Valida com o MESMO schema que o servidor usa.
+      const parsed = quoteRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        this.#mostrarErros(fieldErrors(parsed.error));
+        this.#setEstado('ocioso');
+        return;
+      }
+
+      this.#limparErros();
+      this.#setEstado('enviando');
+
+      try {
+        const response = await fetch(this.dataset.endpoint ?? '/api/orcamento', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(parsed.data),
+        });
+
+        const resultado = (await response.json()) as {
+          ok?: boolean;
+          message?: string;
+          fieldErrors?: Partial<Record<string, string>>;
+          whatsappText?: string;
+        };
+
+        if (resultado.ok) {
+          this.#setEstado('sucesso', { whatsappText: resultado.whatsappText });
+          return;
+        }
+
+        // Erro do servidor NUNCA limpa o formulário: o usuário digitou tudo
+        // aquilo e não vai digitar de novo.
+        if (resultado.fieldErrors) this.#mostrarErros(resultado.fieldErrors);
+        this.#setEstado('erro', { message: resultado.message });
+      } catch {
+        // Rede caiu, ou o usuário está no 4G da obra sem sinal.
+        this.#setEstado('erro');
+      }
+    }
+
+    // --- ciclo de vida ------------------------------------------------------
+
+    #sincronizarLista = () => {
+      const vazia = getAll().length === 0;
+      // Não esconde o formulário depois do sucesso, quando a lista fica vazia
+      // justamente porque o pedido foi enviado.
+      if (!this.#success.hidden) return;
+      this.#noItems.hidden = !vazia;
+      this.#form.hidden = vazia;
+    };
+
+    connectedCallback() {
+      const form = this.querySelector('[data-form]');
+      const submit = this.querySelector('[data-submit]');
+      const summary = this.querySelector('[data-summary]');
+      const success = this.querySelector('[data-success]');
+      const sendError = this.querySelector('[data-send-error]');
+      const noItems = this.querySelector('[data-no-items]');
+
+      if (
+        !(form instanceof HTMLFormElement) ||
+        !(submit instanceof HTMLButtonElement) ||
+        !(summary instanceof HTMLElement) ||
+        !(success instanceof HTMLElement) ||
+        !(sendError instanceof HTMLElement) ||
+        !(noItems instanceof HTMLElement)
+      ) {
+        return;
+      }
+
+      this.#form = form;
+      this.#submit = submit;
+      this.#summary = summary;
+      this.#success = success;
+      this.#sendError = sendError;
+      this.#noItems = noItems;
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void this.#enviar();
+      });
+
+      this.#sincronizarLista();
+      document.addEventListener(QUOTE_CHANGED, this.#sincronizarLista);
+
+      this.#montarTurnstile();
+    }
+
+    disconnectedCallback() {
+      document.removeEventListener(QUOTE_CHANGED, this.#sincronizarLista);
+    }
+
+    /** Renderiza o widget do Turnstile quando o script deles chega. */
+    #montarTurnstile() {
+      const holder = this.querySelector('[data-turnstile]');
+      if (!(holder instanceof HTMLElement)) return;
+
+      const sitekey = holder.dataset.sitekey;
+      const widget = holder.querySelector('[data-widget]');
+      if (!sitekey || !(widget instanceof HTMLElement)) return;
+
+      const render = () => {
+        const turnstile = (
+          window as unknown as {
+            turnstile?: {
+              render: (el: HTMLElement, opts: Record<string, unknown>) => void;
+            };
+          }
+        ).turnstile;
+
+        if (!turnstile) return false;
+        turnstile.render(widget, {
+          sitekey,
+          callback: (token: string) => {
+            this.#turnstileToken = token;
+          },
+          'expired-callback': () => {
+            this.#turnstileToken = undefined;
+          },
+          language: 'pt-br',
+        });
+        return true;
+      };
+
+      if (render()) return;
+      // O script é async: espera ele aparecer, com desistência para não
+      // tentar para sempre.
+      let tentativas = 0;
+      const timer = window.setInterval(() => {
+        tentativas += 1;
+        if (render() || tentativas > 40) window.clearInterval(timer);
+      }, 250);
+    }
+  }
+
+  if (!customElements.get('quote-form')) {
+    customElements.define('quote-form', QuoteFormElement);
+  }
+</script>

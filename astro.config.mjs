@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import vercel from '@astrojs/vercel';
 import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
@@ -14,6 +15,14 @@ export default defineConfig({
   // Medido na Etapa 3, o runtime do React custava 57,2 KB gzip para hospedar
   // 1,8 KB de busca, e a QuoteBar global da Etapa 5 espalharia esse custo por
   // todas as páginas. O público acessa de Android de entrada em 4G de obra.
+  // Adapter da Vercel, necessário para `export const prerender = false`, que
+  // não existe em saída puramente estática.
+  //
+  // A saída CONTINUA estática por padrão: só as rotas que marcam
+  // `prerender = false` são renderizadas sob demanda — hoje apenas
+  // /api/orcamento. As 10 páginas do site seguem HTML pré-gerado em build.
+  adapter: vercel(),
+
   integrations: [sitemap()],
 
   vite: {

@@ -67,8 +67,4 @@ export const quotePage = {
   announceStorageFailed:
     'Não foi possível salvar a alteração. Verifique se o navegador permite armazenamento local.',
 
-  /** O formulário de envio é a Etapa 6. */
-  formPendingHeading: 'Envio do pedido',
-  formPendingBody:
-    'O formulário de envio entra na próxima etapa da construção. Até lá, use o telefone para fechar o pedido.',
 } as const;

@@ -1,5 +1,6 @@
 ---
 import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
+import QuoteForm from '@/components/quote/QuoteForm.astro';
 import QuoteList from '@/components/quote/QuoteList.astro';
 import Heading from '@/components/ui/Heading.astro';
 import Section from '@/components/ui/Section.astro';
@@ -34,15 +35,15 @@ const site = await getSite();
     </div>
   </Section>
 
-  <Section tone="alt" spacing="md" labelledBy="envio">
-    <div class="max-w-2xl">
-      <Heading level={2} id="envio">{quotePage.formPendingHeading}</Heading>
-      <p class="mt-4 text-surface-fg-soft">{quotePage.formPendingBody}</p>
-      <p class="mt-6">
-        <a href={`tel:${site.phoneE164}`} class="font-mono text-lg hover:text-surface-hover">
-          {site.phone}
-        </a>
-      </p>
-    </div>
+  <Section tone="alt" spacing="md">
+    <QuoteForm />
+
+    {/* Caminho alternativo, sempre disponível: quem preferir falar liga. */}
+    <p class="mt-10 text-sm text-surface-fg-soft">
+      Prefere falar? <a
+        href={`tel:${site.phoneE164}`}
+        class="font-mono hover:text-surface-hover">{site.phone}</a
+      >
+    </p>
   </Section>
 </Base>

@@ -1,0 +1,94 @@
+---
+import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
+import Pending from '@/components/Pending.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import { policySections, privacyPage } from '@/lib/privacy-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * Política de Privacidade.
+ *
+ * A data de atualização vem do BUILD. É a informação verdadeira disponível: o
+ * texto muda quando o repositório muda, e o repositório é publicado por build.
+ * Data fixa no código viraria mentira no primeiro ajuste.
+ */
+const site = await getSite();
+
+const updatedAt = new Date().toLocaleDateString('pt-BR', {
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+});
+---
+
+<Base title={privacyPage.seoTitle} description={privacyPage.seoDescription}>
+  <Section tone="light" spacing="md" labelledBy="politica">
+    <Breadcrumb items={[{ label: 'Política de Privacidade' }]} />
+
+    <div class="mt-6 max-w-2xl">
+      <Heading level={1} id="politica">{privacyPage.heading}</Heading>
+      <p class="mt-4 font-mono text-sm text-surface-fg-soft">
+        {privacyPage.updatedLabel}: {updatedAt}
+      </p>
+      <p class="mt-6 text-lg text-surface-fg-soft">{privacyPage.intro}</p>
+    </div>
+
+    <Pending
+      label="Revisão da Política de Privacidade pela Aldifer."
+      detail="Esta é uma MINUTA. O texto descreve com precisão o que o site tecnicamente faz, mas documento legal precisa de revisão de quem responde por ele. Faltam também o CNPJ do controlador e a definição do prazo de retenção do lead."
+    />
+
+    {
+      !site.cnpj && (
+        <Pending
+          label="CNPJ da Aldifer."
+          detail="A identificação do controlador na política de privacidade e no JSON-LD depende dele."
+        />
+      )
+    }
+
+    {/* Índice: a política tem 11 seções, e quem procura um assunto específico
+        não deveria ter de rolar tudo. */}
+    <nav aria-labelledby="indice-politica" class="mt-10 max-w-2xl">
+      <h2 id="indice-politica" class="text-sm font-semibold text-surface-fg">Nesta página</h2>
+      <ol class="mt-3 flex flex-col gap-2 text-sm">
+        {
+          policySections.map((section) => (
+            <li>
+              <a
+                href={`#${section.id}`}
+                class="text-surface-fg-soft underline underline-offset-4 hover:text-surface-hover"
+              >
+                {section.heading}
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+
+    <div class="mt-12 flex max-w-2xl flex-col gap-10">
+      {
+        policySections.map((section) => (
+          <section aria-labelledby={section.id}>
+            <Heading level={2} size={3} id={section.id}>{section.heading}</Heading>
+
+            {section.paragraphs.map((paragraph) => (
+              <p class="mt-3 text-surface-fg-soft">{paragraph}</p>
+            ))}
+
+            {section.list && (
+              <ul class="mt-4 flex flex-col gap-2 text-surface-fg-soft">
+                {section.list.map((item) => (
+                  <li class="border-l-2 border-surface-border pl-3">{item}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))
+      }
+    </div>
+  </Section>
+</Base>
