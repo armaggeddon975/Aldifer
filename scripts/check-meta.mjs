@@ -13,7 +13,7 @@ const RAIZ = 'dist/client';
 
 const paginas = readdirSync(RAIZ, { recursive: true, withFileTypes: true })
   .filter((e) => e.isFile() && e.name.endsWith('.html'))
-  .map((e) => join(e.parentPath ?? e.path, e.name).replaceAll('\\', '/'))
+  .map((e) => join(e.parentPath, e.name).replaceAll('\\', '/'))
   .sort();
 
 if (paginas.length === 0) {

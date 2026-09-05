@@ -265,7 +265,7 @@ for (const pair of HUES) {
 
 const FILES = readdirSync('src', { recursive: true, withFileTypes: true })
   .filter((e) => e.isFile() && /\.(astro|css)$/.test(e.name))
-  .map((e) => join(e.parentPath ?? e.path, e.name));
+  .map((e) => join(e.parentPath, e.name));
 
 /**
  * Vazio desde 04/09/2026, e é para continuar assim.

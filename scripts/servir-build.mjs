@@ -10,7 +10,7 @@
 // quebra o site quando está errada.
 //
 //   npm run servir
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 
@@ -46,7 +46,42 @@ const resolver = (url) => {
   return null;
 };
 
+/**
+ * Redirects do vercel.json, aplicados aqui também.
+ *
+ * A Vercel só os aplica em produção, e sem isto os 117 redirects da Etapa 10
+ * seriam verificados apenas como CONFIGURAÇÃO — nunca como comportamento.
+ * Aqui dá para pedir /barra-chata.php e ver o 301 chegar, seguir o Location e
+ * confirmar que o destino responde 200. É o que o aceite chama de "nenhuma URL
+ * antiga em 404".
+ *
+ * NÃO é uma reimplementação da Vercel: só o casamento exato de caminho, que é
+ * tudo o que este vercel.json usa — nenhum redirect dele tem regex.
+ */
+const redirects = new Map();
+try {
+  const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
+  for (const r of config.redirects ?? []) {
+    redirects.set(r.source, { to: r.destination, status: r.statusCode ?? 308 });
+  }
+  console.log(`${redirects.size} redirects carregados do vercel.json`);
+} catch (erro) {
+  // Diz QUAL foi o erro. A primeira versão engolia em silêncio e eu perdi
+  // tempo achando que os 117 redirects estavam errados quando o problema era
+  // um import faltando — exatamente o defeito que o parser de contraste da
+  // Etapa 1 tinha.
+  console.error(`vercel.json não lido: ${String(erro).slice(0, 120)}`);
+  console.error('servindo SEM redirects — o teste de redirects vai reprovar.');
+}
+
 createServer((req, res) => {
+  const caminhoPedido = (req.url ?? '/').split('?')[0];
+  const redirect = redirects.get(caminhoPedido);
+  if (redirect) {
+    res.writeHead(redirect.status, { location: redirect.to }).end();
+    return;
+  }
+
   const arquivo = resolver(req.url ?? '/');
 
   if (!arquivo) {

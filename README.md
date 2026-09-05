@@ -32,6 +32,13 @@ Enquanto estiverem em rascunho:
 tabelas em `src/content/products/`, conferir linha por linha e só então trocar
 `status: 'rascunho'` por `status: 'publicado'`.
 
+> **Consequência na migração de URLs (Etapa 10):** enquanto os produtos estiverem em
+> rascunho, 69 das 117 URLs antigas param na página de CATEGORIA em vez da página de
+> produto. Não é 404 — o gerador de redirects confere cada destino contra o build e
+> rebaixa o que não existe — mas é um clique a mais para quem buscou "barra chata" no
+> Google. Depois de publicar, rodar `npm run redirects`. Ver
+> [`docs/POS-DEPLOY.md`](./docs/POS-DEPLOY.md).
+
 ### 2. Tabelas de usina que ainda faltam
 
 Quatro produtos têm `weightSource: 'tabela-usina'`, porque não existe fórmula de peso
@@ -165,6 +172,81 @@ só acrescenta as sugestões, e o índice de 22 KB é baixado no primeiro toque 
 A contrapartida aceita: código de formulário e de calculadora fica mais verboso.
 
 O registro completo, com o motivo, está na nota de stack do [`CLAUDE.md`](./CLAUDE.md).
+
+---
+
+## Os 117 redirects, e o que o site antigo escondia
+
+O `CONTEUDO.md` estimava "~100 páginas-satélite" e listava umas 45 explicitamente.
+O `PROMPTS.md` manda não confiar nessa lista, e estava certo:
+**o site antigo tem `sitemap.xml`, com 117 URLs.**
+
+`npm run urls-antigas` rastreia o site seguindo todo `href` `.php` do domínio até
+esgotar, e depois compara com o sitemap. As duas fontes deram exatamente as mesmas
+117 URLs, e todas respondem 200 — nenhuma já estava quebrada. Um rastreamento em vez
+dos quatro `curl` que o PROMPTS.md sugere porque as páginas-satélite se linkam entre
+si: partir de quatro páginas sem seguir os links acharia parte delas.
+
+O inventário está em [`docs/urls-antigas.txt`](./docs/urls-antigas.txt) e é o
+contrato: toda linha ali precisa de destino.
+
+### Quatro coisas que só apareceram lendo as páginas
+
+| URL antiga | O que o título dizia | Destino |
+|---|---|---|
+| `/chapa-antiderrapante.php` | "Chapa Antiderrapante" | `chapa-xadrez` — é o nome comercial da mesma chapa |
+| `/perfil-de-ferro-em-u.php` | "Perfil de Ferro em U" | `perfil-u`, não a categoria toda |
+| `/viga-u-preco.php` | "Viga U Preço" | `perfil-u` |
+| `/responsivo.php` | **vazio** (`<title> - Aldifer</title>`, único h2 com `display:none`) | `/` — sobra de desenvolvimento que entrou no sitemap. Mandá-la para o catálogo daria a ela um destino comercial que nunca teve |
+
+### Uma contradição no CONTEUDO.md, resolvida
+
+A seção 9 lista as regras por radical com **"contém viga ou perfil"** antes de
+**"contém cantoneira"**. Mas o mapa explícito da MESMA seção manda
+`/perfil-cantoneira.php` para a cantoneira — o que aquela ordem não produz.
+
+As duas coisas se contradizem. A leitura que resolve é **mais específico primeiro**,
+então `cantoneira` foi movida para o topo. Sem isso, qualquer
+`perfil-cantoneira-*.php` cairia na categoria em vez do produto. Há um teste que
+trava a ordem, justamente para impedir que alguém a "corrija" de volta para o que
+está escrito no documento.
+
+(Detalhe que a ordem também resolve sem esforço: **"telha" não contém "tela"** como
+substring — t-e-l-h-a contra t-e-l-a. As duas regras não competem.)
+
+### O destino é conferido contra o build, não presumido
+
+Esta é a parte que evita o pior erro possível aqui. **Um 301 para uma página que não
+existe é pior que um 404 direto:** o Google registra soft 404, segue o
+redirecionamento e ainda gasta orçamento de rastreamento no caminho.
+
+Hoje os 27 produtos estão em rascunho, então **nenhuma** página de produto é gerada
+em produção. O gerador lê as rotas que o build realmente produziu e rebaixa o que não
+existe, subindo a hierarquia: produto → categoria → `/produtos` → `/`. São 69 URLs
+que hoje param na categoria.
+
+Quando a planilha da Aldifer chegar, rodar `npm run redirects` de novo faz 53 delas
+voltarem ao destino preciso. Verificado de ponta a ponta: publiquei os rascunhos
+temporariamente, regerei o mapa e confirmei que a cobertura segue 100% e nenhum
+caminho ganha um segundo salto. Trocar o destino de um 301 não cria cadeia.
+
+O passo a passo está em [`docs/POS-DEPLOY.md`](./docs/POS-DEPLOY.md).
+
+### Verificado como comportamento, não como configuração
+
+`npm run check-redirects` confere o `vercel.json`. Mas configuração certa não é o
+mesmo que comportamento certo, então `npm run servir` passou a **aplicar os redirects
+do `vercel.json`**, e `npm run testar-redirects` segue as 117 URLs uma por uma:
+
+```
+117/117 URLs antigas: 301 em um salto, destino 200
+saltos até o 200: { '1': 117 }
+nenhum 404, nenhuma cadeia, nenhum loop — verificado seguindo cada URL.
+```
+
+O `{ 1: 117 }` é a prova de que não há cadeia: toda URL chega ao 200 em um salto.
+O mesmo script aponta para produção com `BASE=https://www.aldifer.com.br`, e é o
+primeiro item do dia do deploy.
 
 ---
 
@@ -546,6 +628,10 @@ npm run dev
 | `npm run meta` | Confere title, description, canonical, og:image e h1 único em TODA rota do build. Reprova em título repetido. |
 | `npm run assets` | Regera favicon, ícones e og-image a partir do logotipo. Rode ao trocar o logo. |
 | `npm run servir` | Serve `dist/client` em `:4330`. Existe porque a CSP é um `<meta>` gerado no BUILD: o servidor de desenvolvimento não a emite e `astro preview` não funciona com o adapter da Vercel. |
+| `npm run urls-antigas` | Rastreia aldifer.com.br e reescreve `docs/urls-antigas.txt`. Rodar de novo só se o site antigo mudar. |
+| `npm run redirects` | Gera os 117 redirects 301 no `vercel.json`, conferindo cada destino contra as rotas que o build produziu. **Exige `npm run build` antes.** |
+| `npm run check-redirects` | Confere 100% de cobertura, sem cadeia, sem loop, todo destino existente, todos 301. |
+| `npm run testar-redirects` | SEGUE as 117 URLs de verdade contra `npm run servir` e confirma 301 em um salto com destino 200. Aceita `BASE=` para apontar para produção. |
 | `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
 
 ---
@@ -651,7 +737,7 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 7 — Calculadora de peso | ✅ |
 | 8 — Páginas restantes | ✅ |
 | 9 — SEO técnico | ✅ |
-| 10 — Migração de URLs | ⬜ |
+| 10 — Migração de URLs | ✅ |
 | 11 — CMS Keystatic | ⬜ |
 | 12 — Portões de qualidade | ⬜ |
 | 13 — Deploy e entrega | ⬜ |
