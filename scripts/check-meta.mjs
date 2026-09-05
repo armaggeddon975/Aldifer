@@ -11,6 +11,17 @@ import { join } from 'node:path';
 
 const RAIZ = 'dist/client';
 
+/**
+ * Rotas que NÃO são páginas de conteúdo e por isso não passam pelo portão.
+ *
+ * Só `/admin`, hoje: é um stub de redirecionamento para `/keystatic`, com
+ * `<meta refresh>`, `noindex` e um link visível. Não tem h1 nem description de
+ * propósito — description serve para o resultado de busca, e esta rota está
+ * bloqueada no robots.txt e fora do sitemap. Exigir h1 dela levaria a
+ * inventar um título só para calar o verificador.
+ */
+const FORA_DO_PORTAO = [/^\/admin\/?$/];
+
 const paginas = readdirSync(RAIZ, { recursive: true, withFileTypes: true })
   .filter((e) => e.isFile() && e.name.endsWith('.html'))
   .map((e) => join(e.parentPath, e.name).replaceAll('\\', '/'))
@@ -32,8 +43,13 @@ for (const arquivo of paginas) {
     canonical: pegar(html, /<link rel="canonical" href="([^"]*)"/),
     ogImage: pegar(html, /<meta property="og:image" content="([^"]*)"/),
     noindex: /name="robots" content="noindex/.test(html),
+    isenta: false,
     h1: (html.match(/<h1[\s>]/g) ?? []).length,
   });
+}
+
+for (const l of linhas) {
+  l.isenta = FORA_DO_PORTAO.some((re) => re.test(l.rota));
 }
 
 const falhas = [];
@@ -42,6 +58,7 @@ const curtas = [];
 const duplicado = (campo) => {
   const vistos = new Map();
   for (const l of linhas) {
+    if (l.isenta) continue;
     const valor = l[campo];
     if (!valor) {
       falhas.push(`${l.rota} — sem ${campo}`);
@@ -57,6 +74,8 @@ duplicado('title');
 duplicado('description');
 
 for (const l of linhas) {
+  if (l.isenta) continue;
+
   if (!l.canonical) falhas.push(`${l.rota} — sem canonical`);
   if (!l.ogImage) falhas.push(`${l.rota} — sem og:image`);
   if (l.h1 !== 1) falhas.push(`${l.rota} — ${l.h1} elementos h1 (deve ser exatamente 1)`);
@@ -90,6 +109,12 @@ for (const l of linhas) {
     `  ${String(l.title?.length ?? 0).padStart(3)} ${String(l.description?.length ?? 0).padStart(3)} ` +
       `${String(l.h1).padStart(3)} ${l.noindex ? '  sim' : '   - '}  ${l.rota}`,
   );
+}
+
+const isentas = linhas.filter((l) => l.isenta);
+if (isentas.length > 0) {
+  console.log('\nfora do portão (não é página de conteúdo):');
+  for (const l of isentas) console.log(`  . ${l.rota}  —  "${l.title}"`);
 }
 
 console.log('');

@@ -1,5 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
+import keystatic from '@keystatic/astro';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
 import tailwindcss from '@tailwindcss/vite';
@@ -141,6 +143,8 @@ export default defineConfig({
   },
 
   integrations: [
+    react(),
+    keystatic(),
     sitemap({
       /**
        * Página `noindex` NÃO entra no sitemap.
@@ -155,9 +159,14 @@ export default defineConfig({
        * roda antes de haver HTML para inspecionar.
        */
       filter: (page) =>
-        !['/mensagem-enviada/', '/mensagem-nao-enviada/'].some((rota) =>
-          page.endsWith(rota),
-        ),
+        ![
+          '/mensagem-enviada/',
+          '/mensagem-nao-enviada/',
+          // O painel do Keystatic. Não é conteúdo e exige login no GitHub —
+          // indexá-lo levaria gente a uma tela de autenticação vinda da busca.
+          '/keystatic/',
+          '/admin/',
+        ].some((rota) => page.endsWith(rota)),
     }),
   ],
 

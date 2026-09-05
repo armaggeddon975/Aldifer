@@ -5,9 +5,14 @@
 // desenvolvimento não a emite, e `astro preview` não funciona com o adapter da
 // Vercel. Sem isto, a única forma de testar a política seria em produção.
 //
-// As rotas /api/* não existem aqui — são renderizadas sob demanda. O que este
-// servidor exercita é script, estilo, fonte, imagem e iframe, que é onde a CSP
-// quebra o site quando está errada.
+// As rotas SOB DEMANDA — /api/orcamento, /api/contato e o painel em
+// /keystatic — são atendidas pelo HANDLER DE PRODUÇÃO da Vercel, importado de
+// .vercel/output. Não é imitação: é o mesmo código que a Vercel executa.
+//
+// Isso importa porque a CSP dessas rotas vem como CABEÇALHO, montado em tempo
+// de execução, e não no <meta> das páginas estáticas. Sem isto, a única forma
+// de testar a política do painel seria em produção — e foi assim que descobri
+// que ela bloqueava o estilo do Keystatic.
 //
 //   npm run servir
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
@@ -16,6 +21,27 @@ import { extname, join, normalize } from 'node:path';
 
 const RAIZ = 'dist/client';
 const PORTA = Number(process.env.PORT ?? 4330);
+const HANDLER = '../.vercel/output/functions/_render.func/.vercel/output/server/entry.mjs';
+
+/**
+ * Handler de produção, para as rotas renderizadas sob demanda.
+ *
+ * Carregado com tolerância: sem `npm run build` ele não existe, e o servidor
+ * ainda serve o estático. Mas diz o que faltou, em vez de responder 404 e
+ * deixar quem testa procurando o motivo.
+ */
+let ondemand = null;
+try {
+  const mod = await import(HANDLER);
+  ondemand = mod.default;
+  console.log('handler de produção carregado: /api/* e /keystatic respondem de verdade');
+} catch (erro) {
+  console.error(`handler de produção NÃO carregado: ${String(erro).slice(0, 100)}`);
+  console.error('rode "npm run build"; sem ele /api/* e /keystatic dão 404.');
+}
+
+/** Rotas que o build marca como `prerender = false`. */
+const SOB_DEMANDA = /^\/(api\/|keystatic(\/|$))/;
 
 const TIPOS = {
   '.html': 'text/html; charset=utf-8',
@@ -33,6 +59,15 @@ const TIPOS = {
   '.xml': 'application/xml; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
 };
+
+/** Junta o corpo da requisição, para repassar POST ao handler. */
+const lerCorpo = (req) =>
+  new Promise((resolve, reject) => {
+    const partes = [];
+    req.on('data', (c) => partes.push(c));
+    req.on('end', () => resolve(Buffer.concat(partes)));
+    req.on('error', reject);
+  });
 
 const resolver = (url) => {
   // normalize + a checagem de prefixo barram travessia por "..".
@@ -74,11 +109,42 @@ try {
   console.error('servindo SEM redirects — o teste de redirects vai reprovar.');
 }
 
-createServer((req, res) => {
+createServer(async (req, res) => {
   const caminhoPedido = (req.url ?? '/').split('?')[0];
   const redirect = redirects.get(caminhoPedido);
   if (redirect) {
     res.writeHead(redirect.status, { location: redirect.to }).end();
+    return;
+  }
+
+  // Sob demanda ANTES do estático: /keystatic não tem arquivo em dist/client.
+  if (SOB_DEMANDA.test(caminhoPedido)) {
+    if (!ondemand) {
+      res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' });
+      res.end('handler de produção não carregado — rode "npm run build"');
+      return;
+    }
+
+    try {
+      const corpo =
+        req.method === 'GET' || req.method === 'HEAD' ? undefined : await lerCorpo(req);
+
+      const resposta = await ondemand.fetch(
+        new Request(`http://localhost:${PORTA}${req.url}`, {
+          method: req.method,
+          headers: Object.entries(req.headers).flatMap(([k, v]) =>
+            typeof v === 'string' ? [[k, v]] : (v ?? []).map((x) => [k, x]),
+          ),
+          body: corpo,
+        }),
+      );
+
+      res.writeHead(resposta.status, Object.fromEntries(resposta.headers));
+      res.end(Buffer.from(await resposta.arrayBuffer()));
+    } catch (erro) {
+      res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+      res.end(`handler falhou: ${String(erro).slice(0, 300)}`);
+    }
     return;
   }
 

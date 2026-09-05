@@ -1,0 +1,43 @@
+---
+/**
+ * `/admin` é o endereço que as pessoas decoram. O painel mora em
+ * `/keystatic`, que é onde a integração do Keystatic o monta.
+ *
+ * POR QUE UMA PÁGINA E NÃO UM REDIRECT NO vercel.json: um 301 de `/admin` para
+ * `/keystatic` funcionaria, mas o `vercel.json` já carrega os 117 redirects da
+ * migração de URLs, e misturar ali uma rota interna faria o
+ * `npm run check-redirects` acusar "redirect para origem fora de
+ * urls-antigas.txt" em toda execução. Além disso o painel é um SPA que lê o
+ * próprio caminho: mandá-lo para o endereço certo é mais previsível que
+ * reescrever a URL por baixo dele.
+ *
+ * A página é HTML mínimo com `<meta refresh>` e um link visível. Sem
+ * JavaScript, sem layout do site, sem 300 ms de tela branca — e o link
+ * funciona mesmo se o refresh for bloqueado.
+ *
+ * `noindex, nofollow` porque não é conteúdo. O `robots.txt` também bloqueia
+ * `/admin` e `/keystatic`, e as duas ficam fora do sitemap.
+ */
+const DESTINO = '/keystatic';
+---
+
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta http-equiv="refresh" content={`0; url=${DESTINO}`} />
+    <title>Painel de edição — Aldifer</title>
+    <link rel="canonical" href={DESTINO} />
+  </head>
+  <body
+    style="font-family: system-ui, sans-serif; margin: 0; display: grid; place-items: center; min-height: 100vh; background: #0b1b2e; color: #e8ebef;"
+  >
+    <p style="font-size: 1rem; text-align: center; padding: 1rem;">
+      Abrindo o painel de edição…<br />
+      <a href={DESTINO} style="color: #ff6a2b; text-underline-offset: 4px;">
+        Clique aqui se não abrir sozinho
+      </a>
+    </p>
+  </body>
+</html>

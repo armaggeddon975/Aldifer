@@ -3,6 +3,7 @@ import { file, glob } from 'astro/loaders';
 import { z } from 'zod';
 
 import { CROSS_SECTION_VARIANTS } from './components/cross-sections/types';
+import { PRODUCT_CATEGORIES } from './lib/categories';
 import { WEIGHT_FORMULAS, WEIGHT_FORMULA_IDS } from './lib/steel';
 
 /**
@@ -15,7 +16,34 @@ import { WEIGHT_FORMULAS, WEIGHT_FORMULA_IDS } from './lib/steel';
  * A `description` de 2 a 4 parágrafos é o CORPO do markdown, não frontmatter.
  */
 
-export const PRODUCT_CATEGORIES = ['barras', 'tubos', 'chapas', 'perfis', 'telas', 'diversos'] as const;
+/**
+ * Reexportado de `src/lib/categories.ts`, que é módulo PURO.
+ *
+ * A definição saiu daqui na Etapa 11 porque o `keystatic.config.ts` roda no
+ * navegador e precisa da mesma lista — importar este arquivo de lá puxaria
+ * `astro:content`, que não existe fora do build.
+ */
+export { PRODUCT_CATEGORIES };
+
+/**
+ * Converte o VAZIO que o painel escreve no NULO que o site entende.
+ *
+ * Acrescentado na Etapa 11, e não é detalhe: campo nulo significa "a Aldifer
+ * ainda não confirmou" e NÃO renderiza — a regra dura do CLAUDE.md. Mas o
+ * Keystatic não escreve `null`: campo de texto vazio sai como `""` e lista
+ * vazia sai como `[]`.
+ *
+ * O `""` seria inofensivo, porque é falso em JavaScript. O `[]` NÃO é: ele é
+ * verdadeiro, e `site.openingHours ? <lista/> : <Pending/>` passaria a
+ * renderizar uma lista de horários VAZIA em vez do aviso de pendência. Quem
+ * limpasse o campo no painel apagaria o aviso sem colocar nada no lugar.
+ */
+const vazioComoNulo = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((valor) => {
+    if (valor === '' || valor === undefined) return null;
+    if (Array.isArray(valor) && valor.length === 0) return null;
+    return valor;
+  }, schema);
 
 const crossSection = z.enum(CROSS_SECTION_VARIANTS);
 
@@ -218,14 +246,69 @@ const siteConfig = defineCollection({
 
     // --- Tudo abaixo é [CONFIRMAR] com a Aldifer -------------------------
     /** O site atual manda para um linktr.ee. Falta o número direto. */
-    whatsapp: z.string().nullable().default(null),
+    whatsapp: vazioComoNulo(z.string().min(8).nullable()).default(null),
     /** Não consta no site atual. Precisa incluir sábado. */
-    openingHours: z.array(z.string().min(1)).nullable().default(null),
+    openingHours: vazioComoNulo(z.array(z.string().min(1)).nullable()).default(null),
     /** Necessário para o rodapé e para o JSON-LD. */
-    cnpj: z.string().nullable().default(null),
-    /** Se a Aldifer faz corte sob medida, é o maior diferencial do site. */
-    customCutting: z.boolean().nullable().default(null),
+    cnpj: vazioComoNulo(z.string().min(14).nullable()).default(null),
+    /**
+     * Se a Aldifer faz corte sob medida, é o maior diferencial do site.
+     *
+     * TRÊS estados, e não um booleano: no painel um checkbox só sabe dizer
+     * "sim" e "não", e "não confirmado" viraria "não faz corte" — informação
+     * inventada, que é exatamente o que o CLAUDE.md proíbe.
+     */
+    customCutting: z.enum(['nao-confirmado', 'sim', 'nao']).default('nao-confirmado'),
   }),
 });
 
-export const collections = { products, categories, siteConfig };
+/**
+ * Aviso temporário: recesso, feriado, mudança de horário.
+ *
+ * O site antigo tinha um `banner-aviso.jpg` — uma IMAGEM com texto dentro, que
+ * só um designer sabia trocar e que nenhum leitor de tela lia. Aqui é campo
+ * editável no painel.
+ *
+ * O `validoAte` é o campo que mais importa e o que ninguém pede: sem ele, um
+ * "recesso de fim de ano" continua no ar em março. Com ele, o aviso some
+ * sozinho — e some no BUILD, não no navegador, então nem chega ao HTML.
+ */
+export const NOTICE_ID = 'aviso';
+
+const notice = defineCollection({
+  loader: file('src/content/aviso.json', {
+    parser: (text) => ({ [NOTICE_ID]: JSON.parse(text) as Record<string, unknown> }),
+  }),
+  schema: z
+    .object({
+      ativo: z.boolean().default(false),
+      mensagem: vazioComoNulo(z.string().min(1).max(200).nullable()).default(null),
+      linkTexto: vazioComoNulo(z.string().min(1).max(60).nullable()).default(null),
+      linkHref: vazioComoNulo(z.string().min(1).nullable()).default(null),
+      /** `null` = sem prazo. Formato ISO, como o painel escreve. */
+      validoAte: vazioComoNulo(z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable()).default(null),
+    })
+    .superRefine((aviso, ctx) => {
+      // Aviso ligado sem mensagem renderizaria uma faixa laranja vazia no topo
+      // de todas as páginas. Falha no BUILD, não em produção.
+      if (aviso.ativo && !aviso.mensagem) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['mensagem'],
+          message: 'aviso ativo precisa de mensagem',
+        });
+      }
+
+      // Meio link é pior que link nenhum: um sem o outro sai como texto morto
+      // ou como link sem rótulo.
+      if (Boolean(aviso.linkTexto) !== Boolean(aviso.linkHref)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['linkTexto'],
+          message: 'preencha o texto e o endereço do link, ou deixe os dois vazios',
+        });
+      }
+    }),
+});
+
+export const collections = { products, categories, siteConfig, notice };

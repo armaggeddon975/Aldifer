@@ -143,6 +143,7 @@ com valor `null`. Campo nulo não renderiza.
 | **Conta no Plausible** | O analytics está implementado e desligado: sem `PUBLIC_PLAUSIBLE_DOMAIN`, nenhum script carrega e o host nem entra na CSP. Falta criar a conta em plausible.io, cadastrar o domínio e preencher a variável na Vercel. **É como se mede a métrica que o CLAUDE.md define como sucesso do projeto** — sem ela o lançamento vai às cegas. |
 | **`includeSubDomains` no HSTS** | O cabeçalho vale para todo subdomínio de `aldifer.com.br`. Se existir algo em `algo.aldifer.com.br` sem certificado válido, ele quebra depois do primeiro acesso ao site. Confirmar antes de submeter à lista `preload` do Chrome, que é irreversível na prática. |
 | **Rich Results Test** | O JSON-LD foi validado no validador oficial do schema.org: 3 tipos reconhecidos, 0 erros, 0 avisos. O Rich Results Test do Google **não** foi rodado: ele precisa de URL pública, e a aba de colar código resiste a automação. Rodar no deploy da Etapa 13. Vale saber que ele só reporta tipos que geram resultado enriquecido — aqui, só o Breadcrumb: dados de negócio local alimentam o Perfil da Empresa, não um card de busca. |
+| **Repositório no GitHub** | O projeto é local, sem remote. O painel roda em modo LOCAL (grava no disco), o que serve para desenvolvimento e **não** para produção: na Vercel o disco é efêmero e somente leitura. Subir o repositório e preencher as quatro variáveis do Keystatic é o que faz cada Save virar commit. Passo a passo no `.env.example`. | 11 · 13 |
 | **Nova sessão fotográfica** | As 5 fotos hoje no site são de 2016, 900×540, tiradas de celular, baixadas do site antigo com autorização. Servem porque mostram ESTOQUE REAL etiquetado por bitola — prova, não decoração. Mas 900px é o limite: em tela de 1280 a galeria já exibe a 587px, quase 1:1. Aço bem fotografado é metade da credibilidade da página Empresa. Vale notar que a placa do caminhão aparece legível na `empresa-05`. | 8 |
 | **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
 
@@ -172,6 +173,126 @@ só acrescenta as sugestões, e o índice de 22 KB é baixado no primeiro toque 
 A contrapartida aceita: código de formulário e de calculadora fica mais verboso.
 
 O registro completo, com o motivo, está na nota de stack do [`CLAUDE.md`](./CLAUDE.md).
+
+---
+
+## O painel de edição, e o que o Keystatic não faz
+
+O painel fica em **`/keystatic`**; `/admin` é o endereço que as pessoas decoram e
+redireciona para lá. Guia de uso para quem não é programador em
+[`docs/COMO-EDITAR.md`](./docs/COMO-EDITAR.md).
+
+Uma fonte de verdade, duas portas: as coleções do `keystatic.config.ts` apontam para OS
+MESMOS arquivos que `src/content.config.ts` valida. O que o painel salva é o que eu
+editaria no editor, e o build valida as duas origens com o mesmo schema Zod.
+
+### O Keystatic exige declarar TODO campo do frontmatter
+
+Não é que ele descarte campo não declarado ao salvar — **ele nem abre a entrada**:
+
+```
+Error: Field validation failed: Key on object value "crossSection" is not allowed
+```
+
+Descobri isso testando com um schema deliberadamente incompleto, ANTES de refatorar 27
+arquivos de conteúdo com base na suposição errada.
+
+### A tabela de bitolas não é editável, e é decisão
+
+O Keystatic não tem campo de matriz com **colunas variáveis** — e as colunas mudam de
+produto para produto: largura e espessura numa barra chata, diâmetro e parede num tubo.
+Modelá-la exigiria mudar o formato dos 27 arquivos para texto tipo planilha e reescrever
+a validação Zod para parsear antes de validar.
+
+`fields.ignored()` resolve sem mudar nada: ele **lê e reescreve o valor verbatim** e não
+aparece no painel. Ficam assim `dimensionColumns`, `dimensions`, `weightSource` e
+`weightFormula` — os quatro campos cuja chave precisa casar com o nome do parâmetro em
+`src/lib/steel.ts`, onde um erro de digitação quebraria o cálculo do peso.
+
+**Verificado, não presumido.** Editei um produto pelo painel e comparei o frontmatter
+com `node scripts/comparar-frontmatter.mjs`:
+
+```
+15 chaves comparadas
+1 chave(s) com valor diferente:  shortDescription   ← a que eu editei
+corpo do markdown: idêntico
+```
+
+Zero campo perdido. As 16 linhas da tabela, as três colunas e a fórmula intactas. O
+diff do git é grande porque o Keystatic reescreve o YAML no estilo dele — `{ width: 12,
+thickness: 3 }` em uma linha vira três em bloco. É formatação, não dado, e o script
+acima é a ferramenta que separa uma coisa da outra.
+
+### Três bugs que só apareceram testando o painel
+
+**1. `keystatic.config.ts` roda NO NAVEGADOR.** Duas consequências que custaram tempo:
+
+- Importar `src/content.config.ts` de lá puxa `astro:content` e o painel abre em branco
+  com 500 no módulo. A lista de categorias virou um módulo puro,
+  `src/lib/categories.ts`, importado pelos dois lados — uma definição só.
+- `process.env` não existe: "process is not defined". É `import.meta.env`.
+
+**2. A CSP estrita da Etapa 9 bloqueava o estilo do painel.** As rotas sob demanda
+recebem a política como CABEÇALHO, e `/keystatic` é uma delas. O painel é React sobre
+`@keystar/ui`, que injeta estilo em tempo de execução — sem hash calculável. O painel
+abria em `font-family: "Times New Roman"`, sem fundo.
+
+Minha primeira correção estava errada, e o navegador explicou por quê:
+
+> "Note that `unsafe-inline` is ignored if either a hash or nonce value is present in
+> the source list."
+
+Acrescentar `unsafe-inline` ao lado dos hashes não faz nada. O `src/middleware.ts`
+**substitui** as diretivas de estilo nas rotas do painel, tirando os hashes — e só
+nelas. `script-src` continua travado por hash, que é a proteção que mais vale.
+
+**3. O painel busca a Inter no `fonts.googleapis.com`.** Bloqueada pela política, ele
+caía em serifada. Em vez de liberar o Google — o `CLAUDE.md` decide "nada de Google
+Fonts por CDN" — o middleware injeta um `@font-face` apontando para a MESMA Inter que o
+site já auto-hospeda em `/fonts`. O Keystatic pede `Inter`, acha `Inter` na nossa
+origem, e nada sai para fora.
+
+### O React ficou onde devia
+
+O Keystatic é uma aplicação React, e a Etapa 3 removeu o React justamente por peso. Foi
+medido antes e depois com `npm run js`: as 16 páginas públicas estão **idênticas** à
+linha de base — `/orcamento` em 26,7 KB, o resto abaixo de 6 KB — e nenhum bundle
+público contém vestígio de React. O portão reprova página pública acima de 40 KB
+justamente para acusar se algum dia vazar.
+
+### O aviso no topo do site
+
+O site antigo tinha um `banner-aviso.jpg` — uma IMAGEM com texto dentro, que só quem
+tinha o arquivo do design sabia trocar e que nenhum leitor de tela lia. Agora é campo
+editável, com um detalhe que ninguém pede: **`validoAte`**.
+
+Depois dessa data o aviso desaparece — e desaparece do HTML, no build, não por CSS nem
+JavaScript. Sem ele, um "recesso de fim de ano" continua no ar em março. Verificado nos
+dois sentidos: com data futura a faixa sai em 16 páginas; com data passada, em zero.
+
+Dois guards param o BUILD, e os dois foram testados:
+
+```
+mensagem: aviso ativo precisa de mensagem
+linkTexto: preencha o texto e o endereço do link, ou deixe os dois vazios
+```
+
+### O vazio do painel não é o nulo do site
+
+Campo nulo significa "a Aldifer não confirmou" e NÃO renderiza. Mas o Keystatic não
+escreve `null`: texto vazio sai `""` e lista vazia sai `[]`.
+
+O `""` é inofensivo, porque é falso em JavaScript. **O `[]` não é:** ele é verdadeiro, e
+`site.openingHours ? <lista/> : <Pending/>` passaria a renderizar uma lista de horários
+VAZIA em vez do aviso de pendência — quem limpasse o campo apagaria o aviso sem pôr
+nada no lugar. `vazioComoNulo`, em `content.config.ts`, converte os dois.
+
+O `customCutting` deixou de ser booleano por motivo parecido: um checkbox só sabe dizer
+sim e não, e "não confirmado" viraria "não faz corte" — informação inventada. Virou
+seleção de três estados.
+
+Confirmado salvando de verdade pelo painel: `openingHours` chegou como `[]` e o aviso de
+pendência continuou aparecendo; `cnpj` foi descartado e o `.default(null)` o recuperou.
 
 ---
 
@@ -632,6 +753,7 @@ npm run dev
 | `npm run redirects` | Gera os 117 redirects 301 no `vercel.json`, conferindo cada destino contra as rotas que o build produziu. **Exige `npm run build` antes.** |
 | `npm run check-redirects` | Confere 100% de cobertura, sem cadeia, sem loop, todo destino existente, todos 301. |
 | `npm run testar-redirects` | SEGUE as 117 URLs de verdade contra `npm run servir` e confirma 301 em um salto com destino 200. Aceita `BASE=` para apontar para produção. |
+| `npm run js` | Mede o JS de cada página em gzip, contra o portão de 100 KB. Reprova página pública acima de 40 KB, que é sinal de runtime de framework vazando. |
 | `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
 
 ---
@@ -738,6 +860,6 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 8 — Páginas restantes | ✅ |
 | 9 — SEO técnico | ✅ |
 | 10 — Migração de URLs | ✅ |
-| 11 — CMS Keystatic | ⬜ |
+| 11 — CMS Keystatic | ✅ |
 | 12 — Portões de qualidade | ⬜ |
 | 13 — Deploy e entrega | ⬜ |

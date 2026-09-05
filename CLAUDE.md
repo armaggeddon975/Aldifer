@@ -421,6 +421,36 @@ funciona com o adapter da Vercel, e `npm run dev` não emite a política.
 
 ---
 
+### Nota de stack — o painel do Keystatic é React, e fica em /keystatic (05/09/2026)
+
+A Etapa 3 removeu o React do site por peso. A Etapa 11 o trouxe de volta **apenas como
+dependência do painel de edição**, e isso é compatível: o painel é ferramenta interna,
+não é o site.
+
+Medido com `npm run js` antes e depois: as 16 páginas públicas ficaram **idênticas**, e
+nenhum bundle público contém vestígio de React. O portão reprova página pública acima de
+40 KB gzip justamente para acusar se algum dia vazar.
+
+Três coisas para lembrar em toda etapa seguinte:
+
+> **`keystatic.config.ts` roda NO NAVEGADOR.** Não importe `src/content.config.ts` de lá
+> (puxa `astro:content` e o painel abre em branco) e não use `process.env` (use
+> `import.meta.env`). Valor compartilhado com o site vai em módulo PURO de `src/lib/`.
+
+> **O Keystatic exige declarar TODO campo do frontmatter.** Ele não descarta campo não
+> declarado: ele **não abre a entrada**. Campo que o painel não deve mostrar vai como
+> `fields.ignored()`, que preserva o valor verbatim.
+
+> **A rota é `/keystatic`, não `/admin`.** `/admin` é um stub que redireciona. As duas
+> estão bloqueadas no robots.txt, fora do sitemap e com `noindex`.
+
+O `src/middleware.ts` relaxa a CSP **só** nas rotas do painel, porque o `@keystar/ui`
+injeta estilo em tempo de execução. E atenção a uma regra da CSP que eu aprendi errando:
+`'unsafe-inline'` é **ignorado** quando há hash na mesma diretiva — é preciso substituir
+a diretiva, não ampliá-la.
+
+---
+
 ## Migração de SEO (crítico)
 
 O site atual tem **~100 páginas-satélite** de keyword stuffing

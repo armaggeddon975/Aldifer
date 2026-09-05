@@ -1,0 +1,93 @@
+---
+import { NOTICE_ID } from '@/content.config';
+import { getEntry } from 'astro:content';
+
+/**
+ * Faixa de aviso temporário no topo do site.
+ *
+ * Substitui o `banner-aviso.jpg` do site antigo — uma IMAGEM com texto dentro,
+ * que só quem tinha o arquivo do design sabia trocar e que nenhum leitor de
+ * tela conseguia ler. Aqui é campo editável no painel, em `/keystatic`.
+ *
+ * DUAS CONDIÇÕES PARA APARECER, e as duas são resolvidas no BUILD:
+ *
+ * 1. `ativo` marcado no painel.
+ * 2. `validoAte` no futuro, ou vazio.
+ *
+ * A segunda é a que ninguém pede e a que evita o problema real: um "recesso de
+ * fim de ano" esquecido no ar em março passa a impressão de site abandonado.
+ * Com a data, o aviso desaparece sozinho — e desaparece do HTML, não por CSS
+ * nem por JavaScript, então não há faixa piscando no carregamento nem peso
+ * extra em quem não vai vê-la.
+ *
+ * CONSEQUÊNCIA A SABER: como a expiração é resolvida no build, um aviso que
+ * vence hoje só sai do ar no próximo deploy. Em site estático isso é inerente;
+ * o alternativa seria decidir no cliente, com JavaScript, e aí a faixa
+ * apareceria por um instante antes de sumir. A troca não se paga.
+ */
+const aviso = (await getEntry('notice', NOTICE_ID))?.data;
+
+/** Data de HOJE em ISO, para comparar como string sem fuso horário. */
+const hoje = new Date().toISOString().slice(0, 10);
+
+const venceu = Boolean(aviso?.validoAte && aviso.validoAte < hoje);
+const mostrar = Boolean(aviso?.ativo && aviso.mensagem && !venceu);
+
+/** Link só quando os dois campos vierem; o schema já recusa meio link. */
+const link = aviso?.linkTexto && aviso.linkHref ? aviso : null;
+---
+
+{
+  mostrar && (
+    <aside class="notice-bar" aria-label="Aviso da Aldifer">
+      <p class="notice-bar__text">
+        {aviso!.mensagem}
+        {link && (
+          <>
+            {' '}
+            <a href={link.linkHref!} class="notice-bar__link">
+              {link.linkTexto}
+            </a>
+          </>
+        )}
+      </p>
+    </aside>
+  )
+}
+
+<style>
+  /* Tom escuro com filete de acento, e não fundo laranja chapado: a faixa
+     precisa ser notada sem competir com o CTA de orçamento, que é a ação
+     primária do site. */
+  .notice-bar {
+    background-color: var(--steel-900);
+    border-bottom: 2px solid var(--accent-bright);
+    color: var(--on-dark);
+  }
+
+  .notice-bar__text {
+    max-width: var(--width-content);
+    margin-inline: auto;
+    padding: var(--space-12) var(--space-16);
+    font-size: var(--size-sm);
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  @media (min-width: 48rem) {
+    .notice-bar__text {
+      padding-inline: var(--space-32);
+      text-align: center;
+    }
+  }
+
+  /* --accent-bright, que dá 6,07:1 sobre --steel-900. O --steel-700 usado em
+     link de superfície clara daria 1,9:1 aqui. Ver a nota da paleta no
+     CLAUDE.md. */
+  .notice-bar__link {
+    color: var(--accent-bright);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>
