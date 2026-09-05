@@ -1,0 +1,47 @@
+---
+/**
+ * Analytics sem cookie — Plausible.
+ *
+ * NÃO RENDERIZA NADA sem `PUBLIC_PLAUSIBLE_DOMAIN`. O padrão é o site não
+ * carregar script de terceiro: em desenvolvimento isso evita poluir as
+ * métricas com as minhas próprias visitas, e em produção, se alguém esquecer
+ * a variável, o site funciona igual — só não mede.
+ *
+ * POR QUE SEM COOKIE IMPORTA AQUI: sem cookie e sem dado pessoal, a LGPD não
+ * exige consentimento prévio, e o site não precisa de banner de cookie. Um
+ * banner custaria a primeira interação de todo visitante numa página cuja
+ * ação primária é montar uma lista de material — e a Política de Privacidade
+ * da Etapa 6 afirma que o site não usa cookie de rastreamento. Trocar
+ * Plausible por Google Analytics tornaria esse texto falso.
+ *
+ * O script é `defer` e não bloqueia render. `data-domain` é o identificador
+ * da propriedade no Plausible, não um segredo — daí o prefixo `PUBLIC_`.
+ *
+ * O host da CSP é montado em astro.config.mjs a partir da MESMA variável:
+ * sem ela, `plausible.io` não entra em `script-src` nem em `connect-src`.
+ */
+const dominio = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN?.trim();
+const host = import.meta.env.PUBLIC_PLAUSIBLE_HOST?.trim() || 'https://plausible.io';
+
+/**
+ * Variante com suporte a evento manual.
+ *
+ * `script.manual.js` é a que expõe `window.plausible(...)`, necessária para o
+ * evento de conversão `orcamento_enviado`. A variante padrão só conta visita.
+ * `outbound-links` mede clique em WhatsApp e nas redes.
+ */
+const src = dominio ? new URL('/js/script.manual.outbound-links.js', host).href : null;
+---
+
+{/*
+  `is:inline` no script COM `src` é obrigatório: sem ele o Astro tentaria
+  processar e empacotar uma URL de terceiro. Script com `src` não precisa de
+  hash na CSP — quem o autoriza é `script-src-elem https://plausible.io`.
+
+  NÃO EXISTE stub inline de fila aqui, ao contrário do que a documentação do
+  Plausible sugere. A CSP deste site não aceita inline sem hash, e o Astro só
+  hasheia os scripts que ele mesmo processa: um `is:inline` passa sem hash e é
+  bloqueado — testado, o console acusou a violação e a fila não existia.
+  A fila é criada por `track()`, em src/lib/analytics.ts.
+*/}
+{dominio && src && <script is:inline defer data-domain={dominio} src={src} />}

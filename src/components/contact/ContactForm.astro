@@ -201,6 +201,7 @@ const campo = (name: string) => `cf-${name}`;
 }
 
 <script>
+  import { EVENTS, track } from '@/lib/analytics';
   import { contactForm } from '@/lib/contact-content';
 
   /**
@@ -288,6 +289,7 @@ const campo = (name: string) => `cf-${name}`;
         };
 
         if (corpo.ok) {
+          track(EVENTS.contactSent);
           this.#form.hidden = true;
           this.#success.hidden = false;
           // O foco vai para a confirmação: quem usa leitor de tela precisa

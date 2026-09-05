@@ -1,0 +1,23 @@
+---
+import { serializeJsonLd } from '@/lib/structured-data';
+
+/**
+ * Renderiza um bloco de dados estruturados.
+ *
+ * Componente de uma linha, mas existe por dois motivos: garante que TODO
+ * JSON-LD do site passe pelo mesmo serializador — o que escapa `<` e remove
+ * chave nula — e concentra o `is:inline`, sem o qual o Astro tentaria
+ * processar o conteúdo como script de módulo.
+ */
+export interface Props {
+  /** Objeto a serializar. `unknown` porque cada página passa um @type diferente. */
+  data: unknown;
+}
+
+// Sem anotação explícita: o Astro infere de `Props`, e anotar uma prop
+// OBRIGATÓRIA de tipo `unknown` conflita com o Record<string, any> que ele
+// usa internamente.
+const { data } = Astro.props;
+---
+
+<script type="application/ld+json" is:inline set:html={serializeJsonLd(data)} />

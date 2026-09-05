@@ -164,6 +164,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 <script>
   import { formCopy } from '@/lib/form-content';
   import { QUOTE_CHANGED, clear, getAll } from '@/lib/quote';
+  import { EVENTS, track } from '@/lib/analytics';
   import { fieldErrors, quoteRequestSchema } from '@/lib/schemas';
 
   type Estado = 'ocioso' | 'enviando' | 'sucesso' | 'erro';
@@ -317,6 +318,9 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
         };
 
         if (resultado.ok) {
+          // A conversão do site. Disparada DEPOIS de o servidor confirmar, e
+          // não no clique: um envio que falhou não é um pedido recebido.
+          track(EVENTS.quoteSent, { medidas: parsed.data.items.length });
           this.#setEstado('sucesso', { whatsappText: resultado.whatsappText });
           return;
         }

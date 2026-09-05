@@ -2,11 +2,13 @@
 import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
 import CatalogFilter from '@/components/catalog/CatalogFilter.astro';
 import DraftNotice from '@/components/DraftNotice.astro';
+import JsonLd from '@/components/JsonLd.astro';
 import Heading from '@/components/ui/Heading.astro';
 import Section from '@/components/ui/Section.astro';
 import Base from '@/layouts/Base.astro';
 import { breadcrumb, catalogPage } from '@/lib/catalog-content';
-import { getVisibleCategories, getVisibleProducts, isDraft } from '@/lib/products';
+import { categoryHref, getVisibleCategories, getVisibleProducts, isDraft } from '@/lib/products';
+import { itemListJsonLd } from '@/lib/structured-data';
 
 /**
  * Catálogo completo, com filtro.
@@ -17,9 +19,30 @@ import { getVisibleCategories, getVisibleProducts, isDraft } from '@/lib/product
 const products = await getVisibleProducts();
 const categories = await getVisibleCategories();
 const draftCount = products.filter(isDraft).length;
+
+const base = Astro.site ?? new URL('/', Astro.url);
+
+/**
+ * ItemList das seis CATEGORIAS, e não dos produtos.
+ *
+ * Nesta página o que o visitante escolhe é a categoria; a lista de produtos
+ * vive atrás do filtro e muda com ele. Uma ItemList de 27 produtos aqui
+ * descreveria algo que a página não mostra de uma vez, e as páginas de
+ * categoria já listam os produtos delas.
+ */
+const listaJsonLd = itemListJsonLd(
+  categories.map((category) => ({
+    name: category.data.name,
+    description: category.data.shortDescription,
+    url: new URL(categoryHref(category.id), base).href,
+  })),
+  catalogPage.heading,
+);
 ---
 
 <Base title={catalogPage.seoTitle} description={catalogPage.seoDescription}>
+  <JsonLd slot="jsonld" data={listaJsonLd} />
+
   <Section tone="light" spacing="md" labelledBy="catalogo">
     <Breadcrumb items={[{ label: breadcrumb.catalogLabel }]} />
 

@@ -133,6 +133,9 @@ com valor `null`. Campo nulo não renderiza.
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
 | **Revisão da Política de Privacidade** | É MINUTA. O texto descreve com precisão o que o site tecnicamente faz, mas documento legal precisa de revisão de quem responde por ele. Faltam o CNPJ do controlador e a definição do prazo de retenção do lead. | 6 · 13 |
 | **Limite por IP é por instância** | O contador vive na memória do processo. Em serverless cada instância tem a sua, então o limite real é 5/hora **por instância**. Contra abuso distribuído o portão é o Turnstile. Um limite global exige Vercel KV ou Upstash Redis — decidir se vale a dependência. | 13 |
+| **Conta no Plausible** | O analytics está implementado e desligado: sem `PUBLIC_PLAUSIBLE_DOMAIN`, nenhum script carrega e o host nem entra na CSP. Falta criar a conta em plausible.io, cadastrar o domínio e preencher a variável na Vercel. **É como se mede a métrica que o CLAUDE.md define como sucesso do projeto** — sem ela o lançamento vai às cegas. |
+| **`includeSubDomains` no HSTS** | O cabeçalho vale para todo subdomínio de `aldifer.com.br`. Se existir algo em `algo.aldifer.com.br` sem certificado válido, ele quebra depois do primeiro acesso ao site. Confirmar antes de submeter à lista `preload` do Chrome, que é irreversível na prática. |
+| **Rich Results Test** | O JSON-LD foi validado no validador oficial do schema.org: 3 tipos reconhecidos, 0 erros, 0 avisos. O Rich Results Test do Google **não** foi rodado: ele precisa de URL pública, e a aba de colar código resiste a automação. Rodar no deploy da Etapa 13. Vale saber que ele só reporta tipos que geram resultado enriquecido — aqui, só o Breadcrumb: dados de negócio local alimentam o Perfil da Empresa, não um card de busca. |
 | **Nova sessão fotográfica** | As 5 fotos hoje no site são de 2016, 900×540, tiradas de celular, baixadas do site antigo com autorização. Servem porque mostram ESTOQUE REAL etiquetado por bitola — prova, não decoração. Mas 900px é o limite: em tela de 1280 a galeria já exibe a 587px, quase 1:1. Aço bem fotografado é metade da credibilidade da página Empresa. Vale notar que a placa do caminhão aparece legível na `empresa-05`. | 8 |
 | **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
 
@@ -162,6 +165,93 @@ só acrescenta as sugestões, e o índice de 22 KB é baixado no primeiro toque 
 A contrapartida aceita: código de formulário e de calculadora fica mais verboso.
 
 O registro completo, com o motivo, está na nota de stack do [`CLAUDE.md`](./CLAUDE.md).
+
+---
+
+## A CSP é gerada, não escrita à mão
+
+O `astro.config.mjs` liga `security.csp`, e o Astro emite um
+`<meta http-equiv="content-security-policy">` por página **com o hash de cada
+script inline que ele mesmo embutiu**.
+
+Escrever a política à mão no `vercel.json` não era opção. O Astro embute em cada
+página os scripts pequenos — menu mobile 372 B, carregador do mapa 494 B, busca
+rápida 3,7 KB. Um cabeçalho só os aceitaria com `unsafe-inline`, que desliga a
+proteção que a CSP existe para dar, ou com hashes digitados que mudam a cada build
+e passariam a **bloquear o próprio site** na primeira alteração de código.
+
+A política resultante é `default-src 'none'` com liberação por diretiva. Detalhe de
+cada cabeçalho em [`docs/CABECALHOS.md`](./docs/CABECALHOS.md).
+
+### Duas armadilhas que só apareceram testando
+
+**1. O Astro NÃO hasheia `is:inline`.** Eu havia posto o stub de fila do Plausible
+como `<script is:inline>` no HTML, que é o que a documentação deles recomenda. A CSP
+o bloqueou: o console acusou a violação e `window.plausible.q` não existia — a fila
+não funcionava e um envio rápido perderia a conversão, em silêncio. A fila passou
+para dentro de `track()`, em `src/lib/analytics.ts`, criada pelo próprio código que
+a usa. Não há mais script inline escrito por mim em nenhuma página.
+
+**2. O dev não emite a CSP.** Ela é um `<meta>` de build, e `astro preview` não
+funciona com o adapter da Vercel. Sem `npm run servir` a política só seria testada
+em produção. Foi assim que as duas armadilhas apareceram antes do deploy.
+
+### Verificado, e não presumido
+
+Em `:4330`, com o build de produção: home, catálogo, categoria, empresa, contato,
+orçamento, calculadora, política e 404 carregam sem uma única violação — 3 fontes,
+todos os custom elements definidos, imagens completas, `fetch` do índice de busca e
+iframe do mapa funcionando. Um script conferiu que **todo** script inline do build
+tem hash correspondente na política da própria página.
+
+---
+
+## JSON-LD: só dado confirmado
+
+Três tipos, montados em [`src/lib/structured-data.ts`](./src/lib/structured-data.ts):
+
+| Tipo | Onde | Observação |
+|---|---|---|
+| `HardwareStore` | toda página, pelo layout base | Subtipo de `LocalBusiness`, mais específico que o genérico |
+| `BreadcrumbList` | páginas internas | Já existia desde a Etapa 4, no próprio componente da trilha |
+| `ItemList` | `/produtos` e cada categoria | Categorias na primeira, produtos nas outras |
+
+O que está **omitido de propósito**, e não por esquecimento:
+
+- **`openingHours`** — não consta em lugar nenhum do site atual. Declarado errado, o
+  Google mostra "aberto agora" para quem está indo ao galpão fechado, e quem chega
+  na porta trancada culpa a Aldifer.
+- **`geo`** — sem coordenada conferida, ela cai na rua errada da Estrada dos
+  Alvarengas, que é longa.
+- **`priceRange`** — o site não tem preço, por decisão do `CLAUDE.md`.
+- **`aggregateRating`** — não há avaliação real. Inventar avaliação em dado
+  estruturado viola as diretrizes do Google, além de ser mentira.
+- **`Product` com `offers`** — `Product` exige preço. Sem `offers` o Rich Results
+  Test reprova; com `offers` inventado seria pior. Daí `ItemList`.
+
+A `ItemList` de categoria **desaparece quando a categoria não tem produto visível**,
+que é o caso hoje em produção com os 27 produtos em rascunho. Uma `ItemList` com
+`numberOfItems: 0` declara ao Google que a categoria está vazia — pior que não
+declarar nada.
+
+**Validação:** validador oficial do schema.org, via o endpoint dele. 3 tipos
+reconhecidos, **0 erros e 0 avisos**. O Rich Results Test do Google ficou para o
+deploy — ver a lista de pendências.
+
+---
+
+## Sitemap e robots são derivados, não digitados
+
+O `robots.txt` é uma rota (`src/pages/robots.txt.ts`) e não um arquivo em `public/`:
+a URL do sitemap vem do `site` do `astro.config.mjs`, a mesma fonte do canonical. Um
+arquivo estático teria o domínio digitado, e na hora de decidir www x apex alguém
+trocaria em dois lugares e esqueceria o terceiro — apontando o Google para um
+sitemap que redireciona.
+
+O sitemap **filtra as páginas `noindex`**. As duas telas de resultado do formulário
+de contato têm `noindex` no HTML; listá-las mandaria ao Google dois sinais opostos
+sobre a mesma URL, e o Search Console reporta isso como erro. São 13 rotas no
+sitemap contra 16 páginas no build: as duas telas de resultado e a 404.
 
 ---
 
@@ -455,6 +545,7 @@ npm run dev
 | `npm run contrast` | 22 contrastes, 4 separações de matiz, e varre o código procurando o acento usado como cor de texto. |
 | `npm run meta` | Confere title, description, canonical, og:image e h1 único em TODA rota do build. Reprova em título repetido. |
 | `npm run assets` | Regera favicon, ícones e og-image a partir do logotipo. Rode ao trocar o logo. |
+| `npm run servir` | Serve `dist/client` em `:4330`. Existe porque a CSP é um `<meta>` gerado no BUILD: o servidor de desenvolvimento não a emite e `astro preview` não funciona com o adapter da Vercel. |
 | `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
 
 ---
@@ -559,7 +650,7 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 6 — Formulário, servidor e LGPD | ◐ implementado e verificado, EXCETO a entrega do e-mail — falta a chave do Resend |
 | 7 — Calculadora de peso | ✅ |
 | 8 — Páginas restantes | ✅ |
-| 9 — SEO técnico | ⬜ |
+| 9 — SEO técnico | ✅ |
 | 10 — Migração de URLs | ⬜ |
 | 11 — CMS Keystatic | ⬜ |
 | 12 — Portões de qualidade | ⬜ |

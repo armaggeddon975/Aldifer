@@ -15,6 +15,7 @@
     "contrast": "node scripts/check-contrast.mjs",
     "assets": "node scripts/gerar-assets-de-marca.mjs",
     "meta": "node scripts/check-meta.mjs",
+    "servir": "node scripts/servir-build.mjs",
     "test": "node --test \"src/**/*.test.ts\"",
     "astro": "astro"
   },

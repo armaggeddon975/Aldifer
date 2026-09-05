@@ -9,6 +9,14 @@
         "dev"
       ],
       "port": 4321
+    },
+    {
+      "name": "build",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/servir-build.mjs"
+      ],
+      "port": 4330
     }
   ]
 }

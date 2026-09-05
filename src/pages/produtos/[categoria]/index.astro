@@ -5,13 +5,15 @@ import { render } from 'astro:content';
 import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
 import ProductCard from '@/components/catalog/ProductCard.astro';
 import CrossSection from '@/components/CrossSection.astro';
+import JsonLd from '@/components/JsonLd.astro';
 import Button from '@/components/ui/Button.astro';
 import Heading from '@/components/ui/Heading.astro';
 import Section from '@/components/ui/Section.astro';
 import Base from '@/layouts/Base.astro';
 import { breadcrumb, categoryPage } from '@/lib/catalog-content';
-import { getVisibleCategories, getVisibleProducts } from '@/lib/products';
+import { getVisibleCategories, getVisibleProducts, productHref } from '@/lib/products';
 import { getSite } from '@/lib/site';
+import { itemListJsonLd } from '@/lib/structured-data';
 
 /**
  * Página de categoria. Existe como rota real, e não como filtro na URL, por
@@ -31,9 +33,38 @@ const { Content } = await render(category);
 
 const products = await getVisibleProducts(category.id);
 const site = await getSite();
+
+const base = Astro.site ?? new URL('/', Astro.url);
+
+/**
+ * ItemList dos produtos DESTA categoria, na ordem em que a página os mostra.
+ *
+ * `null` quando a categoria não tem produto visível — o que é o caso HOJE em
+ * produção, com os 27 produtos em rascunho. Uma ItemList com
+ * `numberOfItems: 0` declara ao Google que a categoria está vazia, o que é
+ * pior que não declarar nada: a página some do resultado por afirmação
+ * própria, e some justamente enquanto a planilha da Aldifer não chega.
+ *
+ * Sem `Product` com `offers`: este site não publica preço, por decisão do
+ * CLAUDE.md, e `Product` sem `offers` é reprovado pelo Rich Results Test.
+ * Com `offers` inventado seria pior.
+ */
+const listaJsonLd =
+  products.length > 0
+    ? itemListJsonLd(
+        products.map((product) => ({
+          name: product.data.name,
+          description: product.data.shortDescription,
+          url: new URL(productHref(product), base).href,
+        })),
+        category.data.name,
+      )
+    : null;
 ---
 
 <Base title={category.data.seoTitle} description={category.data.seoDescription}>
+  {listaJsonLd && <JsonLd slot="jsonld" data={listaJsonLd} />}
+
   <Section tone="light" spacing="md" labelledBy="categoria">
     <Breadcrumb
       items={[

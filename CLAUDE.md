@@ -396,6 +396,31 @@ destrói a confiança do cliente quando ele percebe.
 
 ---
 
+### Nota de segurança — a CSP é gerada pelo Astro (registrado em 05/09/2026)
+
+O `astro.config.mjs` liga `security.csp`, e o Astro emite um `<meta http-equiv>`
+por página **com o hash de cada script inline que ele mesmo embutiu**.
+
+Isso tem uma consequência que precisa ser lembrada em toda etapa seguinte:
+
+> **Nunca escreva `<script is:inline>` com CÓDIGO no corpo.** O Astro só hasheia os
+> scripts que ele processa; um `is:inline` passa sem hash e a CSP o BLOQUEIA em
+> produção — sem erro no build, sem erro no `astro check`, e sem erro no servidor de
+> desenvolvimento, que não emite a CSP.
+
+Foi exatamente o que aconteceu na Etapa 9 com o stub de fila do Plausible, escrito
+como a documentação deles recomenda. Só apareceu ao servir o build em `npm run servir`.
+
+Se um script precisa rodar cedo, ponha a lógica num módulo de `src/lib/` e chame de
+dentro de um `<script>` normal — o Astro empacota, hasheia e a política acompanha.
+`is:inline` **com `src`** de terceiro continua válido: quem o autoriza é o host em
+`script-src-elem`, e script externo não usa hash.
+
+Para testar a CSP: `npm run servir` sobe o build em `:4330`. O `astro preview` não
+funciona com o adapter da Vercel, e `npm run dev` não emite a política.
+
+---
+
 ## Migração de SEO (crítico)
 
 O site atual tem **~100 páginas-satélite** de keyword stuffing
