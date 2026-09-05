@@ -1,0 +1,60 @@
+---
+import { Picture } from 'astro:assets';
+
+/**
+ * Galeria das instalações.
+ *
+ * `<Picture>` e não `<Image>`: o CLAUDE.md pede "AVIF com fallback WebP", e é
+ * o Picture que emite os dois <source> — o Image emite um formato só.
+ *
+ * As fotos vêm de src/assets/ (e não de public/) para o Astro processá-las:
+ * são JPEG de 2016 com 89 a 165 KB, e saem em AVIF na casa dos 30 KB.
+ *
+ * `import.meta.glob` porque os nomes de arquivo chegam como STRING do módulo
+ * de conteúdo — o CLAUDE.md manda o componente receber dados, não contê-los, e
+ * import estático exigiria repetir a lista aqui.
+ */
+interface Props {
+  photos: readonly { readonly file: string; readonly alt: string }[];
+}
+
+const { photos }: Props = Astro.props;
+
+const arquivos = import.meta.glob<{ default: ImageMetadata }>(
+  '/src/assets/aldifer/empresa-*.jpg',
+);
+
+const itens = await Promise.all(
+  photos.map(async (photo) => {
+    const carregar = arquivos[`/src/assets/aldifer/${photo.file}`];
+    if (!carregar) {
+      // Falha no BUILD, não em silêncio: uma foto renomeada deixaria um buraco
+      // na página que só apareceria em produção.
+      throw new Error(
+        `foto "${photo.file}" não existe em src/assets/aldifer/. ` +
+          `Disponíveis: ${Object.keys(arquivos).join(', ')}`,
+      );
+    }
+    return { alt: photo.alt, image: (await carregar()).default };
+  }),
+);
+---
+
+<ul class="grid gap-4 sm:grid-cols-2 lg:gap-6">
+  {
+    itens.map((item) => (
+      <li class="border border-surface-border bg-paper-alt">
+        <Picture
+          src={item.image}
+          alt={item.alt}
+          formats={['avif', 'webp']}
+          widths={[450, 900]}
+          sizes="(min-width: 64rem) 37rem, (min-width: 40rem) 50vw, 100vw"
+          loading="lazy"
+          decoding="async"
+          class="block h-auto w-full"
+        />
+      </li>
+    ))
+  }
+</ul>

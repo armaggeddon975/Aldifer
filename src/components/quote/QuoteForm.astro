@@ -35,7 +35,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
   data-whatsapp={site.whatsapp ?? undefined}
 >
   {/* Lista vazia: o pedido não tem o que enviar. */}
-  <div class="quote-form__notice" hidden data-no-items>
+  <div class="form-notice" hidden data-no-items>
     <p class="font-semibold">{formCopy.emptyListHeading}</p>
     <p class="mt-2">{formCopy.emptyListBody}</p>
   </div>
@@ -47,56 +47,56 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     {/* Resumo anunciado ao leitor de tela quando a validação falha. */}
     <p class="sr-only" role="status" aria-live="polite" data-summary></p>
 
-    <div class="quote-form__grid">
-      <p class="quote-form__field">
+    <div class="form-grid">
+      <p class="form-field">
         <label for="qf-name">{formCopy.labelName}</label>
         <input id="qf-name" name="name" type="text" autocomplete="name" required
           aria-describedby="qf-name-erro" />
-        <span class="quote-form__error" id="qf-name-erro" data-error-for="name"></span>
+        <span class="form-error" id="qf-name-erro" data-error-for="name"></span>
       </p>
 
-      <p class="quote-form__field">
+      <p class="form-field">
         <label for="qf-company">
-          {formCopy.labelCompany} <span class="quote-form__optional">{formCopy.optional}</span>
+          {formCopy.labelCompany} <span class="form-optional">{formCopy.optional}</span>
         </label>
         <input id="qf-company" name="company" type="text" autocomplete="organization"
           aria-describedby="qf-company-erro" />
-        <span class="quote-form__error" id="qf-company-erro" data-error-for="company"></span>
+        <span class="form-error" id="qf-company-erro" data-error-for="company"></span>
       </p>
 
-      <p class="quote-form__field">
+      <p class="form-field">
         <label for="qf-email">{formCopy.labelEmail}</label>
         <input id="qf-email" name="email" type="email" autocomplete="email" inputmode="email"
           required aria-describedby="qf-email-erro" />
-        <span class="quote-form__error" id="qf-email-erro" data-error-for="email"></span>
+        <span class="form-error" id="qf-email-erro" data-error-for="email"></span>
       </p>
 
-      <p class="quote-form__field">
+      <p class="form-field">
         <label for="qf-phone">{formCopy.labelPhone}</label>
         <input id="qf-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required
           aria-describedby="qf-phone-dica qf-phone-erro" />
-        <span class="quote-form__hint" id="qf-phone-dica">{formCopy.phoneHint}</span>
-        <span class="quote-form__error" id="qf-phone-erro" data-error-for="phone"></span>
+        <span class="form-hint" id="qf-phone-dica">{formCopy.phoneHint}</span>
+        <span class="form-error" id="qf-phone-erro" data-error-for="phone"></span>
       </p>
 
-      <p class="quote-form__field">
+      <p class="form-field">
         <label for="qf-city">
-          {formCopy.labelCity} <span class="quote-form__optional">{formCopy.optional}</span>
+          {formCopy.labelCity} <span class="form-optional">{formCopy.optional}</span>
         </label>
         <input id="qf-city" name="city" type="text" autocomplete="address-level2"
           aria-describedby="qf-city-erro" />
-        <span class="quote-form__error" id="qf-city-erro" data-error-for="city"></span>
+        <span class="form-error" id="qf-city-erro" data-error-for="city"></span>
       </p>
     </div>
 
-    <p class="quote-form__field quote-form__field--wide">
+    <p class="form-field form-field--wide">
       <label for="qf-notes">
-        {formCopy.labelNotes} <span class="quote-form__optional">{formCopy.optional}</span>
+        {formCopy.labelNotes} <span class="form-optional">{formCopy.optional}</span>
       </label>
       <textarea id="qf-notes" name="notes" rows="4" autocomplete="off"
         aria-describedby="qf-notes-dica qf-notes-erro"></textarea>
-      <span class="quote-form__hint" id="qf-notes-dica">{formCopy.notesHint}</span>
-      <span class="quote-form__error" id="qf-notes-erro" data-error-for="notes"></span>
+      <span class="form-hint" id="qf-notes-dica">{formCopy.notesHint}</span>
+      <span class="form-error" id="qf-notes-erro" data-error-for="notes"></span>
     </p>
 
     {/*
@@ -105,12 +105,12 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
       ordem de tabulação e aria-hidden esconde do leitor de tela, para não
       confundir quem navega por áudio.
     */}
-    <p class="quote-form__honeypot" aria-hidden="true">
+    <p class="form-honeypot" aria-hidden="true">
       <label for="qf-website">{formCopy.labelHoneypot}</label>
       <input id="qf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
     </p>
 
-    <p class="quote-form__consent">
+    <p class="form-consent">
       {/* NÃO pré-marcado: consentimento LGPD tem de ser ato do titular. */}
       <input id="qf-consent" name="consent" type="checkbox" required
         aria-describedby="qf-consent-erro" />
@@ -118,7 +118,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
         {formCopy.labelConsent.replace(' Li a Política de Privacidade.', ' ')}
         <a href="/politica-de-privacidade">Li a Política de Privacidade</a>.
       </label>
-      <span class="quote-form__error" id="qf-consent-erro" data-error-for="consent"></span>
+      <span class="form-error" id="qf-consent-erro" data-error-for="consent"></span>
     </p>
 
     {
@@ -130,22 +130,22 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     }
 
     <div class="mt-8 flex flex-wrap items-center gap-4">
-      <button type="submit" class="quote-form__submit" data-submit>{formCopy.submitIdle}</button>
+      <button type="submit" class="form-submit" data-submit>{formCopy.submitIdle}</button>
     </div>
 
     {/* Falha de envio. Os dados digitados permanecem no formulário. */}
-    <div class="quote-form__notice quote-form__notice--error" hidden data-send-error>
+    <div class="form-notice form-notice--error" hidden data-send-error>
       <p class="font-semibold" data-send-error-heading>{formCopy.errorHeading}</p>
       <p class="mt-2" data-send-error-body></p>
     </div>
   </form>
 
   {/* Sucesso. Substitui o formulário, não empilha mensagem acima dele. */}
-  <div class="quote-form__success" hidden data-success>
+  <div class="form-success" hidden data-success>
     <Heading level={2} size={3}>{formCopy.successHeading}</Heading>
     <p class="mt-3">{formCopy.successBody}</p>
     <div class="mt-6 flex flex-wrap gap-4">
-      <a class="quote-form__submit" data-whatsapp-link hidden>{formCopy.successWhatsappLabel}</a>
+      <a class="form-submit" data-whatsapp-link hidden>{formCopy.successWhatsappLabel}</a>
       <Button href="/produtos" variant="secondary">{formCopy.successNewLabel}</Button>
     </div>
   </div>
@@ -160,169 +160,6 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
   />
 )}
 
-<style>
-  .quote-form__grid {
-    display: grid;
-    gap: var(--space-16);
-    margin-top: var(--space-24);
-  }
-
-  @media (min-width: 40rem) {
-    .quote-form__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  .quote-form__field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-  }
-
-  .quote-form__field--wide {
-    margin-top: var(--space-16);
-    max-width: 44rem;
-  }
-
-  .quote-form__field label {
-    font-size: var(--size-sm);
-    font-weight: 600;
-    color: var(--surface-fg);
-  }
-
-  .quote-form__optional {
-    font-weight: 400;
-    color: var(--surface-fg-soft);
-  }
-
-  .quote-form__field input,
-  .quote-form__field textarea {
-    min-height: var(--touch-target);
-    padding: var(--space-8) var(--space-12);
-    font-family: var(--family-text);
-    font-size: var(--size-base);
-    color: var(--ink);
-    background-color: var(--paper);
-    border: 1px solid var(--ink-soft);
-    border-radius: var(--corner-control);
-  }
-
-  .quote-form__field textarea {
-    min-height: 6rem;
-    resize: vertical;
-  }
-
-  /* Campo com erro: borda mais grossa E cor. A WCAG proíbe cor como único
-     meio de transmitir informação, então a espessura carrega a mensagem
-     junto — e o texto do erro fica abaixo, sempre. */
-  .quote-form__field input[aria-invalid='true'],
-  .quote-form__field textarea[aria-invalid='true'] {
-    border-width: 2px;
-    border-color: var(--surface-danger);
-  }
-
-  .quote-form__hint {
-    font-size: var(--size-xs);
-    color: var(--surface-fg-soft);
-  }
-
-  .quote-form__error {
-    font-size: var(--size-sm);
-    font-weight: 500;
-    color: var(--surface-danger);
-  }
-
-  .quote-form__error:empty {
-    display: none;
-  }
-
-  /* Honeypot: fora da tela, sem display:none — campo com display:none não é
-     preenchido por robô, e aí ele não pegaria nada. */
-  .quote-form__honeypot {
-    position: absolute;
-    left: -9999px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-  }
-
-  .quote-form__consent {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--space-8) var(--space-12);
-    align-items: start;
-    margin-top: var(--space-24);
-    max-width: 44rem;
-  }
-
-  .quote-form__consent input {
-    width: 1.25rem;
-    height: 1.25rem;
-    margin-top: 0.15rem;
-    accent-color: var(--accent);
-  }
-
-  .quote-form__consent label {
-    font-size: var(--size-sm);
-    color: var(--surface-fg);
-  }
-
-  .quote-form__consent a {
-    color: var(--surface-link);
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-
-  .quote-form__consent .quote-form__error {
-    grid-column: 2;
-  }
-
-  .quote-form__submit {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: var(--touch-target-lg);
-    padding-inline: var(--space-32);
-    font-family: var(--family-text);
-    font-size: var(--size-lg);
-    font-weight: 600;
-    color: var(--cta-fg);
-    background-color: var(--cta-bg);
-    border: 0;
-    border-radius: var(--corner-control);
-    cursor: pointer;
-  }
-
-  .quote-form__submit:hover {
-    background-color: var(--cta-bg-hover);
-  }
-
-  .quote-form__submit[disabled] {
-    opacity: 0.65;
-    cursor: progress;
-  }
-
-  .quote-form__notice {
-    max-width: 68ch;
-    margin-top: var(--space-24);
-    padding: var(--space-16);
-    border-inline-start: 4px solid var(--accent);
-    background-color: var(--paper-alt);
-    color: var(--ink);
-    font-size: var(--size-sm);
-  }
-
-  .quote-form__notice--error {
-    border-inline-start-color: var(--surface-danger);
-  }
-
-  .quote-form__success {
-    max-width: 68ch;
-    padding: var(--space-24);
-    border: 1px solid var(--surface-border);
-    border-inline-start: 4px solid var(--surface-success);
-  }
-</style>
 
 <script>
   import { formCopy } from '@/lib/form-content';
@@ -556,18 +393,12 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
       if (!sitekey || !(widget instanceof HTMLElement)) return;
 
       const render = () => {
-        const turnstile = (
-          window as unknown as {
-            turnstile?: {
-              render: (el: HTMLElement, opts: Record<string, unknown>) => void;
-            };
-          }
-        ).turnstile;
-
-        if (!turnstile) return false;
-        turnstile.render(widget, {
+        // O tipo de window.turnstile vive em src/types/turnstile.d.ts, que os
+        // dois formulários compartilham. Antes havia um cast inline aqui.
+        if (!window.turnstile) return false;
+        window.turnstile.render(widget, {
           sitekey,
-          callback: (token: string) => {
+          callback: (token) => {
             this.#turnstileToken = token;
           },
           'expired-callback': () => {

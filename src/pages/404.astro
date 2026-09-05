@@ -1,0 +1,100 @@
+---
+import CrossSection from '@/components/CrossSection.astro';
+import QuickSearch from '@/components/QuickSearch.astro';
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import { notFoundPage } from '@/lib/not-found-content';
+import { categoryHref, getVisibleCategories } from '@/lib/products';
+
+/**
+ * Página 404.
+ *
+ * Não é uma página de desculpas: é uma página de SAÍDA. Quem chega aqui veio
+ * do Google atrás de uma bitola, por uma das ~100 URLs antigas de keyword
+ * stuffing que a Etapa 10 redireciona — e alguma vai escapar. Devolver essa
+ * pessoa ao buscador entrega o cliente ao concorrente que aparece embaixo.
+ *
+ * Por isso a busca vem PRIMEIRO, antes das categorias: quem sabe a medida
+ * resolve em um campo. Ela é o mesmo componente da home e funciona sem
+ * JavaScript, porque é um <form> que faz GET para /produtos.
+ *
+ * `noindex` NÃO é declarado aqui: o próprio status 404 já diz ao buscador para
+ * não indexar, e uma meta noindex numa página que responde 404 é redundante.
+ */
+const categories = await getVisibleCategories();
+---
+
+<Base title={notFoundPage.seoTitle} description={notFoundPage.seoDescription}>
+  <Section tone="light" spacing="md" labelledBy="nao-encontrada">
+    <div class="max-w-2xl">
+      <p class="font-mono text-sm text-surface-fg-soft">Erro 404</p>
+      <div class="mt-2">
+        <Heading level={1} id="nao-encontrada">{notFoundPage.heading}</Heading>
+      </div>
+      <p class="mt-6 text-lg text-surface-fg-soft">{notFoundPage.body}</p>
+    </div>
+
+    <div class="mt-10 max-w-2xl">
+      <Heading level={2} size={4}>{notFoundPage.searchHeading}</Heading>
+      <div class="mt-4">
+        <QuickSearch />
+      </div>
+      <p class="mt-3 text-sm text-surface-fg-soft">{notFoundPage.searchNote}</p>
+    </div>
+  </Section>
+
+  <Section tone="alt" spacing="md" labelledBy="categorias-404">
+    <Heading level={2} id="categorias-404">{notFoundPage.categoriesHeading}</Heading>
+
+    <ul class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        categories.map((category) => (
+          <li>
+            <a
+              href={categoryHref(category.id)}
+              class="group flex h-full items-center gap-4 border border-surface-border p-5 hover:border-surface-hover"
+            >
+              {/* Sem cotas: o bloco tem menos de 180px de largura e a letra
+                  da dimensão ficaria ilegível. O desenho é opcional no schema
+                  da categoria, então o bloco some quando não houver — em vez
+                  de deixar um quadrado vazio ao lado do nome. */}
+              {
+                category.data.crossSection && (
+                  <span class="block w-16 shrink-0 text-surface-fg-soft group-hover:text-surface-hover">
+                    <CrossSection
+                      variant={category.data.crossSection}
+                      dimensions={false}
+                      decorative
+                    />
+                  </span>
+                )
+              }
+              <span>
+                <span class="block font-semibold text-surface-fg">{category.data.name}</span>
+                <span class="mt-1 block text-sm text-surface-fg-soft">
+                  {category.data.shortDescription}
+                </span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section tone="dark" spacing="md" labelledBy="ajuda-404">
+    <div class="max-w-2xl">
+      <Heading level={2} id="ajuda-404">{notFoundPage.helpHeading}</Heading>
+      <p class="mt-4 text-surface-fg-soft">{notFoundPage.helpBody}</p>
+
+      <div class="mt-8 flex flex-wrap gap-4">
+        <Button href={notFoundPage.helpCtaHref}>{notFoundPage.helpCtaLabel}</Button>
+        <Button href={notFoundPage.helpSecondaryHref} variant="secondary">
+          {notFoundPage.helpSecondaryLabel}
+        </Button>
+      </div>
+    </div>
+  </Section>
+</Base>

@@ -1,0 +1,45 @@
+---
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import { messageSent } from '@/lib/contact-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * Confirmação do formulário de contato enviado SEM JavaScript.
+ *
+ * Existe porque /contato é HTML pré-gerado e não tem como ler `?enviado=1` no
+ * servidor. Uma página estática dedicada resolve sem tornar /contato
+ * renderizada sob demanda em toda visita normal.
+ *
+ * `noindex` porque não é conteúdo: é o fim de um fluxo. Indexada, apareceria
+ * na busca por "aldifer contato" prometendo uma confirmação a quem nunca
+ * enviou nada.
+ */
+const site = await getSite();
+---
+
+<Base title={messageSent.seoTitle} description={messageSent.seoDescription} noindex>
+  <Section tone="light" spacing="lg" labelledBy="enviada">
+    <div class="max-w-2xl">
+      <Heading level={1} id="enviada">{messageSent.heading}</Heading>
+      <p class="mt-6 text-lg text-surface-fg-soft">{messageSent.body}</p>
+
+      <p class="mt-8 text-surface-fg-soft">
+        {messageSent.urgentIntro}{' '}
+        <a
+          href={`tel:${site.phoneE164}`}
+          class="font-mono text-lg text-surface-link underline underline-offset-4 hover:text-surface-hover"
+        >
+          {site.phone}
+        </a>
+      </p>
+
+      <div class="mt-10 flex flex-wrap gap-4">
+        <Button href={messageSent.ctaHref}>{messageSent.ctaLabel}</Button>
+        <Button href={messageSent.backHref} variant="secondary">{messageSent.backLabel}</Button>
+      </div>
+    </div>
+  </Section>
+</Base>

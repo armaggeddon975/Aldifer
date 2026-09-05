@@ -15,7 +15,21 @@ import type { QuoteRequest } from './schemas';
  * `json`, e ele tem uma limitação que NÃO pode passar em silêncio.
  */
 
-export type Lead = Omit<QuoteRequest, 'website' | 'turnstileToken' | 'loadedAt'> & {
+/**
+ * O que gerou o lead.
+ *
+ * Existe porque a Etapa 8 acrescentou o formulário de contato, que passa pelo
+ * MESMO pipeline do orçamento — honeypot, tempo de preenchimento, Turnstile,
+ * limite por IP, persistência e e-mail. Sem este campo, os dois chegariam à
+ * caixa da Aldifer com o mesmo assunto e ninguém saberia se é pedido de
+ * material ou dúvida.
+ */
+export type LeadKind = 'orcamento' | 'contato';
+
+export type Lead = Omit<QuoteRequest, 'website' | 'turnstileToken' | 'loadedAt' | 'items'> & {
+  readonly kind: LeadKind;
+  /** Vazio no contato: lá não existe lista de material. */
+  readonly items: QuoteRequest['items'] | readonly [];
   readonly receivedAt: string;
   readonly ip: string | null;
   readonly userAgent: string | null;

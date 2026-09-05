@@ -26,6 +26,32 @@
   min-width: var(--touch-target);
 }
 
+/* Link de LISTA EMPILHADA com alvo de toque cheio.
+   O `touch-target` sozinho não resolve num <a>: âncora é inline, e
+   min-height não tem efeito em caixa inline. Daí o inline-flex.
+   Encontrado na Etapa 8: os 17 links do rodapé mediam 17px de altura em
+   todas as páginas do site desde a Etapa 3 — reprovando os 44px do
+   CLAUDE.md e também os 24px da WCAG 2.5.8, que só isenta link inline
+   dentro de frase. Link empilhado em lista não é isento. */
+@utility touch-row {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+}
+
+/* Alvo de toque SEM crescer a caixa visual.
+   Para trilha e outras linhas horizontais, onde 44px de altura visível
+   ficaria desproporcional. O padding cria a área de toque e a margem
+   negativa a devolve ao layout. Só serve na horizontal: em lista
+   empilhada, as áreas de toque de vizinhos se sobreporiam. */
+@utility touch-inline {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding-block: var(--space-12);
+  margin-block: calc(var(--space-12) * -1);
+}
+
 /* --- Contexto de superfície ------------------------------------------------
    Cada tom redefine as variáveis de contexto. Componente dentro da seção
    herda tudo: cor de texto, cor de borda, cor do CTA e cor do anel de foco.

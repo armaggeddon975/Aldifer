@@ -251,3 +251,181 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+/* ---------------------------------------------------------------------------
+   Formulário — primitivas compartilhadas
+   ---------------------------------------------------------------------------
+   Estas regras nasceram dentro de QuoteForm.astro, na Etapa 6, com o prefixo
+   `quote-form__`. A Etapa 8 acrescentou o formulário de contato e revelou que
+   NENHUMA delas era específica do orçamento: campo, rótulo, dica, erro,
+   honeypot, consentimento, botão e aviso são iguais nos dois.
+
+   Duplicá-las no segundo formulário faria os dois divergirem na primeira
+   alteração de espaçamento — e um formulário de contato com input de outra
+   altura que o de orçamento é o tipo de detalhe que faz o site parecer
+   remendado.
+
+   Ficam aqui, e não em cada componente, porque `<style>` do Astro é ESCOPADO:
+   a mesma regra escrita nos dois arquivos gera duas cópias no CSS final.
+   --------------------------------------------------------------------------- */
+.form-grid {
+    display: grid;
+    gap: var(--space-16);
+    margin-top: var(--space-24);
+  }
+
+  @media (min-width: 40rem) {
+    .form-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .form-field--wide {
+    margin-top: var(--space-16);
+    max-width: 44rem;
+  }
+
+  .form-field label {
+    font-size: var(--size-sm);
+    font-weight: 600;
+    color: var(--surface-fg);
+  }
+
+  .form-optional {
+    font-weight: 400;
+    color: var(--surface-fg-soft);
+  }
+
+  .form-field input,
+  .form-field textarea {
+    min-height: var(--touch-target);
+    padding: var(--space-8) var(--space-12);
+    font-family: var(--family-text);
+    font-size: var(--size-base);
+    color: var(--ink);
+    background-color: var(--paper);
+    border: 1px solid var(--ink-soft);
+    border-radius: var(--corner-control);
+  }
+
+  .form-field textarea {
+    min-height: 6rem;
+    resize: vertical;
+  }
+
+  /* Campo com erro: borda mais grossa E cor. A WCAG proíbe cor como único
+     meio de transmitir informação, então a espessura carrega a mensagem
+     junto — e o texto do erro fica abaixo, sempre. */
+  .form-field input[aria-invalid='true'],
+  .form-field textarea[aria-invalid='true'] {
+    border-width: 2px;
+    border-color: var(--surface-danger);
+  }
+
+  .form-hint {
+    font-size: var(--size-xs);
+    color: var(--surface-fg-soft);
+  }
+
+  .form-error {
+    font-size: var(--size-sm);
+    font-weight: 500;
+    color: var(--surface-danger);
+  }
+
+  .form-error:empty {
+    display: none;
+  }
+
+  /* Honeypot: fora da tela, sem display:none — campo com display:none não é
+     preenchido por robô, e aí ele não pegaria nada. */
+  .form-honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .form-consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-8) var(--space-12);
+    align-items: start;
+    margin-top: var(--space-24);
+    max-width: 44rem;
+  }
+
+  .form-consent input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.15rem;
+    accent-color: var(--accent);
+  }
+
+  .form-consent label {
+    font-size: var(--size-sm);
+    color: var(--surface-fg);
+  }
+
+  .form-consent a {
+    color: var(--surface-link);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .form-consent .form-error {
+    grid-column: 2;
+  }
+
+  .form-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--touch-target-lg);
+    padding-inline: var(--space-32);
+    font-family: var(--family-text);
+    font-size: var(--size-lg);
+    font-weight: 600;
+    color: var(--cta-fg);
+    background-color: var(--cta-bg);
+    border: 0;
+    border-radius: var(--corner-control);
+    cursor: pointer;
+  }
+
+  .form-submit:hover {
+    background-color: var(--cta-bg-hover);
+  }
+
+  .form-submit[disabled] {
+    opacity: 0.65;
+    cursor: progress;
+  }
+
+  .form-notice {
+    max-width: 68ch;
+    margin-top: var(--space-24);
+    padding: var(--space-16);
+    border-inline-start: 4px solid var(--accent);
+    background-color: var(--paper-alt);
+    color: var(--ink);
+    font-size: var(--size-sm);
+  }
+
+  .form-notice--error {
+    border-inline-start-color: var(--surface-danger);
+  }
+
+  .form-success {
+    max-width: 68ch;
+    padding: var(--space-24);
+    border: 1px solid var(--surface-border);
+    border-inline-start: 4px solid var(--surface-success);
+  }

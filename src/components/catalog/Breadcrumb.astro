@@ -48,7 +48,10 @@ const jsonLd = {
         return (
           <li>
             {crumb.href && !isLast ? (
-              <a href={crumb.href}>{crumb.label}</a>
+              // touch-inline: alvo de 44px sem engordar a linha da trilha.
+              <a href={crumb.href} class="touch-inline">
+                {crumb.label}
+              </a>
             ) : (
               <span aria-current="page">{crumb.label}</span>
             )}

@@ -126,13 +126,14 @@ com valor `null`. Campo nulo não renderiza.
 
 | Item | Situação | Etapa |
 |---|---|---|
-| **Arquivo do logotipo** | Não temos. A marca hoje é um logotipo tipográfico em Archivo Expanded — mais nítido e mais leve que um PNG, mas não é a identidade oficial. | 8 |
+| **Logotipo em vetor** | O `logo.png` do site atual foi baixado na Etapa 8 e é o logotipo REAL: dele saem o favicon, o apple-touch-icon, os ícones do manifest e a marca da og-image. Mas ele tem 240×60, e o marco circular dentro dele só 58×58 — o `apple-touch-icon` de 180px é ampliação de 3×. Fica levemente macio. Um SVG ou um PNG grande resolveria de vez. **Não redesenhei o marco em SVG de propósito:** um logotipo traçado a olho de um raster de 58px sai *quase* igual, e quase igual em identidade de marca é pior que macio. | 8 · 12 |
 | **Onde persistir o lead** | E-mail sozinho perde lead. Ordem de preferência: Google Sheets → Notion → Supabase. Depende da pergunta 10. | 6 |
 | **`www` ou apex** | Fixado em `https://www.aldifer.com.br` no `astro.config.mjs`, para casar com o JSON-LD. Se mudar, muda nos dois lugares. | 13 |
 | **Fonte Archivo** | O arquivo com eixo de largura custa 88 KB contra 34 KB da versão só-peso. É o preço do "Expanded". Candidata nº 1 de otimização. | 12 |
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
 | **Revisão da Política de Privacidade** | É MINUTA. O texto descreve com precisão o que o site tecnicamente faz, mas documento legal precisa de revisão de quem responde por ele. Faltam o CNPJ do controlador e a definição do prazo de retenção do lead. | 6 · 13 |
 | **Limite por IP é por instância** | O contador vive na memória do processo. Em serverless cada instância tem a sua, então o limite real é 5/hora **por instância**. Contra abuso distribuído o portão é o Turnstile. Um limite global exige Vercel KV ou Upstash Redis — decidir se vale a dependência. | 13 |
+| **Nova sessão fotográfica** | As 5 fotos hoje no site são de 2016, 900×540, tiradas de celular, baixadas do site antigo com autorização. Servem porque mostram ESTOQUE REAL etiquetado por bitola — prova, não decoração. Mas 900px é o limite: em tela de 1280 a galeria já exibe a 587px, quase 1:1. Aço bem fotografado é metade da credibilidade da página Empresa. Vale notar que a placa do caminhão aparece legível na `empresa-05`. | 8 |
 | **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
 
 ---
@@ -161,6 +162,140 @@ só acrescenta as sugestões, e o índice de 22 KB é baixado no primeiro toque 
 A contrapartida aceita: código de formulário e de calculadora fica mais verboso.
 
 O registro completo, com o motivo, está na nota de stack do [`CLAUDE.md`](./CLAUDE.md).
+
+---
+
+## Um pipeline de recebimento, duas rotas
+
+A Etapa 8 acrescentou `/api/contato`, e ele **não** é uma segunda implementação do
+`/api/orcamento`. Tudo o que os dois fazem — honeypot antes da validação, tempo de
+preenchimento, Turnstile, limite por IP contado só sobre envio bem formado,
+persistência obrigatória e a política de nunca perder um lead — vive em
+[`src/lib/submission.ts`](./src/lib/submission.ts). As duas rotas são finas.
+
+O motivo é concreto: na Etapa 6 eu errei a ORDEM dessas checagens. O honeypot vinha
+depois do Zod, e a resposta de erro saía com `fieldErrors.website` — dizendo ao robô
+exatamente qual campo o pegou. Um erro desses corrigido em duas cópias é um erro
+corrigido pela metade.
+
+O que difere entre os dois é só o schema. No contato a mensagem é **obrigatória**: no
+orçamento a lista de material já diz o que a pessoa quer, mas no contato a mensagem *é*
+o pedido, e recebê-la vazia daria à Aldifer um nome e um telefone sem assunto.
+
+### O formulário de contato funciona sem JavaScript
+
+O `<form>` tem `method`, `action` e validação nativa (`required`, `type=email`,
+`minlength`, `pattern`). Com o script bloqueado o navegador barra o que está errado e
+faz um POST comum; `/api/contato` responde **303** para uma página estática de
+resultado — `/mensagem-enviada` ou `/mensagem-nao-enviada`.
+
+O atributo `novalidate` **não está no HTML**: o script o acrescenta quando roda. Assim
+as mensagens que dizem o que fazer substituem as bolhas genéricas do navegador apenas
+quando existe script para mostrá-las.
+
+Duas consequências que valem registro:
+
+- **`loadedAt` chega como `0`** no caminho sem script, porque ninguém preenche o campo
+  oculto. O servidor trata 0 como "não cronometrado" e pula a checagem de tempo, em vez
+  de recusar justamente quem está sem JavaScript. O e-mail mostra "não medido (envio sem
+  JavaScript)" e não `-1s`.
+- **A página de falha não diz qual campo errou.** Nesse caminho os erros de
+  preenchimento já foram barrados pelo navegador; o que chega lá é envio rápido demais,
+  limite por IP ou falha de entrega. Em nenhum desses casos a pessoa resolve algo com um
+  nome de campo — o que resolve é o telefone, e é ele que está em destaque.
+
+O POST nativo passa pela checagem de origem do Astro, que recusa com 403 quando falta o
+header `Origin`. Navegador sempre o manda; script de fora, não. É proteção contra CSRF
+e fica.
+
+### Sem Zod no cliente, ao contrário do orçamento
+
+No formulário de orçamento o schema no cliente custa 25 KB gzip e se paga: a lista de
+material tem regra que o HTML não expressa. No contato os campos são cinco e a validação
+nativa cobre todos, então o peso seria só peso. A autoridade sobre o que é válido
+continua sendo o mesmo `contactMessageSchema` do servidor — as mensagens dele chegam na
+resposta e o script as coloca no campo certo.
+
+---
+
+## Alvo de toque: um defeito que estava em todas as páginas
+
+Verificando a Etapa 8 a 360px, o conteúdo das páginas novas passou sem um alvo abaixo
+de 44px. O **rodapé**, não: seus 17 links mediam **17px de altura** — e o rodapé está em
+todas as páginas desde a Etapa 3.
+
+Isso reprova os 44×44 que o `CLAUDE.md` exige e também os 24×24 da WCAG 2.5.8, que
+isenta apenas link *inline dentro de frase*. Link empilhado em lista não é isento. O
+`axe` não pegou porque ele não implementa a checagem de tamanho de alvo.
+
+A correção criou duas utilities em `global.css`:
+
+- **`touch-row`** para link de lista empilhada. `min-height` sozinho não resolve num
+  `<a>`: âncora é caixa inline, e `min-height` não tem efeito nela — daí o `inline-flex`.
+  O `gap` das listas saiu, senão o alvo de 44px somado ao gap abriria um vão de 60px.
+- **`touch-inline`** para linha horizontal, como a trilha de navegação, onde 44px de
+  altura visível ficaria desproporcional: o `padding-block` cria a área de toque e a
+  margem negativa a devolve ao layout. Só serve na horizontal — em lista empilhada as
+  áreas de toque de vizinhos se sobreporiam.
+
+O rodapé no mobile passou de ~750px para 1208px de altura. É o que custa, e ele está
+abaixo da dobra.
+
+---
+
+## Os ativos de marca são gerados, não desenhados à mão
+
+`npm run assets` roda [`scripts/gerar-assets-de-marca.mjs`](./scripts/gerar-assets-de-marca.mjs)
+e produz, a partir do `logo.png` e das fotos reais:
+
+```
+public/favicon.ico           16 + 32 + 48, PNG dentro de ICO
+public/apple-touch-icon.png  180, fundo opaco (o iOS ignora alfa e a renderiza preta)
+public/icone-192.png         manifest
+public/icone-512.png         manifest
+public/og-image.jpg          1200×630
+src/assets/aldifer/fachada.jpg   a fachada, sem o overlay promocional
+```
+
+A saída é **commitada** e o script roda sob demanda, não no build: assim a og-image não
+depende de fonte instalada na Vercel e fica estável entre deploys.
+
+Três detalhes que o script documenta e que custaram tempo:
+
+- **O `sharp` não escreve ICO.** O formato é simples e aceita PNG embutido, que todo
+  navegador atual lê, então o container é montado à mão: cabeçalho de 6 bytes, uma
+  entrada de diretório de 16 bytes por tamanho, e os PNGs em seguida.
+- **`extract` e `trim` não se encadeiam.** No mesmo pipeline o `sharp` aplica o `trim`
+  primeiro, o logo cai para 240×58 e o recorte de 60 de altura estoura com "bad extract
+  area". São dois pipelines.
+- **A Archivo Expanded não chega ao rasterizador.** `@font-face` com woff2 é ignorado em
+  silêncio e cai numa serifada. Por isso a marca na og-image é o `logo.png` de verdade,
+  como imagem, e só o texto de apoio usa sans do sistema — onde a diferença de fonte não
+  engana ninguém.
+
+O `empresa-01.jpg` era um post de rede social de 800×800, com selo de 20 anos e
+"Obrigado por fazer parte dessa história" nos 375px de cima. O recorte deixa só a
+fotografia da fachada, que é o que serve para reconhecer o galpão na estrada. Recortar
+o overlay não inventa nada.
+
+**Até a Etapa 8 o site servia o favicon padrão do Astro.** Ele teria ido ao ar assim.
+
+---
+
+## As primitivas de formulário são compartilhadas
+
+As classes `.form-field`, `.form-error`, `.form-hint`, `.form-submit`, `.form-consent`,
+`.form-honeypot` e `.form-notice` vivem em `src/styles/components.css`.
+
+Elas nasceram dentro de `QuoteForm.astro`, na Etapa 6, com prefixo `quote-form__`. A
+Etapa 8 revelou que **nenhuma** era específica do orçamento. Duplicá-las no formulário de
+contato faria os dois divergirem na primeira alteração de espaçamento — e um formulário
+de contato com input de outra altura que o de orçamento é o tipo de detalhe que faz o
+site parecer remendado.
+
+Ficam num arquivo compartilhado, e não em cada componente, porque `<style>` do Astro é
+escopado: a mesma regra escrita nos dois arquivos gera duas cópias no CSS final. O
+`QuoteForm.astro` caiu de 595 para 432 linhas.
 
 ---
 
@@ -316,8 +451,10 @@ npm run dev
 | `npm run build` | Build de produção. **Exclui os rascunhos** e valida todos os schemas. |
 | `npm run preview` | Serve o build de produção, para medir performance de verdade. |
 | `npm run check` | Verificação de tipos, inclusive nos arquivos `.astro`. |
-| `npm test` | 155 testes: fórmulas, rótulos, busca, legendas e lista de orçamento. |
-| `npm run contrast` | Verifica os 19 contrastes e as 4 separações de matiz da paleta. |
+| `npm test` | 215 testes: fórmulas, rótulos, busca, legendas, lista de orçamento e e-mail. |
+| `npm run contrast` | 22 contrastes, 4 separações de matiz, e varre o código procurando o acento usado como cor de texto. |
+| `npm run meta` | Confere title, description, canonical, og:image e h1 único em TODA rota do build. Reprova em título repetido. |
+| `npm run assets` | Regera favicon, ícones e og-image a partir do logotipo. Rode ao trocar o logo. |
 | `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
 
 ---
@@ -374,7 +511,7 @@ src/components/
 
 src/layouts/Base.astro        layout raiz
 src/styles/tokens.css         TODOS os tokens do design system
-src/pages/styleguide.astro    rota temporária de revisão — REMOVER na Etapa 8
+                              (a rota /styleguide foi removida na Etapa 8)
 ```
 
 ### Como editar conteúdo pelo código
@@ -421,7 +558,7 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 5 — Lista de orçamento | ✅ |
 | 6 — Formulário, servidor e LGPD | ◐ implementado e verificado, EXCETO a entrega do e-mail — falta a chave do Resend |
 | 7 — Calculadora de peso | ✅ |
-| 8 — Páginas restantes | ⬜ |
+| 8 — Páginas restantes | ✅ |
 | 9 — SEO técnico | ⬜ |
 | 10 — Migração de URLs | ⬜ |
 | 11 — CMS Keystatic | ⬜ |

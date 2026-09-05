@@ -1,0 +1,168 @@
+---
+import { Picture } from 'astro:assets';
+
+import ContactForm from '@/components/contact/ContactForm.astro';
+import Location from '@/components/Location.astro';
+import Pending from '@/components/Pending.astro';
+import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import fachada from '@/assets/aldifer/fachada.jpg';
+import { contactChannels, contactFacade, contactForm, contactPage } from '@/lib/contact-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * Página Contato.
+ *
+ * A ordem das seções segue a hierarquia do CLAUDE.md, não a do costume: quem
+ * quer PREÇO DE MATERIAL é mandado ao catálogo na abertura, porque o pedido
+ * estruturado é a ação primária do site e responder por ela é mais rápido para
+ * as duas partes. Os canais diretos vêm em seguida, e o formulário por último —
+ * ele é para dúvida, não para pedido de bitola.
+ *
+ * Os canais diretos são `tel:` e `mailto:` puros: funcionam sem JavaScript, o
+ * que faz o objetivo da página sobreviver mesmo com o script bloqueado.
+ */
+const site = await getSite();
+const { address } = site;
+---
+
+<Base title={contactPage.seoTitle} description={contactPage.seoDescription}>
+  <Section tone="light" spacing="md" labelledBy="contato">
+    <Breadcrumb items={[{ label: 'Contato' }]} />
+
+    <div class="mt-6 max-w-3xl">
+      <Heading level={1} id="contato">{contactPage.heading}</Heading>
+      <p class="mt-6 text-lg text-surface-fg-soft">{contactPage.intro}</p>
+      <div class="mt-8">
+        <Button href={contactPage.quoteCtaHref}>{contactPage.quoteCtaLabel}</Button>
+      </div>
+    </div>
+  </Section>
+
+  <Section tone="alt" spacing="md" labelledBy="canais">
+    <Heading level={2} id="canais">{contactChannels.heading}</Heading>
+
+    <div class="mt-8 grid gap-8 lg:grid-cols-3 lg:gap-12">
+      <div>
+        <h3 class="text-sm font-semibold text-surface-fg">{contactChannels.phoneLabel}</h3>
+        <p class="mt-2">
+          <a
+            href={`tel:${site.phoneE164}`}
+            class="touch-target inline-flex items-center font-mono text-xl text-surface-link underline underline-offset-4 hover:text-surface-hover"
+          >
+            {site.phone}
+          </a>
+        </p>
+        <p class="mt-1 text-sm text-surface-fg-soft">{contactChannels.phoneNote}</p>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-surface-fg">{contactChannels.emailLabel}</h3>
+        <p class="mt-2">
+          <a
+            href={`mailto:${site.email}`}
+            class="touch-target inline-flex items-center break-all text-lg text-surface-link underline underline-offset-4 hover:text-surface-hover"
+          >
+            {site.email}
+          </a>
+        </p>
+        <p class="mt-1 text-sm text-surface-fg-soft">{contactChannels.emailNote}</p>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-surface-fg">{contactChannels.whatsappLabel}</h3>
+        {/* Campo nulo não renderiza botão: um WhatsApp que abre página
+            intermediária perde gente no caminho. Ver a lista do README. */}
+        {
+          site.whatsapp ? (
+            <p class="mt-2">
+              <a
+                href={`https://wa.me/${site.whatsapp}`}
+                rel="noopener"
+                target="_blank"
+                class="touch-target inline-flex items-center font-mono text-xl text-surface-link underline underline-offset-4 hover:text-surface-hover"
+              >
+                {site.whatsapp}
+              </a>
+            </p>
+          ) : (
+            <Pending
+              label={contactChannels.whatsappPending.label}
+              detail={contactChannels.whatsappPending.detail}
+            />
+          )
+        }
+      </div>
+    </div>
+
+    <div class="mt-10 grid gap-8 border-t border-surface-border pt-8 lg:grid-cols-3 lg:gap-12">
+      <div class="lg:col-span-2">
+        <h3 class="text-sm font-semibold text-surface-fg">{contactChannels.addressLabel}</h3>
+        <address class="mt-2 not-italic text-surface-fg-soft">
+          <span class="block font-semibold text-surface-fg">{site.legalName}</span>
+          {address.street}<br />
+          {address.district}<br />
+          {address.city} / {address.state} — CEP {address.postalCode}
+        </address>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-surface-fg">{contactChannels.hoursLabel}</h3>
+        {
+          site.openingHours ? (
+            <ul class="mt-2 text-surface-fg-soft">
+              {site.openingHours.map((line) => (
+                <li>{line}</li>
+              ))}
+            </ul>
+          ) : (
+            <Pending
+              label={contactChannels.hoursPending.label}
+              detail={contactChannels.hoursPending.detail}
+            />
+          )
+        }
+      </div>
+    </div>
+  </Section>
+
+  {/* A fachada resolve um problema concreto: achar o galpão na estrada. */}
+  <Section tone="light" spacing="md" labelledBy="reconhecer">
+    <div class="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
+      <div class="max-w-xl">
+        <Heading level={2} id="reconhecer">{contactFacade.heading}</Heading>
+        <p class="mt-4 text-surface-fg-soft">{contactFacade.description}</p>
+      </div>
+
+      <div class="border border-surface-border">
+        <Picture
+          src={fachada}
+          alt={contactFacade.alt}
+          formats={['avif', 'webp']}
+          widths={[400, 800]}
+          sizes="(min-width: 64rem) 37rem, 100vw"
+          loading="lazy"
+          decoding="async"
+          class="block h-auto w-full"
+        />
+      </div>
+    </div>
+  </Section>
+
+  {/* Reaproveita o bloco da home: mapa sob clique e rota sem chave de API. */}
+  <Location tone="alt" showDescription={false} showDetails={false} heading="Onde estamos" />
+
+  <Section tone="light" spacing="md" labelledBy="formulario" id="formulario">
+    <div class="max-w-2xl">
+      <Heading level={2} id="formulario">{contactForm.heading}</Heading>
+      <p class="mt-4 text-surface-fg-soft">{contactForm.description}</p>
+    </div>
+
+    <div class="mt-8 max-w-3xl">
+      <ContactForm turnstileSiteKey={import.meta.env.PUBLIC_TURNSTILE_SITE_KEY} />
+    </div>
+  </Section>
+</Base>

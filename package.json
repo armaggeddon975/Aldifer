@@ -13,6 +13,8 @@
     "check": "astro check",
     "fonts": "node scripts/copy-fonts.mjs",
     "contrast": "node scripts/check-contrast.mjs",
+    "assets": "node scripts/gerar-assets-de-marca.mjs",
+    "meta": "node scripts/check-meta.mjs",
     "test": "node --test \"src/**/*.test.ts\"",
     "astro": "astro"
   },

@@ -1,0 +1,34 @@
+{
+  "name": "Aldifer Distribuidora de Ferro e Aço",
+  "short_name": "Aldifer",
+  "description": "Ferro e aço em pronta-entrega no Grande ABC. Consulte bitolas e monte seu pedido de orçamento.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "minimal-ui",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0B1B2E",
+  "icons": [
+    {
+      "src": "/icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catálogo de produtos",
+      "url": "/produtos"
+    },
+    {
+      "name": "Calculadora de peso",
+      "url": "/calculadora-de-peso"
+    }
+  ]
+}

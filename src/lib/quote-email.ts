@@ -1,7 +1,7 @@
 import type { Lead } from './lead-store';
 
 /**
- * Monta o e-mail do pedido de orçamento.
+ * Monta o e-mail do pedido de orçamento e da mensagem de contato.
  *
  * Duas versões, texto e HTML. O texto não é enfeite: melhora entrega, é o que
  * alguns clientes de e-mail mostram, e é o que se lê melhor num celular no
@@ -18,13 +18,35 @@ const WARNING_LABEL: Record<EmailWarning, string> = {
   'sem-antispam': 'SEM VERIFICAÇÃO ANTI-SPAM',
 };
 
+/** Rótulos que mudam com o tipo de envio. */
+const KIND = {
+  orcamento: { subject: 'Pedido de orçamento', notes: 'OBSERVAÇÕES DO CLIENTE' },
+  contato: { subject: 'Mensagem de contato', notes: 'MENSAGEM' },
+} as const;
+
 export function buildSubject(lead: Lead, warnings: readonly EmailWarning[]): string {
   const who = lead.company ? `${lead.name} — ${lead.company}` : lead.name;
   const count = lead.items.length;
-  const base = `Pedido de orçamento: ${who} (${count} ${count === 1 ? 'medida' : 'medidas'})`;
+
+  // A contagem de medidas só entra no orçamento: "(0 medidas)" numa mensagem
+  // de contato faria a Aldifer procurar uma lista que não existe.
+  const base =
+    lead.kind === 'orcamento'
+      ? `${KIND.orcamento.subject}: ${who} (${count} ${count === 1 ? 'medida' : 'medidas'})`
+      : `${KIND.contato.subject}: ${who}`;
 
   if (warnings.length === 0) return base;
   return `[${warnings.map((w) => WARNING_LABEL[w]).join(' · ')}] ${base}`;
+}
+
+/**
+ * Tempo de preenchimento para o rodapé de auditoria.
+ *
+ * `-1` significa que o envio veio SEM JavaScript e ninguém o cronometrou —
+ * imprimir "-1s" faria a Aldifer achar que o dado está corrompido.
+ */
+function fillLabel(seconds: number): string {
+  return seconds < 0 ? 'não medido (envio sem JavaScript)' : `${seconds}s`;
 }
 
 function escapeHtml(value: string): string {
@@ -83,7 +105,7 @@ export function buildTextBody(lead: Lead, warnings: readonly EmailWarning[]): st
 
   blocks.push(
     [
-      'PEDIDO DE ORÇAMENTO',
+      KIND[lead.kind].subject.toUpperCase(),
       '',
       `Nome:     ${lead.name}`,
       lead.company ? `Empresa:  ${lead.company}` : null,
@@ -96,15 +118,18 @@ export function buildTextBody(lead: Lead, warnings: readonly EmailWarning[]): st
       .join('\n'),
   );
 
-  blocks.push(['MATERIAL PEDIDO', '', textTable(lead.items)].join('\n'));
+  // Sem lista, sem tabela: uma tabela só com cabeçalho parece pedido perdido.
+  if (lead.items.length > 0) {
+    blocks.push(['MATERIAL PEDIDO', '', textTable(lead.items)].join('\n'));
+  }
 
-  if (lead.notes) blocks.push(['OBSERVAÇÕES DO CLIENTE', '', lead.notes].join('\n'));
+  if (lead.notes) blocks.push([KIND[lead.kind].notes, '', lead.notes].join('\n'));
 
   blocks.push(
     [
       '---',
       'Responder a este e-mail vai direto para o cliente.',
-      `Tempo de preenchimento: ${lead.fillSeconds}s · IP: ${lead.ip ?? 'desconhecido'}`,
+      `Tempo de preenchimento: ${fillLabel(lead.fillSeconds)} · IP: ${lead.ip ?? 'desconhecido'}`,
     ].join('\n'),
   );
 
@@ -145,7 +170,7 @@ ${warnings
 
   return `<div style="font-family:system-ui,Arial,sans-serif;font-size:15px;line-height:1.6;color:#0b1b2e">
 ${aviso}
-<h1 style="margin:0 0 16px;font-size:20px">Pedido de orçamento</h1>
+<h1 style="margin:0 0 16px;font-size:20px">${KIND[lead.kind].subject}</h1>
 
 <table cellpadding="0" cellspacing="0" style="margin-bottom:24px">
 ${dado('Nome', lead.name)}
@@ -156,7 +181,10 @@ ${dado('Cidade', lead.city)}
 ${dado('Recebido', lead.receivedAt)}
 </table>
 
-<h2 style="margin:0 0 8px;font-size:16px">Material pedido</h2>
+${
+  lead.items.length === 0
+    ? ''
+    : `<h2 style="margin:0 0 8px;font-size:16px">Material pedido</h2>
 <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;font-size:14px">
 <thead><tr style="background:#f5f6f7">
   <th align="left" style="padding:8px">Produto</th>
@@ -167,18 +195,21 @@ ${dado('Recebido', lead.receivedAt)}
 <tbody>
 ${linhas}
 </tbody>
-</table>
+</table>`
+}
 
 ${
   lead.notes
-    ? `<h2 style="margin:24px 0 8px;font-size:16px">Observações do cliente</h2>
+    ? `<h2 style="margin:24px 0 8px;font-size:16px">${
+        lead.kind === 'orcamento' ? 'Observações do cliente' : 'Mensagem'
+      }</h2>
 <p style="margin:0;white-space:pre-wrap">${escapeHtml(lead.notes)}</p>`
     : ''
 }
 
 <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #dde2e8;font-size:13px;color:#5a6472">
 Responder a este e-mail vai direto para o cliente.<br>
-Tempo de preenchimento: ${lead.fillSeconds}s · IP: ${escapeHtml(lead.ip ?? 'desconhecido')}
+Tempo de preenchimento: ${fillLabel(lead.fillSeconds)} · IP: ${escapeHtml(lead.ip ?? 'desconhecido')}
 </p>
 </div>`;
 }
@@ -186,7 +217,7 @@ Tempo de preenchimento: ${lead.fillSeconds}s · IP: ${escapeHtml(lead.ip ?? 'des
 /** Uma linha por item, para o botão de WhatsApp da tela de sucesso. */
 export function buildWhatsappText(lead: Lead): string {
   return [
-    `Pedido de orçamento — ${lead.name}${lead.company ? ` (${lead.company})` : ''}`,
+    `${KIND[lead.kind].subject} — ${lead.name}${lead.company ? ` (${lead.company})` : ''}`,
     '',
     ...lead.items.map((item) => `• ${itemLine(item)}`),
     lead.notes ? `\nObservações: ${lead.notes}` : '',

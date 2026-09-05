@@ -2,7 +2,7 @@
 import Pending from '@/components/Pending.astro';
 import Button from '@/components/ui/Button.astro';
 import Heading from '@/components/ui/Heading.astro';
-import Section from '@/components/ui/Section.astro';
+import Section, { type SectionTone } from '@/components/ui/Section.astro';
 import { location } from '@/lib/home-content';
 import { getSite } from '@/lib/site';
 
@@ -17,6 +17,37 @@ import { getSite } from '@/lib/site';
  * ao galpão consegue mesmo com o script bloqueado — e traçar rota é mais útil
  * que ver o mapa parado.
  */
+/**
+ * Props para a página Contato reusar o bloco: lá ele é o CONTEÚDO da página, e
+ * não uma faixa entre outras, então precisa de h1 fora e h2 aqui, num tom que
+ * não repita o da seção anterior.
+ */
+interface Props {
+  tone?: SectionTone;
+  /** Nível do título. 2 na home, 2 no Contato sob um h1 próprio. */
+  level?: 2 | 3;
+  /** O Contato já apresenta o assunto no seu próprio texto de abertura. */
+  showDescription?: boolean;
+  /**
+   * Endereço, telefone e horário.
+   *
+   * `false` na página Contato, que já traz os três na seção de canais diretos.
+   * Repetir ali deixava o endereço duas vezes na mesma página e, pior, DOIS
+   * avisos [CONFIRMAR] de horário — o que faz a pendência parecer duas
+   * pendências diferentes na revisão.
+   */
+  showDetails?: boolean;
+  heading?: string;
+}
+
+const {
+  tone = 'alt',
+  level = 2,
+  showDescription = true,
+  showDetails = true,
+  heading = location.heading,
+}: Props = Astro.props;
+
 const site = await getSite();
 const { address } = site;
 
@@ -27,12 +58,14 @@ const routeUrl = `https://www.google.com/maps/dir/?api=1&destination=${query}`;
 const mapUrl = `https://www.google.com/maps?q=${query}&output=embed`;
 ---
 
-<Section tone="alt" spacing="md" labelledBy="onde-estamos">
+<Section tone={tone} spacing="md" labelledBy="onde-estamos">
   <div class="grid gap-10 lg:grid-cols-2 lg:gap-16">
     <div>
-      <Heading level={2} id="onde-estamos">{location.heading}</Heading>
-      <p class="mt-4 text-surface-fg-soft">{location.description}</p>
+      <Heading level={level} size={2} id="onde-estamos">{heading}</Heading>
+      {showDescription && <p class="mt-4 text-surface-fg-soft">{location.description}</p>}
 
+      {showDetails && (
+      <>
       <address class="mt-8 not-italic">
         <span class="block font-semibold text-surface-fg">{site.legalName}</span>
         <span class="mt-2 block text-surface-fg-soft">
@@ -63,6 +96,9 @@ const mapUrl = `https://www.google.com/maps?q=${query}&output=embed`;
           <Pending label={location.hoursPending.label} detail={location.hoursPending.detail} />
         )
       }
+
+      </>
+      )}
 
       <div class="mt-8">
         <Button href={routeUrl} rel="noopener" target="_blank">{location.routeLabel}</Button>

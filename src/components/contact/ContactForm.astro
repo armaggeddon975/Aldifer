@@ -1,0 +1,396 @@
+---
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import { contactForm } from '@/lib/contact-content';
+
+/**
+ * Formulário de contato.
+ *
+ * MELHORIA PROGRESSIVA DE VERDADE. O `<form>` tem `method`, `action` e
+ * validação nativa do HTML, então funciona com o script bloqueado: o navegador
+ * barra campo vazio, e-mail malformado e mensagem curta antes do POST, e
+ * /api/contato responde 303 para uma página estática de resultado.
+ *
+ * Com JavaScript o script acrescenta `novalidate` ao formulário — e é por isso
+ * que o atributo NÃO está no HTML: assim as mensagens do CLAUDE.md, que dizem o
+ * que fazer, substituem as bolhas genéricas do navegador apenas quando existe
+ * script para mostrá-las. Sem script, é melhor a bolha genérica que nada.
+ *
+ * SEM ZOD NO CLIENTE, ao contrário do formulário de orçamento. Lá o schema
+ * pesa 25 KB gzip e se paga: a lista de material tem regra que o HTML não
+ * expressa. Aqui os campos são cinco e a validação nativa cobre todos, então o
+ * peso seria só peso — e a autoridade sobre o que é válido continua sendo o
+ * mesmo `contactMessageSchema` do servidor, cujas mensagens chegam na resposta.
+ */
+interface Props {
+  /** Chave do Turnstile. Ausente, o formulário segue sem o widget. */
+  turnstileSiteKey?: string;
+}
+
+const { turnstileSiteKey }: Props = Astro.props;
+
+const campo = (name: string) => `cf-${name}`;
+---
+
+<contact-form data-endpoint="/api/contato">
+  <form method="post" action="/api/contato" data-form>
+    <div class="form-grid">
+      <p class="form-field">
+        <label for={campo('name')}>{contactForm.labelName}</label>
+        <input
+          id={campo('name')}
+          name="name"
+          type="text"
+          autocomplete="name"
+          required
+          minlength="2"
+          maxlength="120"
+          aria-describedby={`${campo('name')}-erro`}
+        />
+        <span class="form-error" id={`${campo('name')}-erro`} data-error-for="name"></span>
+      </p>
+
+      <p class="form-field">
+        <label for={campo('company')}>
+          {contactForm.labelCompany} <span class="form-optional">{contactForm.optional}</span>
+        </label>
+        <input
+          id={campo('company')}
+          name="company"
+          type="text"
+          autocomplete="organization"
+          maxlength="120"
+          aria-describedby={`${campo('company')}-erro`}
+        />
+        <span class="form-error" id={`${campo('company')}-erro`} data-error-for="company"></span>
+      </p>
+
+      <p class="form-field">
+        <label for={campo('email')}>{contactForm.labelEmail}</label>
+        <input
+          id={campo('email')}
+          name="email"
+          type="email"
+          autocomplete="email"
+          inputmode="email"
+          required
+          aria-describedby={`${campo('email')}-erro`}
+        />
+        <span class="form-error" id={`${campo('email')}-erro`} data-error-for="email"></span>
+      </p>
+
+      <p class="form-field">
+        <label for={campo('phone')}>{contactForm.labelPhone}</label>
+        {/* O `pattern` só confere a FORMA — dígitos, espaço e máscara, de 10 a
+            20 caracteres. Quem decide se o número é válido é o schema no
+            servidor, que trata DDD, +55 e as sete formas de escrever. Um
+            pattern estrito aqui recusaria quem digita do jeito certo. */}
+        <input
+          id={campo('phone')}
+          name="phone"
+          type="tel"
+          autocomplete="tel"
+          inputmode="tel"
+          required
+          pattern="[0-9()+\-\s]{10,20}"
+          aria-describedby={`${campo('phone')}-dica ${campo('phone')}-erro`}
+        />
+        <span class="form-hint" id={`${campo('phone')}-dica`}>{contactForm.phoneHint}</span>
+        <span class="form-error" id={`${campo('phone')}-erro`} data-error-for="phone"></span>
+      </p>
+
+      <p class="form-field">
+        <label for={campo('city')}>
+          {contactForm.labelCity} <span class="form-optional">{contactForm.optional}</span>
+        </label>
+        <input
+          id={campo('city')}
+          name="city"
+          type="text"
+          autocomplete="address-level2"
+          maxlength="80"
+          aria-describedby={`${campo('city')}-erro`}
+        />
+        <span class="form-error" id={`${campo('city')}-erro`} data-error-for="city"></span>
+      </p>
+    </div>
+
+    <p class="form-field form-field--wide">
+      <label for={campo('notes')}>{contactForm.labelMessage}</label>
+      <textarea
+        id={campo('notes')}
+        name="notes"
+        rows="5"
+        required
+        minlength="10"
+        maxlength="2000"
+        aria-describedby={`${campo('notes')}-dica ${campo('notes')}-erro`}></textarea>
+      <span class="form-hint" id={`${campo('notes')}-dica`}>{contactForm.messageHint}</span>
+      <span class="form-error" id={`${campo('notes')}-erro`} data-error-for="notes"></span>
+    </p>
+
+    {/*
+      Honeypot. Escondido por CSS e NÃO por type="hidden": campo hidden não é
+      preenchido por robô, então não pegaria ninguém. tabindex="-1" tira da
+      ordem de tabulação e aria-hidden esconde do leitor de tela.
+    */}
+    <p class="form-honeypot" aria-hidden="true">
+      <label for={campo('website')}>{contactForm.labelHoneypot}</label>
+      <input id={campo('website')} name="website" type="text" tabindex="-1" autocomplete="off" />
+    </p>
+
+    {/* Enviado no POST nativo também: o servidor mede o tempo de preenchimento
+        nos dois caminhos. Preenchido por script; sem script vai 0 e o servidor
+        trata como ausente em vez de recusar. */}
+    <input type="hidden" name="loadedAt" value="0" data-loaded-at />
+
+    <p class="form-consent">
+      {/* NÃO pré-marcado: consentimento LGPD tem de ser ato do titular. */}
+      <input
+        id={campo('consent')}
+        name="consent"
+        type="checkbox"
+        required
+        aria-describedby={`${campo('consent')}-erro`}
+      />
+      <label for={campo('consent')}>
+        {contactForm.labelConsent}{' '}
+        <a href="/politica-de-privacidade">Li a Política de Privacidade</a>.
+      </label>
+      <span class="form-error" id={`${campo('consent')}-erro`} data-error-for="consent"></span>
+    </p>
+
+    {
+      turnstileSiteKey && (
+        <div class="mt-6" data-turnstile data-sitekey={turnstileSiteKey}>
+          <div class="cf-turnstile" data-widget />
+        </div>
+      )
+    }
+
+    <div class="mt-8">
+      <button type="submit" class="form-submit" data-submit>{contactForm.submitIdle}</button>
+    </div>
+
+    {/* Falha de envio. Os dados digitados permanecem no formulário. */}
+    <div class="form-notice form-notice--error" hidden data-send-error>
+      <p class="font-semibold" data-send-error-heading>{contactForm.errorHeading}</p>
+      <p class="mt-2" data-send-error-body></p>
+    </div>
+  </form>
+
+  {/* Sucesso. Substitui o formulário, não empilha mensagem acima dele. */}
+  <div class="form-success" hidden data-success>
+    <Heading level={3} size={3}>{contactForm.successHeading}</Heading>
+    <p class="mt-3">{contactForm.successBody}</p>
+    <div class="mt-6">
+      <Button href="/produtos" variant="secondary">{contactForm.successCatalogLabel}</Button>
+    </div>
+  </div>
+</contact-form>
+
+{
+  turnstileSiteKey && (
+    <script
+      is:inline
+      async
+      defer
+      src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+    />
+  )
+}
+
+<script>
+  import { contactForm } from '@/lib/contact-content';
+
+  /**
+   * Enhancement do formulário de contato.
+   *
+   * Não valida por conta própria: deixa a validação nativa do HTML barrar o
+   * óbvio e trata as mensagens que o servidor devolve, que vêm do mesmo
+   * `contactMessageSchema` que decide o que é válido. Uma segunda regra aqui
+   * poderia divergir da do servidor.
+   */
+  class ContactFormElement extends HTMLElement {
+    #form!: HTMLFormElement;
+    #submit!: HTMLButtonElement;
+    #success!: HTMLElement;
+    #sendError!: HTMLElement;
+    #sendErrorBody!: HTMLElement;
+    /** Token do desafio. Chega por callback, não por leitura sob demanda. */
+    #turnstileToken: string | undefined;
+
+    #errorSlots(): HTMLElement[] {
+      return [...this.querySelectorAll<HTMLElement>('[data-error-for]')];
+    }
+
+    #clearErrors() {
+      for (const slot of this.#errorSlots()) {
+        slot.textContent = '';
+        const name = slot.dataset.errorFor;
+        const field = name ? this.#form.elements.namedItem(name) : null;
+        if (field instanceof HTMLElement) field.removeAttribute('aria-invalid');
+      }
+      this.#sendError.hidden = true;
+    }
+
+    #showErrors(errors: Record<string, string>) {
+      let primeiro: HTMLElement | null = null;
+
+      for (const slot of this.#errorSlots()) {
+        const name = slot.dataset.errorFor;
+        const message = name ? errors[name] : undefined;
+        slot.textContent = message ?? '';
+
+        const field = name ? this.#form.elements.namedItem(name) : null;
+        if (!(field instanceof HTMLElement)) continue;
+
+        if (message) {
+          field.setAttribute('aria-invalid', 'true');
+          primeiro ??= field;
+        } else {
+          field.removeAttribute('aria-invalid');
+        }
+      }
+
+      // Foco no primeiro campo com erro: sem isso, num formulário longo a
+      // pessoa não descobre o que ficou errado sem rolar procurando.
+      primeiro?.focus();
+    }
+
+    #fail(message: string) {
+      this.#sendErrorBody.textContent = message;
+      this.#sendError.hidden = false;
+    }
+
+    async #enviar() {
+      this.#clearErrors();
+      this.#submit.disabled = true;
+      this.#submit.textContent = contactForm.submitSending;
+
+      const dados = new FormData(this.#form);
+      const payload: Record<string, unknown> = Object.fromEntries(dados.entries());
+      payload.consent = dados.get('consent') !== null;
+      payload.loadedAt = Number(dados.get('loadedAt') ?? 0);
+      if (this.#turnstileToken) payload.turnstileToken = this.#turnstileToken;
+
+      try {
+        const res = await fetch(this.dataset.endpoint ?? '/api/contato', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const corpo = (await res.json()) as {
+          ok?: boolean;
+          message?: string;
+          fieldErrors?: Record<string, string>;
+        };
+
+        if (corpo.ok) {
+          this.#form.hidden = true;
+          this.#success.hidden = false;
+          // O foco vai para a confirmação: quem usa leitor de tela precisa
+          // saber que a mensagem foi enviada, e o formulário acabou de sair
+          // da tela debaixo do cursor dele.
+          this.#success.setAttribute('tabindex', '-1');
+          this.#success.focus();
+          return;
+        }
+
+        if (corpo.fieldErrors && Object.keys(corpo.fieldErrors).length > 0) {
+          this.#showErrors(corpo.fieldErrors);
+          this.#fail(corpo.message ?? contactForm.invalidHeading);
+        } else {
+          this.#fail(corpo.message ?? contactForm.errorHeading);
+        }
+      } catch {
+        // Rede caiu ou o servidor não respondeu. Os dados ficam no formulário.
+        this.#fail(contactForm.errorHeading);
+      } finally {
+        this.#submit.disabled = false;
+        this.#submit.textContent = contactForm.submitIdle;
+      }
+    }
+
+    /**
+     * Renderiza o widget quando o script da Cloudflare chega.
+     *
+     * O script é `async`, então pode não estar pronto no connectedCallback.
+     * A espera desiste depois de alguns segundos em vez de tentar para sempre:
+     * se a Cloudflare estiver fora, o formulário segue sem o widget e o
+     * servidor carimba "SEM VERIFICAÇÃO ANTI-SPAM" no assunto do e-mail.
+     */
+    #montarTurnstile() {
+      const holder = this.querySelector<HTMLElement>('[data-turnstile]');
+      const sitekey = holder?.dataset.sitekey;
+      const widget = holder?.querySelector<HTMLElement>('[data-widget]');
+      if (!sitekey || !widget) return;
+
+      const render = () => {
+        if (!window.turnstile) return false;
+        window.turnstile.render(widget, {
+          sitekey,
+          callback: (token) => {
+            this.#turnstileToken = token;
+          },
+          'expired-callback': () => {
+            this.#turnstileToken = undefined;
+          },
+          language: 'pt-br',
+        });
+        return true;
+      };
+
+      if (render()) return;
+
+      let tentativas = 0;
+      const timer = window.setInterval(() => {
+        if (render() || ++tentativas > 40) window.clearInterval(timer);
+      }, 150);
+    }
+
+    connectedCallback() {
+      const form = this.querySelector('[data-form]');
+      const submit = this.querySelector('[data-submit]');
+      const success = this.querySelector('[data-success]');
+      const sendError = this.querySelector('[data-send-error]');
+      const sendErrorBody = this.querySelector('[data-send-error-body]');
+      const loadedAt = this.querySelector('[data-loaded-at]');
+
+      if (
+        !(form instanceof HTMLFormElement) ||
+        !(submit instanceof HTMLButtonElement) ||
+        !(success instanceof HTMLElement) ||
+        !(sendError instanceof HTMLElement) ||
+        !(sendErrorBody instanceof HTMLElement) ||
+        !(loadedAt instanceof HTMLInputElement)
+      ) {
+        // Sem os ganchos, o formulário continua funcionando pelo POST nativo.
+        return;
+      }
+
+      this.#form = form;
+      this.#submit = submit;
+      this.#success = success;
+      this.#sendError = sendError;
+      this.#sendErrorBody = sendErrorBody;
+
+      loadedAt.value = String(Date.now());
+
+      // `novalidate` só existe quando HÁ script para mostrar mensagem melhor.
+      form.noValidate = true;
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        void this.#enviar();
+      });
+
+      this.#montarTurnstile();
+    }
+  }
+
+  if (!customElements.get('contact-form')) {
+    customElements.define('contact-form', ContactFormElement);
+  }
+</script>

@@ -1,0 +1,108 @@
+---
+import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
+import FacilityGallery from '@/components/company/FacilityGallery.astro';
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import {
+  companyClosing,
+  companyFacilities,
+  companyPage,
+  companyPurpose,
+} from '@/lib/company-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * Página Empresa.
+ *
+ * O texto todo é da própria Aldifer (ver src/lib/company-content.ts). A página
+ * não acrescenta afirmação nenhuma sobre a empresa — nem número de clientes,
+ * nem metragem do galpão, nem tonelagem de estoque. A regra dura do CLAUDE.md
+ * proíbe, e uma página Empresa é justamente onde a tentação de inventar escala
+ * é maior.
+ *
+ * O que ela acrescenta é PROVA: as fotos do estoque etiquetado por bitola.
+ */
+const site = await getSite();
+const anos = new Date().getFullYear() - site.foundedYear;
+---
+
+<Base title={companyPage.seoTitle} description={companyPage.seoDescription}>
+  <Section tone="light" spacing="md" labelledBy="empresa">
+    <Breadcrumb items={[{ label: 'A empresa' }]} />
+
+    <div class="mt-6 max-w-3xl">
+      <Heading level={1} id="empresa">{companyPage.heading}</Heading>
+      <p class="mt-6 text-lg leading-relaxed text-surface-fg-soft">{companyPage.about}</p>
+
+      {/* Os anos são CALCULADOS do ano de fundação, que é dado confirmado.
+          Escrever "mais de 20 anos" à mão envelheceria sozinho. */}
+      <dl class="mt-10 grid gap-6 border-t border-surface-border pt-8 sm:grid-cols-3">
+        <div>
+          <dt class="text-sm text-surface-fg-soft">Fundação</dt>
+          <dd class="mt-1 font-mono text-xl text-surface-fg">{site.foundedYear}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-surface-fg-soft">No mercado</dt>
+          {/* Só o número em mono: a JetBrains é larga, e "anos" nela abre um
+              vão que parece erro de digitação. */}
+          <dd class="mt-1 text-xl text-surface-fg">
+            <span class="font-mono">{anos}</span> anos
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm text-surface-fg-soft">Onde</dt>
+          <dd class="mt-1 text-xl text-surface-fg">{site.address.city}</dd>
+        </div>
+      </dl>
+    </div>
+  </Section>
+
+  <Section tone="alt" spacing="md" labelledBy="proposito">
+    <Heading level={2} id="proposito">{companyPurpose.heading}</Heading>
+
+    <div class="mt-8 grid gap-8 lg:grid-cols-3 lg:gap-12">
+      {
+        [companyPurpose.mission, companyPurpose.vision].map((bloco) => (
+          <div class="border-l-2 border-surface-border pl-5">
+            <Heading level={3} size={4}>{bloco.label}</Heading>
+            <p class="mt-3 text-surface-fg-soft">{bloco.body}</p>
+          </div>
+        ))
+      }
+
+      <div class="border-l-2 border-surface-border pl-5">
+        <Heading level={3} size={4}>{companyPurpose.values.label}</Heading>
+        <ul class="mt-3 flex flex-col gap-2 text-surface-fg-soft">
+          {companyPurpose.values.items.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+    </div>
+  </Section>
+
+  <Section tone="light" spacing="md" labelledBy="galpao">
+    <div class="max-w-2xl">
+      <Heading level={2} id="galpao">{companyFacilities.heading}</Heading>
+      <p class="mt-4 text-surface-fg-soft">{companyFacilities.description}</p>
+    </div>
+
+    <div class="mt-8">
+      <FacilityGallery photos={companyFacilities.photos} />
+    </div>
+  </Section>
+
+  <Section tone="dark" spacing="md" labelledBy="empresa-fim">
+    <div class="max-w-2xl">
+      <Heading level={2} id="empresa-fim">{companyClosing.heading}</Heading>
+      <p class="mt-4 text-surface-fg-soft">{companyClosing.body}</p>
+
+      <div class="mt-8 flex flex-wrap gap-4">
+        <Button href={companyClosing.ctaHref}>{companyClosing.ctaLabel}</Button>
+        <Button href={companyClosing.secondaryHref} variant="secondary">
+          {companyClosing.secondaryLabel}
+        </Button>
+      </div>
+    </div>
+  </Section>
+</Base>

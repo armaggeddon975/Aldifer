@@ -92,6 +92,43 @@ export const contactBaseSchema = z.object({
   turnstileToken: z.string().optional(),
 });
 
+/**
+ * Mensagem do formulário de contato da Etapa 8.
+ *
+ * A diferença que importa em relação ao orçamento: aqui `notes` é OBRIGATÓRIO
+ * e tem mínimo. No orçamento a observação é acessória — a lista de material já
+ * diz o que a pessoa quer. No contato, a mensagem É o pedido: recebê-la vazia
+ * daria à Aldifer um nome e um telefone sem assunto, e alguém teria de ligar
+ * para descobrir por quê.
+ */
+export const contactMessageSchema = contactBaseSchema.extend({
+  notes: z
+    .string()
+    .trim()
+    .min(10, 'Escreva sua dúvida ou pedido, com pelo menos algumas palavras.')
+    .max(2000, 'Mensagem muito longa. Use até 2000 caracteres.'),
+
+  /**
+   * Aqui `0` é permitido e significa "não medido".
+   *
+   * O formulário de contato funciona SEM JavaScript, e nesse caminho ninguém
+   * escreve o timestamp: o campo oculto vai com o valor 0 do HTML. Exigir
+   * `positive()` como no orçamento recusaria justamente quem está sem script —
+   * e a mensagem seria "recarregue a página", que não resolveria nada.
+   *
+   * O servidor pula a checagem de tempo quando recebe 0. Não é perda de
+   * defesa: o próprio valor sempre foi forjável, e o portão de verdade contra
+   * robô é o Turnstile.
+   */
+  loadedAt: z
+    .number()
+    .int()
+    .nonnegative('Recarregue a página e tente novamente.'),
+});
+
+/** Sentinela de `loadedAt`: o envio veio sem JavaScript e não foi cronometrado. */
+export const FILL_TIME_UNMEASURED = 0;
+
 export const quoteRequestSchema = contactBaseSchema.extend({
   items: z
     .array(quoteItemSchema)
@@ -100,6 +137,7 @@ export const quoteRequestSchema = contactBaseSchema.extend({
 });
 
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
+export type ContactMessage = z.infer<typeof contactMessageSchema>;
 export type ContactBase = z.infer<typeof contactBaseSchema>;
 
 /** Nomes dos campos que aparecem na tela, para mapear erro -> input. */

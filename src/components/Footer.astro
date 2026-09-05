@@ -27,11 +27,13 @@ const { address } = site;
 
     <nav aria-label="Catálogo" class="flex flex-col gap-3">
       <h2 class="text-xs font-semibold">Catálogo</h2>
-      <ul class="flex flex-col gap-2 text-sm">
+      {/* Sem `gap`: o alvo de toque de 44px já dá o espaçamento, e somar os
+          dois abriria um vão de 60px entre links. */}
+      <ul class="flex flex-col text-sm">
         {
           categoryNav.map((item) => (
             <li>
-              <a href={item.href} class="text-surface-fg-soft hover:text-surface-hover">
+              <a href={item.href} class="touch-row text-surface-fg-soft hover:text-surface-hover">
                 {item.label}
               </a>
             </li>
@@ -42,18 +44,18 @@ const { address } = site;
 
     <nav aria-label="Institucional" class="flex flex-col gap-3">
       <h2 class="text-xs font-semibold">O site</h2>
-      <ul class="flex flex-col gap-2 text-sm">
+      <ul class="flex flex-col text-sm">
         {
           mainNav.map((item) => (
             <li>
-              <a href={item.href} class="text-surface-fg-soft hover:text-surface-hover">
+              <a href={item.href} class="touch-row text-surface-fg-soft hover:text-surface-hover">
                 {item.label}
               </a>
             </li>
           ))
         }
         <li>
-          <a href="/orcamento" class="text-surface-fg-soft hover:text-surface-hover">
+          <a href="/orcamento" class="touch-row text-surface-fg-soft hover:text-surface-hover">
             Pedir orçamento
           </a>
         </li>
@@ -62,10 +64,13 @@ const { address } = site;
 
     <div class="flex flex-col gap-3">
       <h2 class="text-xs font-semibold">Contato</h2>
-      <a href={`tel:${site.phoneE164}`} class="font-mono text-base hover:text-surface-hover">
+      <a href={`tel:${site.phoneE164}`} class="touch-row font-mono text-base hover:text-surface-hover">
         {site.phone}
       </a>
-      <a href={`mailto:${site.email}`} class="text-sm text-surface-fg-soft hover:text-surface-hover">
+      <a
+        href={`mailto:${site.email}`}
+        class="touch-row text-sm text-surface-fg-soft hover:text-surface-hover"
+      >
         {site.email}
       </a>
 
@@ -89,7 +94,7 @@ const { address } = site;
                 href={link.href}
                 rel="noopener noreferrer"
                 target="_blank"
-                class="text-surface-fg-soft underline underline-offset-4 hover:text-surface-hover"
+                class="touch-row text-surface-fg-soft underline underline-offset-4 hover:text-surface-hover"
               >
                 {link.label}
               </a>
@@ -108,7 +113,10 @@ const { address } = site;
         © {site.foundedYear}–{currentYear} {site.legalName}.
         {site.cnpj && ` CNPJ ${site.cnpj}.`}
       </p>
-      <a href="/politica-de-privacidade" class="underline underline-offset-4 hover:text-surface-hover">
+      <a
+        href="/politica-de-privacidade"
+        class="touch-inline underline underline-offset-4 hover:text-surface-hover"
+      >
         Política de Privacidade
       </a>
     </Container>

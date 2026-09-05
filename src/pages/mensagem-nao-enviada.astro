@@ -1,0 +1,80 @@
+---
+import Pending from '@/components/Pending.astro';
+import Button from '@/components/ui/Button.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Base from '@/layouts/Base.astro';
+import { contactChannels, messageFailed } from '@/lib/contact-content';
+import { getSite } from '@/lib/site';
+
+/**
+ * Falha no formulário de contato enviado SEM JavaScript.
+ *
+ * NÃO tenta explicar qual campo errou. Nesse caminho os erros de preenchimento
+ * já foram barrados pelo navegador antes do POST — o que chega aqui é envio
+ * rápido demais, limite por IP ou falha de entrega. Em nenhum desses casos a
+ * pessoa consegue fazer algo com um nome de campo; o que resolve é o telefone,
+ * e é ele que está em destaque.
+ *
+ * A página existe porque a alternativa era pior: sem ela, o envio sem
+ * JavaScript falharia mostrando JSON cru na tela.
+ */
+const site = await getSite();
+---
+
+<Base title={messageFailed.seoTitle} description={messageFailed.seoDescription} noindex>
+  <Section tone="light" spacing="lg" labelledBy="nao-enviada">
+    <div class="max-w-2xl">
+      <Heading level={1} id="nao-enviada">{messageFailed.heading}</Heading>
+      <p class="mt-6 text-lg text-surface-fg-soft">{messageFailed.body}</p>
+
+      <dl class="mt-10 flex flex-col gap-6 border-t border-surface-border pt-8">
+        <div>
+          <dt class="text-sm font-semibold text-surface-fg">{contactChannels.phoneLabel}</dt>
+          <dd class="mt-1">
+            <a
+              href={`tel:${site.phoneE164}`}
+              class="touch-target inline-flex items-center font-mono text-xl text-surface-link underline underline-offset-4 hover:text-surface-hover"
+            >
+              {site.phone}
+            </a>
+          </dd>
+        </div>
+
+        <div>
+          <dt class="text-sm font-semibold text-surface-fg">{contactChannels.emailLabel}</dt>
+          <dd class="mt-1">
+            <a
+              href={`mailto:${site.email}`}
+              class="touch-target inline-flex items-center break-all text-lg text-surface-link underline underline-offset-4 hover:text-surface-hover"
+            >
+              {site.email}
+            </a>
+          </dd>
+        </div>
+
+        {
+          !site.whatsapp && (
+            <div>
+              <dt class="text-sm font-semibold text-surface-fg">
+                {contactChannels.whatsappLabel}
+              </dt>
+              <dd class="mt-1">
+                <Pending
+                  label={contactChannels.whatsappPending.label}
+                  detail={contactChannels.whatsappPending.detail}
+                />
+              </dd>
+            </div>
+          )
+        }
+      </dl>
+
+      <div class="mt-10">
+        <Button href={messageFailed.retryHref} variant="secondary">
+          {messageFailed.retryLabel}
+        </Button>
+      </div>
+    </div>
+  </Section>
+</Base>

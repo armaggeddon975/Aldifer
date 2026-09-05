@@ -12,12 +12,26 @@ interface Props {
   description: string;
   /** Absoluta. Se omitida, é derivada de `site` no astro.config e do caminho. */
   canonical?: string;
-  /** Caminho da imagem de compartilhamento. [ETAPA 8] criar /og-image.png. */
+  /**
+   * Imagem de compartilhamento. O padrão serve a TODA página: card social sem
+   * imagem vira um retângulo cinza com o domínio, e o link deixa de convidar
+   * ao clique no WhatsApp, que é por onde o serralheiro manda coisa.
+   *
+   * Gerada por `npm run assets`, do logotipo real e da foto do estoque.
+   */
   ogImage?: string;
   noindex?: boolean;
 }
 
-const { title, description, canonical, ogImage, noindex = false } = Astro.props;
+const OG_PADRAO = '/og-image.jpg';
+
+const {
+  title,
+  description,
+  canonical,
+  ogImage = OG_PADRAO,
+  noindex = false,
+} = Astro.props;
 
 const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 ---
@@ -43,7 +57,13 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site ?? Astr
       crossorigin
     />
 
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {/* Ícones gerados do logotipo real da Aldifer por `npm run assets`. Até a
+        Etapa 8 aqui estava o favicon PADRÃO DO ASTRO, que teria ido ao ar no
+        site do cliente. */}
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0B1B2E" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.legalName} />
@@ -51,14 +71,20 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site ?? Astr
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site ?? Astro.url).href} />
+    <meta property="og:image:alt" content={`${site.legalName} — ${site.slogan}`} />
+    {/* Dimensões só na imagem padrão, cujo tamanho eu conheço: declarar
+        1200×630 para uma imagem de outro tamanho faz o WhatsApp reservar a
+        proporção errada e cortar o card. */}
     {
-      ogImage && (
+      ogImage === OG_PADRAO && (
         <>
-          <meta property="og:image" content={new URL(ogImage, Astro.site ?? Astro.url).href} />
-          <meta name="twitter:card" content="summary_large_image" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
         </>
       )
     }
+    <meta name="twitter:card" content="summary_large_image" />
 
     {/* Dados estruturados. A Etapa 9 injeta LocalBusiness por aqui. */}
     <slot name="jsonld" />
