@@ -170,6 +170,26 @@ FEEDBACK DE FORMULÁRIO (acrescentado em 04/09/2026 — ver nota abaixo)
 Regra: `--accent` (#CD4116) **nunca** sobre fundo escuro — ratio cai para 3,6:1.
 Sobre escuro use `--accent-bright`.
 
+### Segunda regra do acento — não é cor de letra (registrado em 04/09/2026)
+
+`--accent` como **cor de texto** dá 4,81:1 no branco. São 0,31 de folga sobre o mínimo
+AA, e ela desaparece na primeira faixa alternada: sobre `--paper-alt` cai para
+**4,45:1 e reprova**. Um link de acento passa ou reprova dependendo do `tone` que a
+seção recebeu — e trocar o tom de uma seção é decisão de layout que ninguém associa a
+contraste. O `axe` pegou exatamente isso na Etapa 7.
+
+Para **link no corpo do texto use `--steel-700`**, que já está descrito nesta tabela
+como "azul claro para hover e links": dá 9,07:1 no branco e 8,38:1 sobre `--paper-alt`.
+De quebra o acento fica só nos CTA, que é o que esta seção pede ao chamá-lo de "um só,
+sem concorrente".
+
+O acento **no hover** continua valendo — a WCAG mede o estado de repouso, e o laranja no
+hover é assinatura do site.
+
+O `scripts/check-contrast.mjs` agora varre o código-fonte procurando `--accent` como
+`color` em repouso e reprova. Quatro lugares anteriores à Etapa 7 estão listados lá como
+**pendentes de decisão**, não liberados: passam hoje só porque caíram em fundo branco.
+
 **Os contrastes desta tabela não são mais afirmação: são verificados.** Rode
 `npm run contrast` — o script lê os tokens do próprio `tokens.css`, calcula 19 razões
 de contraste e 4 separações de matiz, e falha se alguma reprovar. Ele existe porque na

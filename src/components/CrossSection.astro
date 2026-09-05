@@ -3,6 +3,7 @@ import type { CrossSectionVariant } from './cross-sections/types';
 import Angle from './cross-sections/Angle.astro';
 import CorrugatedSheet from './cross-sections/CorrugatedSheet.astro';
 import FlatBar from './cross-sections/FlatBar.astro';
+import HexBar from './cross-sections/HexBar.astro';
 import IBeam from './cross-sections/IBeam.astro';
 import Mesh from './cross-sections/Mesh.astro';
 import Plate from './cross-sections/Plate.astro';
@@ -42,6 +43,7 @@ const { variant, label, decorative = false, dimensions = true, class: className 
 const SHAPES = {
   'round-bar': RoundBar,
   'square-bar': SquareBar,
+  'hex-bar': HexBar,
   'flat-bar': FlatBar,
   'round-tube': RoundTube,
   'square-tube': SquareTube,
@@ -58,6 +60,8 @@ const SHAPES = {
 const TITLES: Record<CrossSectionVariant, string> = {
   'round-bar': 'Seção transversal de barra redonda, com a cota do diâmetro',
   'square-bar': 'Seção transversal de barra quadrada, com a cota do lado',
+  'hex-bar':
+    'Seção transversal de barra sextavada, com a cota da medida entre faces opostas',
   'flat-bar': 'Seção transversal de barra chata, com as cotas de largura e espessura',
   'round-tube':
     'Seção transversal de tubo redondo, com as cotas de diâmetro externo e espessura de parede',

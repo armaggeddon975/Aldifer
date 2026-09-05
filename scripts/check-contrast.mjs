@@ -6,7 +6,8 @@
 // desses não aparece no build nem no type check.
 //
 // Rodar com `npm run contrast`. Sai com código 1 se algum par reprovar.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 const CSS = 'src/styles/tokens.css';
 
@@ -137,6 +138,15 @@ const PAIRS = [
   { fg: '--steel-950', bg: '--accent-bright', min: 4.5, what: 'texto do CTA sobre escuro' },
   { fg: '--accent-bright', bg: '--steel-950', min: 4.5, what: 'destaque sobre escuro' },
 
+  // Link no corpo do texto. O CLAUDE.md designa --steel-700 para "hover e
+  // links"; estes dois pares são a razão. O --accent, que parecia a escolha
+  // óbvia, dá 4,81:1 no branco — 0,31 de folga — e DESPENCA para 4,45:1 sobre
+  // --paper-alt, reprovando no AA. Um link de acento numa faixa alternada
+  // passou pelo axe da Etapa 7. Ver também o guard de --accent como texto,
+  // no fim deste arquivo.
+  { fg: '--steel-700', bg: '--paper', min: 4.5, what: 'link no corpo, seção clara' },
+  { fg: '--steel-700', bg: '--paper-alt', min: 4.5, what: 'link no corpo, faixa alternada' },
+
   // Limite de componente e anel de foco — 3:1
   { fg: '--accent', bg: '--paper', min: 3, what: 'anel de foco no claro' },
   { fg: '--accent-bright', bg: '--steel-950', min: 3, what: 'anel de foco no escuro' },
@@ -234,6 +244,78 @@ for (const pair of HUES) {
   console.log(
     `${ok ? 'ok' : 'X '} ${d.toFixed(1).padStart(5)}°  ${String(pair.min).padStart(5)}°  ` +
       `${pair.what}  (${pair.a} / ${pair.b})`,
+  );
+}
+
+// --- guard: --accent nunca como cor de TEXTO em repouso ---------------------
+//
+// A tabela acima verifica pares que alguém se lembrou de listar. Este bloco
+// verifica o código: procura --accent (e o --surface-hover das superfícies
+// claras, que resolve para ele) usado como `color` em estado de repouso.
+//
+// Por que existe: o --accent tem 4,81:1 no branco, folga de 0,31, e 4,45:1
+// sobre --paper-alt. Ou seja, um link de acento passa ou reprova dependendo
+// da FAIXA em que a seção caiu — e trocar o tom de uma seção é uma decisão de
+// layout que ninguém associa a contraste. Em hover a regra não se aplica: a
+// WCAG mede o estado de repouso, e o acento no hover é a assinatura do site.
+
+const FILES = readdirSync('src', { recursive: true, withFileTypes: true })
+  .filter((e) => e.isFile() && /\.(astro|css)$/.test(e.name))
+  .map((e) => join(e.parentPath ?? e.path, e.name));
+
+/**
+ * Casos que EXISTEM e passam hoje, porque caíram em fundo branco (4,81:1).
+ *
+ * Não estão liberados: estão pendentes de decisão da Aldifer, porque trocá-los
+ * para --steel-700 muda a cor de link em página inicial, catálogo, formulário e
+ * texto corrido — mudança visível que o CLAUDE.md manda perguntar antes de
+ * fazer ("se um requisito conflitar com este arquivo, pare e pergunte").
+ *
+ * Cada um passa por um fio: basta a seção que os contém virar `tone="alt"`
+ * para caírem a 4,45:1 e reprovarem. Estão listados aqui, e não apagados do
+ * guard, justamente para não sumirem da vista.
+ */
+const PENDENTES = new Set([
+  'src/styles/components.css:250', //          .prose-aldifer a
+  'src/components/catalog/GaugeTable.astro:118', // botão "adicionar" da tabela
+  'src/components/home/CategoryGrid.astro:53', //  "Ver medidas"
+  'src/components/quote/QuoteForm.astro:271', //   link do consentimento LGPD
+]);
+
+/** Linhas como `color: var(--accent);` fora de um seletor de hover. */
+const usos = [];
+for (const file of FILES) {
+  const lines = readFileSync(file, 'utf8').split(/\r?\n/);
+  let seletor = '';
+  lines.forEach((line, i) => {
+    if (line.includes('{')) seletor = line;
+    // A fronteira antes de `color` é essencial: sem ela isto pega
+    // `background-color`, `border-color` e `accent-color`, que usam o acento
+    // com toda a razão — o problema é o acento como cor de LETRA.
+    const texto = /(?<![-\w])color:\s*var\(--(accent|surface-hover)\)/.exec(line);
+    const utilitario = /(?<!hover:)\btext-surface-hover\b/.exec(line);
+    if ((texto || utilitario) && !/:hover|:focus|group-hover/.test(seletor + line)) {
+      const local = `${file.replaceAll('\\', '/')}:${i + 1}`;
+      usos.push({ local, linha: line.trim(), pendente: PENDENTES.has(local) });
+    }
+  });
+}
+
+const novos = usos.filter((u) => !u.pendente);
+const pendentes = usos.filter((u) => u.pendente);
+
+if (usos.length > 0) {
+  console.log('--accent como cor de TEXTO em repouso:');
+  for (const u of pendentes) console.log(`  . ${u.local}  ${u.linha}   [pendente de decisão]`);
+  for (const u of novos) console.log(`  X ${u.local}  ${u.linha}`);
+  console.log('');
+}
+
+if (novos.length > 0) {
+  falhas.push(
+    `--accent como cor de texto em repouso em ${novos.length} lugar(es) novo(s) — ` +
+      'sobre --paper-alt dá 4,45:1 e reprova no AA. Use --steel-700, que o ' +
+      'CLAUDE.md designa para links e dá 8,38:1.',
   );
 }
 

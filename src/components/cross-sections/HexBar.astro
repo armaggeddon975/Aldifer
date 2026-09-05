@@ -1,0 +1,39 @@
+---
+/**
+ * Barra sextavada: hexágono regular com as faces planas na vertical.
+ *
+ * A cota é a medida ENTRE FACES opostas, não entre pontas — é a bitola que o
+ * serralheiro pede e a que a fórmula de peso usa. Por isso a linha de cota sai
+ * das duas faces verticais (x = 32,31 e x = 139,69) e não das pontas laterais,
+ * que aqui nem existem: nesta orientação as pontas ficam em cima e embaixo.
+ *
+ * Geometria: circunraio 62, o mesmo da barra redonda, para que os dois
+ * desenhos ocupem a mesma caixa. Daí o apótema sai 62 × cos 30° = 53,69, e a
+ * medida entre faces desenhada é 107,38.
+ */
+import DimH from './DimH.astro';
+
+const CX = 86;
+const CY = 80;
+const R = 62;
+/** Apótema: metade da distância entre faces. */
+const A = 53.69;
+/** Meia altura da face vertical. */
+const H = R / 2;
+
+const points = [
+  [CX, CY - R],
+  [CX + A, CY - H],
+  [CX + A, CY + H],
+  [CX, CY + R],
+  [CX - A, CY + H],
+  [CX - A, CY - H],
+]
+  .map(([x, y]) => `${x},${y}`)
+  .join(' ');
+---
+
+<line class="axis" x1={CX - A - 8} y1={CY} x2={CX + A + 8} y2={CY} />
+<line class="axis" x1={CX} y1={CY - R - 10} x2={CX} y2={CY + R + 10} />
+<polygon class="contour" points={points} />
+<DimH x1={CX - A} x2={CX + A} y={168} from={CY + H} label="A" />

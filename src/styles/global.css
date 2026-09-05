@@ -121,7 +121,8 @@
   table-scroller,
   catalog-filter,
   quote-list,
-  quote-form {
+  quote-form,
+  weight-calculator {
     display: block;
   }
 

@@ -19,6 +19,7 @@ type LegendMap = Partial<Record<CrossSectionVariant, readonly (readonly [string,
 const LEGEND: LegendMap = {
   'round-bar': [['Ø', 'diameter']],
   'square-bar': [['A', 'side']],
+  'hex-bar': [['A', 'acrossFlats']],
   'flat-bar': [
     ['A', 'width'],
     ['e', 'thickness'],

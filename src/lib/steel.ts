@@ -188,7 +188,7 @@ export const WEIGHT_FORMULAS = {
     label: 'Barra quadrada',
     params: ['side'],
     unit: 'kg/m',
-    expression: 'P = 0,00785 × L²',
+    expression: 'P = 0,00785 × lado²',
     compute: (r) => squareBarWeight(r.side!),
   },
   'flat-bar': {

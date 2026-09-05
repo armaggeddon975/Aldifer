@@ -1,0 +1,713 @@
+---
+import CrossSection from '@/components/CrossSection.astro';
+import { CALCULATOR_PROFILES, legendFor } from '@/lib/calculator';
+import { calculatorUi, calculatorWarnings } from '@/lib/calculator-content';
+import { WEIGHT_FORMULAS } from '@/lib/steel';
+
+/**
+ * Calculadora de peso. Elemento de assinatura funcional do site.
+ *
+ * TUDO É RENDERIZADO NO SERVIDOR e o script apenas mostra, esconde e calcula.
+ * Os campos de todos os 12 perfis vêm no HTML, cada um com <label for> real em
+ * português, e os 12 desenhos também. Montar campos por JavaScript colocaria
+ * rótulo de interface dentro do script e tiraria a garantia de que todo campo
+ * tem label.
+ *
+ * ZERO DUPLICAÇÃO DE FÓRMULA: o cálculo mora em src/lib/calculator.ts, que
+ * delega para o registro de src/lib/steel.ts — o mesmo que gera a coluna de
+ * peso das tabelas de bitola.
+ */
+interface Props {
+  /**
+   * Mapa slug do produto -> slug do perfil, para o link ?produto= que a
+   * página de produto gera. Quem monta é a página da calculadora, que tem
+   * acesso à coleção; este componente só o repassa ao script.
+   */
+  productProfiles?: Readonly<Record<string, { profile: string; name: string }>>;
+}
+
+const { productProfiles = {} }: Props = Astro.props;
+
+const profiles = CALCULATOR_PROFILES;
+const fieldId = (slug: string, name: string) => `calc-${slug}-${name}`;
+---
+
+<weight-calculator>
+  <div class="calc">
+    <div class="calc__controls">
+      <p class="calc__field">
+        <label for="calc-perfil">{calculatorUi.profileLabel}</label>
+        <select id="calc-perfil" data-profile aria-describedby="calc-perfil-dica">
+          {
+            profiles.map((profile) => (
+              <option value={profile.slug}>{profile.label}</option>
+            ))
+          }
+        </select>
+        <span class="calc__hint" id="calc-perfil-dica">{calculatorUi.profileHint}</span>
+      </p>
+
+      {/* Campos de TODOS os perfis, um grupo por perfil. O script revela o
+          grupo do perfil escolhido e ignora o resto. */}
+      {
+        profiles.map((profile) => (
+          <div class="calc__fields" data-fields={profile.slug} hidden>
+            {profile.params.length > 0 && (
+              <>
+                <p class="calc__group-label">{calculatorUi.dimensionsHeading}</p>
+                <div class="calc__grid">
+                  {profile.params.map((param) => (
+                    <p class="calc__field">
+                      <label for={fieldId(profile.slug, param.name)}>
+                        {param.label} <span class="calc__unit">({param.unit})</span>
+                      </label>
+                      <input
+                        id={fieldId(profile.slug, param.name)}
+                        type="text"
+                        inputmode="decimal"
+                        autocomplete="off"
+                        data-param={param.name}
+                        data-url-key={param.urlKey}
+                      />
+                    </p>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Perfil sem fórmula: explicação em vez de campo. */}
+            {
+              !profile.formula && (
+                <div class="calc__notice">
+                  <p class="font-semibold">{calculatorWarnings.noFormulaHeading}</p>
+                  <p class="mt-2">{calculatorWarnings.noFormulaBody}</p>
+                  {profile.tableHref && (
+                    <p class="mt-4">
+                      <a href={profile.tableHref} class="calc__notice-link">
+                        {calculatorWarnings.noFormulaCta}
+                      </a>
+                    </p>
+                  )}
+                </div>
+              )
+            }
+          </div>
+        ))
+      }
+
+      {/* Comprimento e quantidade valem para as fórmulas por metro linear.
+          Na chapa o comprimento já é um parâmetro em mm, então o script
+          esconde este campo. */}
+      <div class="calc__grid" data-linear>
+        <p class="calc__field">
+          <label for="calc-comprimento">
+            {calculatorUi.lengthLabel} <span class="calc__unit">({calculatorUi.lengthUnit})</span>
+          </label>
+          <input id="calc-comprimento" type="text" inputmode="decimal" autocomplete="off"
+            value="6" data-length />
+        </p>
+
+        <p class="calc__field">
+          <label for="calc-quantidade">{calculatorUi.quantityLabel}</label>
+          <input id="calc-quantidade" type="text" inputmode="numeric" autocomplete="off"
+            value="1" data-quantity />
+        </p>
+      </div>
+    </div>
+
+    <div class="calc__panel">
+      {/* Desenhos de todos os perfis; o script mostra o do perfil escolhido. */}
+      <div class="calc__drawing">
+        {
+          profiles.map((profile) => (
+            <div data-drawing={profile.slug} hidden>
+              <CrossSection variant={profile.crossSection} decorative />
+              {/* Liga as letras cotadas no desenho aos campos ao lado. Sem
+                  ela o cliente vê "A", "B", "e" e tem de adivinhar. */}
+              {legendFor(profile).length > 0 && (
+                <ul class="calc__legend">
+                  {legendFor(profile).map((entry) => (
+                    <li>
+                      {/* O travessão é texto de verdade, com espaço em volta:
+                          num espaçamento só de CSS o leitor de tela leria
+                          "ØDiâmetro externo", tudo junto. */}
+                      <span class="calc__legend-letter">{entry.letter}</span> — {entry.label}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="calc__results">
+        <p class="calc__group-label">{calculatorUi.resultHeading}</p>
+
+        <p class="calc__empty" data-empty>
+          <span class="font-semibold">{calculatorUi.emptyResult}</span>
+          <span class="calc__hint">{calculatorUi.emptyHint}</span>
+        </p>
+
+        <dl data-result hidden>
+          <div class="calc__row" data-row="perMeter" hidden>
+            <dt>{calculatorUi.perMeterLabel}</dt>
+            <dd><span data-value></span> <span class="calc__unit">kg/m</span></dd>
+          </div>
+          <div class="calc__row" data-row="perSquareMeter" hidden>
+            <dt>{calculatorUi.perSquareMeterLabel}</dt>
+            <dd><span data-value></span> <span class="calc__unit">kg/m²</span></dd>
+          </div>
+          <div class="calc__row" data-row="perPiece" hidden>
+            <dt>{calculatorUi.perPieceLabel}</dt>
+            <dd><span data-value></span> <span class="calc__unit">kg</span></dd>
+          </div>
+          <div class="calc__row calc__row--total" data-row="total" hidden>
+            <dt>{calculatorUi.totalLabel}</dt>
+            <dd><span data-value></span> <span class="calc__unit">kg</span></dd>
+          </div>
+        </dl>
+
+        {/* A expressão exibida vem do registro de fórmulas, não de texto. */}
+        <p class="calc__formula" data-formula hidden>
+          <span class="calc__hint">{calculatorUi.formulaLabel}</span>
+          <span class="calc__formula-text" data-formula-text></span>
+        </p>
+
+        <div class="calc__actions" data-actions hidden>
+          <button type="button" class="calc__add" data-add>{calculatorUi.addToQuoteLabel}</button>
+          <button type="button" class="calc__copy" data-copy>{calculatorUi.copyLinkLabel}</button>
+        </div>
+
+        {/* Resultado anunciado sem roubar o foco do campo em edição. */}
+        <p class="sr-only" role="status" aria-live="polite" data-announce></p>
+      </div>
+    </div>
+  </div>
+
+  {/* Aviso de peso teórico, em tamanho de leitura e não de letra miúda. */}
+  <div class="calc__warning">
+    <p class="font-semibold">{calculatorWarnings.theoreticalHeading}</p>
+    <p class="mt-2">{calculatorWarnings.theoreticalBody}</p>
+  </div>
+
+  {/* Expressões, para o script preencher o rótulo de fórmula sem duplicá-las. */}
+  <script type="application/json" is:inline data-formulas set:html={JSON.stringify(
+    Object.fromEntries(
+      Object.entries(WEIGHT_FORMULAS).map(([id, spec]) => [id, spec.expression]),
+    ),
+  )} />
+
+  {/* Mapa produto -> perfil, para resolver ?produto=tubo-quadrado. */}
+  <script type="application/json" is:inline data-product-profiles set:html={JSON.stringify(productProfiles)} />
+</weight-calculator>
+
+<style>
+  .calc {
+    display: grid;
+    gap: var(--space-24);
+  }
+
+  @media (min-width: 56rem) {
+    .calc {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+      gap: var(--space-32);
+      align-items: start;
+    }
+  }
+
+  .calc__controls,
+  .calc__results {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+  }
+
+  .calc__grid {
+    display: grid;
+    gap: var(--space-16);
+  }
+
+  @media (min-width: 30rem) {
+    .calc__grid {
+      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    }
+  }
+
+  .calc__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .calc__field label {
+    font-size: var(--size-sm);
+    font-weight: 600;
+    color: var(--surface-fg);
+  }
+
+  .calc__unit {
+    font-weight: 400;
+    color: var(--surface-fg-soft);
+  }
+
+  .calc__field input,
+  .calc__field select {
+    min-height: var(--touch-target);
+    padding: 0 var(--space-12);
+    font-family: var(--family-text);
+    font-size: var(--size-base);
+    color: var(--ink);
+    background-color: var(--paper);
+    border: 1px solid var(--ink-soft);
+    border-radius: var(--corner-control);
+  }
+
+  /* Medida é número técnico: mono, para os dígitos alinharem. */
+  .calc__field input[data-param],
+  .calc__field input[data-length],
+  .calc__field input[data-quantity] {
+    font-family: var(--family-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calc__group-label {
+    font-size: var(--size-xs);
+    font-weight: 600;
+    color: var(--surface-fg);
+  }
+
+  .calc__fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .calc__hint {
+    font-size: var(--size-xs);
+    color: var(--surface-fg-soft);
+  }
+
+  /* --- painel de resultado ------------------------------------------------ */
+
+  .calc__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+    padding: var(--space-16);
+    border: 1px solid var(--surface-border);
+    background-color: var(--paper);
+  }
+
+  .calc__drawing {
+    color: var(--ink);
+  }
+
+  /* Legenda das cotas: a letra em mono, do mesmo jeito que aparece desenhada
+     na prancha, para o olho casar as duas de imediato. */
+  .calc__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) var(--space-12);
+    margin-top: var(--space-8);
+    font-size: var(--size-xs);
+    color: var(--ink-soft);
+  }
+
+  /* Sem flex aqui: o espaço em volta do travessão é o próprio texto, que é o
+     que o leitor de tela precisa ouvir. */
+  .calc__legend li {
+    white-space: nowrap;
+  }
+
+  .calc__legend-letter {
+    font-family: var(--family-mono);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .calc__empty {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    color: var(--ink-soft);
+    font-size: var(--size-sm);
+  }
+
+  .calc__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-12);
+    padding-block: var(--space-8);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .calc__row dt {
+    font-size: var(--size-sm);
+    color: var(--ink-soft);
+  }
+
+  .calc__row dd {
+    font-family: var(--family-mono);
+    font-size: var(--size-lg);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  /* O total é o número que o serralheiro anota: recebe o destaque. */
+  .calc__row--total {
+    border-bottom: 0;
+    border-top: 2px solid var(--ink);
+    margin-top: var(--space-4);
+  }
+
+  .calc__row--total dd {
+    font-size: var(--size-xl);
+    font-weight: 600;
+  }
+
+  .calc__formula {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .calc__formula-text {
+    font-family: var(--family-mono);
+    font-size: var(--size-xs);
+    color: var(--ink-soft);
+  }
+
+  .calc__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+  }
+
+  .calc__add,
+  .calc__copy {
+    min-height: var(--touch-target);
+    padding-inline: var(--space-12);
+    font-family: var(--family-text);
+    font-size: var(--size-sm);
+    font-weight: 600;
+    border-radius: var(--corner-control);
+    cursor: pointer;
+  }
+
+  .calc__add {
+    color: var(--paper);
+    background-color: var(--accent);
+    border: 0;
+  }
+
+  .calc__add:hover {
+    background-color: color-mix(in oklab, var(--accent) 88%, black);
+  }
+
+  .calc__copy {
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--ink-soft);
+  }
+
+  .calc__copy:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* --- avisos -------------------------------------------------------------- */
+
+  .calc__notice,
+  .calc__warning {
+    max-width: 68ch;
+    padding: var(--space-16);
+    border-inline-start: 4px solid var(--accent);
+    background-color: var(--paper-alt);
+    color: var(--ink);
+    /* Tamanho de leitura, não de letra miúda: o CLAUDE.md pede aviso visível. */
+    font-size: var(--size-base);
+  }
+
+  .calc__warning {
+    margin-top: var(--space-32);
+  }
+
+  /* --steel-700, e não --accent: o CLAUDE.md designa este token para "hover e
+     links", e a medição confirma por quê. Sobre --paper-alt, que é o fundo
+     deste aviso, o --accent dá 4,45:1 e reprova no AA (o axe pegou); o
+     --steel-700 dá 8,38:1. De quebra o acento fica só nos CTA, que é o que o
+     design system pede ao chamar o acento de "um só, sem concorrente". */
+  .calc__notice-link {
+    color: var(--steel-700);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .calc__notice-link:hover {
+    color: var(--surface-hover);
+  }
+</style>
+
+<script>
+  import {
+    URL_PRODUCT_KEY,
+    calculate,
+    findProfile,
+    buildQuoteItem,
+    fromSearchParams,
+    toSearchParams,
+    type CalculatorProfile,
+  } from '@/lib/calculator';
+  import { calculatorUi } from '@/lib/calculator-content';
+  import { add } from '@/lib/quote';
+  import { formatWeight } from '@/lib/steel';
+
+  class WeightCalculatorElement extends HTMLElement {
+    #select!: HTMLSelectElement;
+    #lengthInput!: HTMLInputElement;
+    #quantityInput!: HTMLInputElement;
+    #linearBlock!: HTMLElement;
+    #empty!: HTMLElement;
+    #result!: HTMLElement;
+    #formula!: HTMLElement;
+    #formulaText!: HTMLElement;
+    #actions!: HTMLElement;
+    #announce!: HTMLElement;
+    #expressions: Record<string, string> = {};
+    #profile!: CalculatorProfile;
+    /**
+     * Produto de origem, quando o visitante chegou por ?produto= da página de
+     * produto. Guardado para que o item da lista de orçamento saia com o nome
+     * e o slug REAIS — "Chapa fina a frio", não "Chapa". Zera assim que a
+     * pessoa troca o perfil no select: aí ela já saiu daquele produto.
+     */
+    #product: { slug: string; name: string } | null = null;
+
+    /** Aceita vírgula: no celular brasileiro o teclado decimal dá vírgula. */
+    #num(input: HTMLInputElement | undefined): number | undefined {
+      if (!input) return undefined;
+      const value = Number(input.value.replace(',', '.'));
+      return Number.isFinite(value) && value > 0 ? value : undefined;
+    }
+
+    #activeInputs(): HTMLInputElement[] {
+      const group = this.querySelector(`[data-fields="${this.#profile.slug}"]`);
+      if (!(group instanceof HTMLElement)) return [];
+      return [...group.querySelectorAll<HTMLInputElement>('input[data-param]')];
+    }
+
+    #readInput() {
+      const values: Record<string, number> = {};
+      for (const input of this.#activeInputs()) {
+        const name = input.dataset.param;
+        const value = this.#num(input);
+        if (name && value !== undefined) values[name] = value;
+      }
+      return {
+        values,
+        lengthMeters: this.#num(this.#lengthInput),
+        quantity: this.#num(this.#quantityInput),
+      };
+    }
+
+    #showProfile(slug: string) {
+      const profile = findProfile(slug);
+      if (!profile) return;
+      this.#profile = profile;
+
+      for (const group of this.querySelectorAll<HTMLElement>('[data-fields]')) {
+        group.hidden = group.dataset.fields !== slug;
+      }
+      for (const drawing of this.querySelectorAll<HTMLElement>('[data-drawing]')) {
+        drawing.hidden = drawing.dataset.drawing !== slug;
+      }
+
+      // Chapa: o comprimento é parâmetro em mm, então o campo em metros não
+      // se aplica. Perfil sem fórmula não usa nenhum dos dois.
+      const usesLinear = Boolean(profile.formula) && profile.formula !== 'plate-piece';
+      this.#linearBlock.hidden = !usesLinear && profile.formula !== 'plate-piece';
+      this.#lengthInput.closest('p')!.hidden = !usesLinear;
+
+      if (this.#select.value !== slug) this.#select.value = slug;
+    }
+
+    #render(syncUrl: boolean) {
+      const input = this.#readInput();
+      const result = calculate(this.#profile, input);
+
+      const show = (row: string, value: number | null, digits = 3) => {
+        const el = this.querySelector<HTMLElement>(`[data-row="${row}"]`);
+        if (!el) return;
+        el.hidden = value === null;
+        if (value !== null) {
+          const target = el.querySelector('[data-value]');
+          if (target) target.textContent = formatWeight(value, digits);
+        }
+      };
+
+      const temResultado = !result.incomplete;
+      this.#empty.hidden = temResultado;
+      this.#result.hidden = !temResultado;
+      this.#actions.hidden = !temResultado;
+      this.#formula.hidden = !temResultado;
+
+      show('perMeter', result.perMeter);
+      show('perSquareMeter', result.perSquareMeter, 2);
+      show('perPiece', result.perPiece);
+      show('total', result.total, 2);
+
+      if (temResultado && this.#profile.formula) {
+        this.#formulaText.textContent = this.#expressions[this.#profile.formula] ?? '';
+        const principal = result.perMeter ?? result.perPiece;
+        if (principal !== null) {
+          this.#announce.textContent = calculatorUi.announceTemplate(
+            result.dimension,
+            formatWeight(principal),
+          );
+        }
+      } else {
+        this.#announce.textContent = '';
+      }
+
+      if (syncUrl) {
+        const params = toSearchParams(this.#profile, input);
+        window.history.replaceState(null, '', `${window.location.pathname}?${params}`);
+      }
+    }
+
+    #adicionar() {
+      // A montagem do item mora em calculator.ts, onde é testada: as regras
+      // de identidade do produto e de comprimento na chapa custam um telefonema
+      // à Aldifer se regredirem, e nenhuma delas é pega por type check.
+      // Devolve null quando o cálculo está incompleto — nada a adicionar.
+      const item = buildQuoteItem(this.#profile, this.#readInput(), this.#product);
+      if (!item) return;
+
+      const saved = add(item);
+
+      this.#announce.textContent =
+        saved === null
+          ? calculatorUi.addFailed
+          : calculatorUi.addedTemplate(item.dimension, saved.total);
+    }
+
+    async #copiar() {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        this.#announce.textContent = calculatorUi.copyLinkDone;
+      } catch {
+        this.#announce.textContent = calculatorUi.copyLinkFailed;
+      }
+    }
+
+    connectedCallback() {
+      const select = this.querySelector('[data-profile]');
+      const lengthInput = this.querySelector('[data-length]');
+      const quantityInput = this.querySelector('[data-quantity]');
+      const linearBlock = this.querySelector('[data-linear]');
+      const empty = this.querySelector('[data-empty]');
+      const result = this.querySelector('[data-result]');
+      const formula = this.querySelector('[data-formula]');
+      const formulaText = this.querySelector('[data-formula-text]');
+      const actions = this.querySelector('[data-actions]');
+      const announce = this.querySelector('[data-announce]');
+      const formulasJson = this.querySelector('[data-formulas]');
+      const productJson = this.querySelector('[data-product-profiles]');
+
+      if (
+        !(select instanceof HTMLSelectElement) ||
+        !(lengthInput instanceof HTMLInputElement) ||
+        !(quantityInput instanceof HTMLInputElement) ||
+        !(linearBlock instanceof HTMLElement) ||
+        !(empty instanceof HTMLElement) ||
+        !(result instanceof HTMLElement) ||
+        !(formula instanceof HTMLElement) ||
+        !(formulaText instanceof HTMLElement) ||
+        !(actions instanceof HTMLElement) ||
+        !(announce instanceof HTMLElement)
+      ) {
+        return;
+      }
+
+      this.#select = select;
+      this.#lengthInput = lengthInput;
+      this.#quantityInput = quantityInput;
+      this.#linearBlock = linearBlock;
+      this.#empty = empty;
+      this.#result = result;
+      this.#formula = formula;
+      this.#formulaText = formulaText;
+      this.#actions = actions;
+      this.#announce = announce;
+
+      const readJson = <T,>(el: Element | null): Record<string, T> => {
+        try {
+          return JSON.parse(el?.textContent ?? '{}') as Record<string, T>;
+        } catch {
+          return {};
+        }
+      };
+
+      this.#expressions = readJson<string>(formulasJson);
+      const productProfiles = readJson<{ profile: string; name: string }>(productJson);
+
+      // Estado da URL: ?perfil= direto, ou ?produto= vindo da página de produto.
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = fromSearchParams(params);
+      const byProduct = params.get(URL_PRODUCT_KEY);
+
+      // ?produto=chapa-fina-a-frio, vindo da página de produto, resolve pelo
+      // mapa que a página monta a partir da coleção. Se o slug do produto por
+      // acaso coincidir com um slug de perfil, aceita direto.
+      let inicial = fromUrl.profile;
+      if (byProduct) {
+        const found = productProfiles[byProduct];
+        if (found) {
+          this.#product = { slug: byProduct, name: found.name };
+          inicial ??= findProfile(found.profile);
+        } else {
+          inicial ??= findProfile(byProduct);
+        }
+      }
+
+      this.#showProfile((inicial ?? findProfile('tubo-quadrado'))!.slug);
+
+      // Preenche o que veio da URL.
+      for (const input of this.#activeInputs()) {
+        const name = input.dataset.param;
+        const value = name ? fromUrl.input.values[name] : undefined;
+        if (value !== undefined) input.value = String(value);
+      }
+      if (fromUrl.input.lengthMeters) lengthInput.value = String(fromUrl.input.lengthMeters);
+      if (fromUrl.input.quantity) quantityInput.value = String(fromUrl.input.quantity);
+
+      // Cálculo em tempo real, sem botão de calcular.
+      this.addEventListener('input', () => this.#render(true));
+      select.addEventListener('change', () => {
+        // Escolher outro perfil é sair do produto de origem: o item não pode
+        // continuar sendo pedido como "Chapa fina a frio" depois disso.
+        this.#product = null;
+        this.#showProfile(select.value);
+        this.#render(true);
+      });
+
+      this.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.closest('[data-add]')) this.#adicionar();
+        if (target.closest('[data-copy]')) void this.#copiar();
+      });
+
+      // Primeiro render sem tocar na URL: chegar na página não deve reescrevê-la.
+      this.#render(false);
+    }
+  }
+
+  if (!customElements.get('weight-calculator')) {
+    customElements.define('weight-calculator', WeightCalculatorElement);
+  }
+</script>

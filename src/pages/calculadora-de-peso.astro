@@ -1,0 +1,99 @@
+---
+import WeightCalculator from '@/components/calculator/WeightCalculator.astro';
+import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
+import Heading from '@/components/ui/Heading.astro';
+import Section from '@/components/ui/Section.astro';
+import Table from '@/components/ui/Table.astro';
+import Base from '@/layouts/Base.astro';
+import { profileForFormula } from '@/lib/calculator';
+import { calculatorExplainer, calculatorPage } from '@/lib/calculator-content';
+import { getVisibleProducts } from '@/lib/products';
+
+/**
+ * Calculadora de peso teórico.
+ *
+ * SEM JAVASCRIPT A PÁGINA CONTINUA VALENDO: o bloco "Como o cálculo funciona",
+ * com as fórmulas e a legenda das letras, é HTML estático. Quem chega por busca
+ * orgânica procurando "peso da barra chata por metro" encontra a fórmula e a
+ * explicação mesmo com o script bloqueado — a calculadora é a melhoria, não o
+ * conteúdo.
+ *
+ * As fórmulas exibidas vêm de src/lib/steel.ts. A página mostra exatamente a
+ * expressão que o código executa.
+ */
+const products = await getVisibleProducts();
+
+/**
+ * Mapa produto -> { perfil, nome }, para o link ?produto= que a página de
+ * produto gera. Montado aqui porque só a página tem acesso à coleção.
+ *
+ * O NOME vai junto de propósito: quem chega de /produtos/chapas/chapa-fina-a-frio
+ * e clica em "adicionar à lista" precisa que o pedido diga "Chapa fina a frio",
+ * não "Chapa". Chapa fina a frio, fina a quente e grossa são produtos
+ * diferentes, e um pedido ambíguo obriga a Aldifer a ligar de volta — que é
+ * exatamente a objeção que este site existe para eliminar.
+ */
+const productProfiles: Record<string, { profile: string; name: string }> = {};
+for (const product of products) {
+  const profile = profileForFormula(product.data.weightFormula);
+  if (profile) productProfiles[product.id] = { profile: profile.slug, name: product.data.name };
+}
+---
+
+<Base title={calculatorPage.seoTitle} description={calculatorPage.seoDescription}>
+  <Section tone="light" spacing="md" labelledBy="calculadora">
+    <Breadcrumb items={[{ label: 'Calculadora de peso' }]} />
+
+    <div class="mt-6 max-w-3xl">
+      <Heading level={1} id="calculadora">{calculatorPage.heading}</Heading>
+      <p class="mt-4 text-lg text-surface-fg-soft">{calculatorPage.intro}</p>
+    </div>
+
+    <div class="mt-10">
+      <WeightCalculator productProfiles={productProfiles} />
+    </div>
+  </Section>
+
+  {/* Conteúdo estático: é o que sustenta a busca orgânica e o que resta sem JS. */}
+  <Section tone="alt" spacing="md" labelledBy="como-funciona">
+    <div class="max-w-2xl">
+      <Heading level={2} id="como-funciona">{calculatorExplainer.heading}</Heading>
+      {
+        calculatorExplainer.paragraphs.map((paragraph) => (
+          <p class="mt-4 text-surface-fg-soft">{paragraph}</p>
+        ))
+      }
+    </div>
+
+    <div class="mt-10">
+      <Heading level={3} size={4}>{calculatorExplainer.formulasHeading}</Heading>
+      <div class="mt-4 max-w-3xl">
+        <Table
+          caption="Fórmulas de peso teórico por perfil"
+          columns={[{ label: 'Perfil' }, { label: 'Fórmula' }, { label: 'Resultado em' }]}
+        >
+          {
+            calculatorExplainer.formulas.map((formula) => (
+              <tr>
+                <td>{formula.label}</td>
+                <td class="font-mono">{formula.expression}</td>
+                <td class="font-mono">{formula.unit}</td>
+              </tr>
+            ))
+          }
+        </Table>
+      </div>
+    </div>
+
+    <div class="mt-10 max-w-2xl">
+      <Heading level={3} size={4}>{calculatorExplainer.legendHeading}</Heading>
+      <ul class="mt-4 flex flex-col gap-2 text-surface-fg-soft">
+        {
+          calculatorExplainer.legend.map((item) => (
+            <li class="border-l-2 border-surface-border pl-3">{item}</li>
+          ))
+        }
+      </ul>
+    </div>
+  </Section>
+</Base>

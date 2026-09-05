@@ -133,6 +133,7 @@ com valor `null`. Campo nulo não renderiza.
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
 | **Revisão da Política de Privacidade** | É MINUTA. O texto descreve com precisão o que o site tecnicamente faz, mas documento legal precisa de revisão de quem responde por ele. Faltam o CNPJ do controlador e a definição do prazo de retenção do lead. | 6 · 13 |
 | **Limite por IP é por instância** | O contador vive na memória do processo. Em serverless cada instância tem a sua, então o limite real é 5/hora **por instância**. Contra abuso distribuído o portão é o Turnstile. Um limite global exige Vercel KV ou Upstash Redis — decidir se vale a dependência. | 13 |
+| **Cor de link no corpo do texto** | O `--accent` (#CD4116) como cor de LETRA dá 4,81:1 no branco — 0,31 de folga sobre o mínimo AA — e **4,45:1 sobre `--paper-alt`, que reprova**. O `CLAUDE.md` já designa `--steel-700` para "hover e links", e ele dá 8,38:1. Quatro lugares ainda usam o acento como texto e passam só porque caíram em fundo branco; estão listados em `scripts/check-contrast.mjs` como pendentes. Trocá-los muda a cor de link em home, catálogo, formulário e texto corrido — decisão visível, então não foi tomada sozinha. | 7 · 12 |
 | **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
 
 ---
@@ -161,6 +162,46 @@ só acrescenta as sugestões, e o índice de 22 KB é baixado no primeiro toque 
 A contrapartida aceita: código de formulário e de calculadora fica mais verboso.
 
 O registro completo, com o motivo, está na nota de stack do [`CLAUDE.md`](./CLAUDE.md).
+
+---
+
+## A calculadora não tem fórmula própria
+
+A `src/lib/calculator.ts` **não calcula peso**. Ela descreve quais campos cada perfil
+pede e delega para `WEIGHT_FORMULAS`, de `src/lib/steel.ts` — o mesmo registro que gera
+a coluna de peso das tabelas de bitola. Uma fórmula corrigida lá aparece na calculadora
+sem ninguém tocar nela.
+
+Isso é testado, não confiado: em `src/lib/calculator.test.ts` cada caso compara o
+resultado da calculadora com a chamada **direta** da função de `steel.ts`. Se alguém
+reimplementar uma fórmula na calculadora, a comparação quebra.
+
+O rótulo da medida vem do mesmo lugar: `describeDimension` é a função que nomeia as
+linhas do catálogo, então "30 × 30 × 2 mm" sai igual nos dois — e um item adicionado
+pela calculadora fica indistinguível de um adicionado pela tabela.
+
+### Perfil I, U e H não têm cálculo, de propósito
+
+A aba desses perfis é **cônica** — mais grossa junto à alma, mais fina na ponta — e há
+raio de concordância entre aba e alma. Não existe fórmula fechada que acerte, e uma
+aproximação erraria. Então a calculadora não mostra campo nenhum nesses perfis: mostra
+a explicação e manda para a tabela de usina do produto. Dar um número aproximado seria
+pior que não dar número.
+
+### O item que vai para o orçamento carrega o produto de origem
+
+Quem chega em `/calculadora-de-peso?produto=chapa-fina-a-frio` pelo link da página de
+produto e clica em "adicionar à lista" gera um pedido que diz **"Chapa Fina a Frio"**,
+com o slug real do produto. Um item que dissesse só "Chapa" obrigaria a Aldifer a ligar
+de volta para saber se é fina a frio, fina a quente ou grossa — que é a objeção nº 1 do
+projeto recriada dentro do próprio formulário.
+
+Trocar o perfil no select solta esse vínculo: a pessoa saiu daquele produto.
+
+A montagem do item mora em `buildQuoteItem`, no módulo puro, e não no script do
+componente, porque duas regras dela custam um telefonema se regredirem e nenhuma é
+pega por type check — a identidade do produto e o fato de que **chapa não leva
+comprimento em metros** (nela o comprimento já está na medida, em milímetros).
 
 ---
 
@@ -346,7 +387,7 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 4 — Catálogo | ✅ |
 | 5 — Lista de orçamento | ✅ |
 | 6 — Formulário, servidor e LGPD | ◐ implementado e verificado, EXCETO a entrega do e-mail — falta a chave do Resend |
-| 7 — Calculadora de peso | ⬜ |
+| 7 — Calculadora de peso | ✅ |
 | 8 — Páginas restantes | ⬜ |
 | 9 — SEO técnico | ⬜ |
 | 10 — Migração de URLs | ⬜ |
