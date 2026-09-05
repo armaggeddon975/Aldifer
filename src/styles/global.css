@@ -38,6 +38,9 @@
   --surface-border: var(--border-dark);
   --surface-control-border: var(--on-dark-soft);            /* 7,04:1 */
   --surface-hover: var(--accent-bright);
+  /* Em seção escura o --steel-700 daria 1,91:1. O --accent-bright dá 6,07:1,
+     e um link em texto não se confunde com o CTA, que é botão preenchido. */
+  --surface-link: var(--accent-bright);                     /* 6,07:1 */
   --surface-danger: var(--danger-bright);                   /* 10,2:1 */
   --surface-success: var(--success-bright);                 /* 13,4:1 */
   --cta-bg: var(--accent-bright);
@@ -57,6 +60,7 @@
   --surface-border: var(--border-light);
   --surface-control-border: var(--ink-soft);                /* 6,0:1 */
   --surface-hover: var(--accent);
+  --surface-link: var(--steel-700);                         /* 9,07:1 */
   --surface-danger: var(--danger);                          /* 6,5:1 */
   --surface-success: var(--success);                        /* 6,5:1 */
   --cta-bg: var(--accent);
@@ -74,6 +78,7 @@
   --surface-border: var(--border-light);
   --surface-control-border: var(--ink-soft);
   --surface-hover: var(--accent);
+  --surface-link: var(--steel-700);                         /* 8,38:1 */
   --surface-danger: var(--danger);
   --surface-success: var(--success);
   --cta-bg: var(--accent);

@@ -178,20 +178,35 @@ AA, e ela desaparece na primeira faixa alternada: sobre `--paper-alt` cai para
 seção recebeu — e trocar o tom de uma seção é decisão de layout que ninguém associa a
 contraste. O `axe` pegou exatamente isso na Etapa 7.
 
-Para **link no corpo do texto use `--steel-700`**, que já está descrito nesta tabela
-como "azul claro para hover e links": dá 9,07:1 no branco e 8,38:1 sobre `--paper-alt`.
-De quebra o acento fica só nos CTA, que é o que esta seção pede ao chamá-lo de "um só,
-sem concorrente".
+Para **link no corpo do texto use `--surface-link`**, token de contexto acrescentado em
+04/09/2026. Ele resolve para:
+
+| Tom da seção | Cor | Ratio |
+|---|---|---|
+| `tone-light` | `--steel-700` | 9,07:1 |
+| `tone-alt` | `--steel-700` | 8,38:1 |
+| `tone-dark` | `--accent-bright` | 6,07:1 |
+
+**Precisa ser de contexto, e não a cor fixa `--steel-700`:** sobre `--steel-950` o
+`--steel-700` dá **1,91:1**. Ele só serve em superfície clara — o que faz sentido, já que
+na paleta ele pertence à "BASE ESCURA" e foi pensado para ser o azul que aparece *sobre*
+o escuro, não em cima dele.
+
+Cuidado com **ilha que fixa fundo claro dentro de seção escura**. `Table.astro` e o aviso
+da calculadora declaram `--paper`/`--paper-alt` independente do tom em volta; os dois
+também declaram `--surface-link: var(--steel-700)`, senão herdariam `--accent-bright` do
+tom escuro e ficariam com laranja claro sobre branco.
 
 O acento **no hover** continua valendo — a WCAG mede o estado de repouso, e o laranja no
 hover é assinatura do site.
 
-O `scripts/check-contrast.mjs` agora varre o código-fonte procurando `--accent` como
-`color` em repouso e reprova. Quatro lugares anteriores à Etapa 7 estão listados lá como
-**pendentes de decisão**, não liberados: passam hoje só porque caíram em fundo branco.
+O `scripts/check-contrast.mjs` varre o código-fonte procurando `--accent` (e o
+`--surface-hover`, que resolve para ele) usado como `color` em repouso, e reprova. Os
+quatro lugares anteriores à Etapa 7 foram convertidos, e a lista de pendências está
+vazia — é para continuar assim.
 
 **Os contrastes desta tabela não são mais afirmação: são verificados.** Rode
-`npm run contrast` — o script lê os tokens do próprio `tokens.css`, calcula 19 razões
+`npm run contrast` — o script lê os tokens do próprio `tokens.css`, calcula 22 razões
 de contraste e 4 separações de matiz, e falha se alguma reprovar. Ele existe porque na
 Etapa 1 eu usei a cor de DIVISOR como contorno de CONTROLE, que dava 1,30:1 contra os
 3:1 da WCAG 1.4.11, e nada no build acusou.

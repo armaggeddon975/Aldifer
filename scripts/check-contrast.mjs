@@ -144,8 +144,12 @@ const PAIRS = [
   // --paper-alt, reprovando no AA. Um link de acento numa faixa alternada
   // passou pelo axe da Etapa 7. Ver também o guard de --accent como texto,
   // no fim deste arquivo.
+  // Em seção escura o --steel-700 daria 1,91:1 — ele só serve em superfície
+  // clara. Por isso `--surface-link` é token de CONTEXTO: os três tons de
+  // global.css o apontam para a cor que passa em cada um.
   { fg: '--steel-700', bg: '--paper', min: 4.5, what: 'link no corpo, seção clara' },
   { fg: '--steel-700', bg: '--paper-alt', min: 4.5, what: 'link no corpo, faixa alternada' },
+  { fg: '--accent-bright', bg: '--steel-950', min: 4.5, what: 'link no corpo, seção escura' },
 
   // Limite de componente e anel de foco — 3:1
   { fg: '--accent', bg: '--paper', min: 3, what: 'anel de foco no claro' },
@@ -264,23 +268,17 @@ const FILES = readdirSync('src', { recursive: true, withFileTypes: true })
   .map((e) => join(e.parentPath ?? e.path, e.name));
 
 /**
- * Casos que EXISTEM e passam hoje, porque caíram em fundo branco (4,81:1).
+ * Vazio desde 04/09/2026, e é para continuar assim.
  *
- * Não estão liberados: estão pendentes de decisão da Aldifer, porque trocá-los
- * para --steel-700 muda a cor de link em página inicial, catálogo, formulário e
- * texto corrido — mudança visível que o CLAUDE.md manda perguntar antes de
- * fazer ("se um requisito conflitar com este arquivo, pare e pergunte").
+ * Os quatro casos que moravam aqui — links do texto corrido, botão da tabela
+ * de bitolas, "Ver medidas" da home e link do consentimento — passaram a usar
+ * `--surface-link`, o token de contexto que resolve para --steel-700 em
+ * superfície clara e --accent-bright em escura.
  *
- * Cada um passa por um fio: basta a seção que os contém virar `tone="alt"`
- * para caírem a 4,45:1 e reprovarem. Estão listados aqui, e não apagados do
- * guard, justamente para não sumirem da vista.
+ * Só entra aqui um caso que a Aldifer decida manter com o acento sabendo do
+ * risco. Não é lugar para calar um achado novo.
  */
-const PENDENTES = new Set([
-  'src/styles/components.css:250', //          .prose-aldifer a
-  'src/components/catalog/GaugeTable.astro:118', // botão "adicionar" da tabela
-  'src/components/home/CategoryGrid.astro:53', //  "Ver medidas"
-  'src/components/quote/QuoteForm.astro:271', //   link do consentimento LGPD
-]);
+const PENDENTES = new Set([]);
 
 /** Linhas como `color: var(--accent);` fora de um seletor de hover. */
 const usos = [];

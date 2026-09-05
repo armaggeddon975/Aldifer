@@ -133,6 +133,13 @@
      então não serve aqui. --ink-soft dá 6,0:1. */
   --surface-control-border: var(--ink-soft);
   --surface-hover: var(--accent);
+  /* Cor de LINK no corpo do texto, separada da cor de hover.
+     O --accent como cor de letra dá 4,81:1 no branco e 4,45:1 sobre
+     --paper-alt, que reprova no AA. O --steel-700 dá 9,07:1 e 8,38:1, e é o
+     token que o CLAUDE.md descreve como "azul claro para hover e links".
+     Precisa ser token de CONTEXTO porque --steel-700 sobre --steel-950 dá
+     1,91:1 — em seção escura o link tem de ser outra cor. */
+  --surface-link: var(--steel-700);
   --surface-danger: var(--danger);
   --surface-success: var(--success);
 
@@ -221,6 +228,7 @@
   --color-surface-border: var(--surface-border);
   --color-surface-control-border: var(--surface-control-border);
   --color-surface-hover: var(--surface-hover);
+  --color-surface-link: var(--surface-link);
   --color-surface-danger: var(--surface-danger);
   --color-surface-success: var(--surface-success);
   --color-danger: var(--danger);

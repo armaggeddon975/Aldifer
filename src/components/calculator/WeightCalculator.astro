@@ -427,6 +427,7 @@ const fieldId = (slug: string, name: string) => `calc-${slug}-${name}`;
     border-inline-start: 4px solid var(--accent);
     background-color: var(--paper-alt);
     color: var(--ink);
+    --surface-link: var(--steel-700);
     /* Tamanho de leitura, não de letra miúda: o CLAUDE.md pede aviso visível. */
     font-size: var(--size-base);
   }
@@ -435,13 +436,16 @@ const fieldId = (slug: string, name: string) => `calc-${slug}-${name}`;
     margin-top: var(--space-32);
   }
 
-  /* --steel-700, e não --accent: o CLAUDE.md designa este token para "hover e
-     links", e a medição confirma por quê. Sobre --paper-alt, que é o fundo
-     deste aviso, o --accent dá 4,45:1 e reprova no AA (o axe pegou); o
-     --steel-700 dá 8,38:1. De quebra o acento fica só nos CTA, que é o que o
-     design system pede ao chamar o acento de "um só, sem concorrente". */
+  /* --surface-link, e não --accent: sobre --paper-alt, que é o fundo fixo
+     deste aviso, o --accent dá 4,45:1 e reprova no AA — foi o que o axe
+     pegou. O --surface-link resolve para --steel-700 em superfície clara e
+     dá 8,38:1.
+
+     A declaração vai junto do fundo, na regra acima, porque este bloco fixa
+     --paper-alt independente do tom da seção: sem ela, dentro de uma
+     Section tone="dark" o link herdaria --accent-bright sobre fundo claro. */
   .calc__notice-link {
-    color: var(--steel-700);
+    color: var(--surface-link);
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 4px;

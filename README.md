@@ -133,7 +133,6 @@ com valor `null`. Campo nulo não renderiza.
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
 | **Revisão da Política de Privacidade** | É MINUTA. O texto descreve com precisão o que o site tecnicamente faz, mas documento legal precisa de revisão de quem responde por ele. Faltam o CNPJ do controlador e a definição do prazo de retenção do lead. | 6 · 13 |
 | **Limite por IP é por instância** | O contador vive na memória do processo. Em serverless cada instância tem a sua, então o limite real é 5/hora **por instância**. Contra abuso distribuído o portão é o Turnstile. Um limite global exige Vercel KV ou Upstash Redis — decidir se vale a dependência. | 13 |
-| **Cor de link no corpo do texto** | O `--accent` (#CD4116) como cor de LETRA dá 4,81:1 no branco — 0,31 de folga sobre o mínimo AA — e **4,45:1 sobre `--paper-alt`, que reprova**. O `CLAUDE.md` já designa `--steel-700` para "hover e links", e ele dá 8,38:1. Quatro lugares ainda usam o acento como texto e passam só porque caíram em fundo branco; estão listados em `scripts/check-contrast.mjs` como pendentes. Trocá-los muda a cor de link em home, catálogo, formulário e texto corrido — decisão visível, então não foi tomada sozinha. | 7 · 12 |
 | **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
 
 ---
@@ -202,6 +201,40 @@ A montagem do item mora em `buildQuoteItem`, no módulo puro, e não no script d
 componente, porque duas regras dela custam um telefonema se regredirem e nenhuma é
 pega por type check — a identidade do produto e o fato de que **chapa não leva
 comprimento em metros** (nela o comprimento já está na medida, em milímetros).
+
+---
+
+## Link no corpo do texto não é laranja
+
+O `--accent` como **cor de letra** dá 4,81:1 no branco — 0,31 de folga sobre o mínimo AA
+— e **4,45:1 sobre `--paper-alt`, onde reprova**. Um link de acento passava ou reprovava
+dependendo do `tone` que a seção tinha recebido, e trocar o tom de uma seção é decisão de
+layout que ninguém associa a contraste.
+
+Existe então `--surface-link`, token de contexto: `--steel-700` nos dois tons claros
+(9,07:1 e 8,38:1) e `--accent-bright` no escuro (6,07:1). Não pode ser a cor fixa, porque
+`--steel-700` sobre `--steel-950` dá 1,91:1.
+
+Quatro lugares usavam o acento como texto. Um deles — o link do consentimento LGPD —
+estava sobre faixa alternada e **reprovava de fato**, não era risco latente:
+
+| Onde | Antes | Agora |
+|---|---|---|
+| Link do consentimento LGPD (`QuoteForm`) | 4,45:1 sobre `--paper-alt` — reprovava | 8,38:1 |
+| Botão "adicionar" da tabela de bitolas | 4,81:1 no branco | 9,07:1 |
+| "Ver medidas" nos cards da home | 4,81:1 no branco | 9,07:1 |
+| Links de texto corrido (`.prose-aldifer a`) | 4,81:1 no branco | 9,07:1 |
+
+**Ilha que fixa fundo claro dentro de seção escura precisa declarar o token.**
+`Table.astro` e o aviso da calculadora fixam `--paper`/`--paper-alt` independente do tom
+em volta; sem declarar `--surface-link` eles herdariam `--accent-bright` do tom escuro e
+ficariam com laranja claro sobre branco.
+
+O hover continua laranja: a WCAG mede o estado de repouso, e o laranja no hover é
+assinatura do site.
+
+`npm run contrast` agora, além das 22 razões e 4 separações de matiz, varre o
+código-fonte procurando `--accent` como `color` em repouso e reprova.
 
 ---
 
