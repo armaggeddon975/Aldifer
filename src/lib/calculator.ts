@@ -155,6 +155,23 @@ export const CALCULATOR_PROFILES: readonly CalculatorProfile[] = [
 const BY_SLUG = new Map(CALCULATOR_PROFILES.map((profile) => [profile.slug, profile]));
 
 /**
+ * Perfil que a calculadora abre quando a URL não pede outro.
+ *
+ * FONTE ÚNICA, e é por isso que ele mora aqui e não no componente. Antes o
+ * script tinha `findProfile('tubo-quadrado')` como último recurso enquanto o
+ * `<select>` — sem nenhuma `<option selected>` — começava no primeiro perfil do
+ * registro, a barra redonda. Servidor e cliente discordavam: toda visita sem
+ * query trocava o perfil depois de hidratar.
+ *
+ * A discordância ficou invisível desde a Etapa 7 porque o servidor renderizava
+ * TODOS os grupos de campo escondidos: nenhum estava "errado" antes do script
+ * rodar, porque nenhum estava aparecendo.
+ * Assim que o grupo do padrão passou a vir visível — para a calculadora
+ * funcionar sem JavaScript — a discordância virou um deslocamento de layout.
+ */
+export const DEFAULT_PROFILE_SLUG = 'tubo-quadrado';
+
+/**
  * Legenda das cotas do desenho para um perfil da calculadora.
  *
  * Reaproveita `buildLegend`, o MESMO mapa letra→medida que a página de produto

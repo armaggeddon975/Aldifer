@@ -12,6 +12,7 @@ import { describe, it } from 'node:test';
 
 import {
   CALCULATOR_PROFILES,
+  DEFAULT_PROFILE_SLUG,
   URL_PROFILE_KEY,
   buildQuoteItem,
   calculate,
@@ -426,6 +427,23 @@ describe('item da lista de orçamento', () => {
       lengthMeters: 6,
     });
     assert.equal(item?.dimension, doCalculo.dimension);
+  });
+});
+
+describe('DEFAULT_PROFILE_SLUG', () => {
+  it('aponta para um perfil que existe no registro', () => {
+    const perfilPadrao = findProfile(DEFAULT_PROFILE_SLUG);
+    assert.ok(perfilPadrao, `DEFAULT_PROFILE_SLUG "${DEFAULT_PROFILE_SLUG}" nao esta no registro`);
+    assert.equal(perfilPadrao.slug, DEFAULT_PROFILE_SLUG);
+  });
+
+  it('o perfil padrao tem formula e campos, para a pagina abrir util sem JS', () => {
+    // O WeightCalculator renderiza VISIVEL o grupo de campos e o desenho deste
+    // perfil. Se o padrao fosse um perfil sem formula, quem chega sem
+    // JavaScript veria a explicacao de "nao ha calculo" em vez da calculadora.
+    const perfilPadrao = findProfile(DEFAULT_PROFILE_SLUG);
+    assert.ok(perfilPadrao?.formula, 'o perfil padrao precisa ter formula');
+    assert.ok(perfilPadrao.params.length > 0, 'o perfil padrao precisa ter campos');
   });
 });
 

@@ -18,6 +18,7 @@
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
+import { gzipSync } from 'node:zlib';
 
 const RAIZ = 'dist/client';
 const PORTA = Number(process.env.PORT ?? 4330);
@@ -42,6 +43,28 @@ try {
 
 /** Rotas que o build marca como `prerender = false`. */
 const SOB_DEMANDA = /^\/(api\/|keystatic(\/|$))/;
+
+/**
+ * Tipos que a Vercel comprime e que este servidor precisa comprimir também.
+ *
+ * SEM ISSO A MEDIÇÃO MENTE. Descoberto rodando o Lighthouse da Etapa 12: sem
+ * compressão, `transferSize` era igual a `resourceSize` em todo recurso — o
+ * HTML da home ia com 44 KB em vez de ~9 KB e o CSS com 31,5 em vez de ~6. Com
+ * throttling simulado isso infla FCP e LCP, e a nota saía pessimista por
+ * defeito do servidor de teste, não do site.
+ *
+ * woff2, avif, webp, jpeg e png ficam fora: já são comprimidos, e gzipá-los
+ * gastaria CPU para aumentar o tamanho.
+ */
+const COMPRIMIR = /^(text\/|application\/(json|javascript|xml|manifest))/;
+
+/**
+ * Cabeçalhos de cache do vercel.json, aplicados aqui também.
+ *
+ * O Lighthouse audita política de cache, e sem isto o relatório acusaria um
+ * problema que a produção não tem.
+ */
+const CACHE_IMUTAVEL = /^\/(_astro|fonts)\//;
 
 const TIPOS = {
   '.html': 'text/html; charset=utf-8',
@@ -161,7 +184,28 @@ createServer(async (req, res) => {
     return;
   }
 
-  res.writeHead(200, { 'content-type': TIPOS[extname(arquivo)] ?? 'application/octet-stream' });
+  const tipo = TIPOS[extname(arquivo)] ?? 'application/octet-stream';
+  const cabecalhos = { 'content-type': tipo };
+
+  if (CACHE_IMUTAVEL.test(caminhoPedido)) {
+    cabecalhos['cache-control'] = 'public, max-age=31536000, immutable';
+  }
+
+  const aceitaGzip = (req.headers['accept-encoding'] ?? '').includes('gzip');
+
+  if (aceitaGzip && COMPRIMIR.test(tipo)) {
+    const comprimido = gzipSync(readFileSync(arquivo));
+    res.writeHead(200, {
+      ...cabecalhos,
+      'content-encoding': 'gzip',
+      'content-length': comprimido.length,
+      vary: 'accept-encoding',
+    });
+    res.end(comprimido);
+    return;
+  }
+
+  res.writeHead(200, cabecalhos);
   createReadStream(arquivo).pipe(res);
 }).listen(PORTA, () => {
   console.log(`build de produção em http://localhost:${PORTA}`);

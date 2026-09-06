@@ -27,8 +27,16 @@ import { quotePage } from '@/lib/quote-content';
     </div>
   </noscript>
 
-  {/* Lista vazia: caminho de saída, não mensagem de erro. */}
-  <div data-empty hidden>
+  {/*
+    Lista vazia: caminho de saída, não mensagem de erro.
+
+    SEM `hidden`, e o par abaixo também: quem decide é o CSS, a partir do
+    `data-quote` que o script de boot escreve antes da primeira pintura.
+    Com `hidden` nos dois, NENHUM aparecia até a hidratação e então um
+    surgia — 292px inseridos de uma vez, empurrando o formulário. Era o
+    maior deslocamento do site, 0,198 de CLS medidos na Etapa 12.
+  */}
+  <div data-empty>
     <div class="quote-notice">
       <p class="font-semibold">{quotePage.emptyHeading}</p>
       <p class="mt-2">{quotePage.emptyBody}</p>
@@ -52,7 +60,7 @@ import { quotePage } from '@/lib/quote-content';
     </ul>
   </div>
 
-  <div data-filled hidden>
+  <div data-filled>
     <Table
       caption={quotePage.tableCaption}
       columns={[
@@ -176,8 +184,6 @@ import { quotePage } from '@/lib/quote-content';
   import { quotePage } from '@/lib/quote-content';
 
   class QuoteListElement extends HTMLElement {
-    #empty!: HTMLElement;
-    #filled!: HTMLElement;
     #body!: HTMLTableSectionElement;
     #template!: HTMLTemplateElement;
     #announce!: HTMLElement;
@@ -196,8 +202,9 @@ import { quotePage } from '@/lib/quote-content';
     #render = () => {
       const items = getAll();
 
-      this.#empty.hidden = items.length > 0;
-      this.#filled.hidden = items.length === 0;
+      // A visibilidade sai do CSS, pelo `data-quote` do <html>. Escrever
+      // `.hidden` aqui competiria com ele e traria o deslocamento de volta.
+      document.documentElement.dataset.quote = items.length > 0 ? 'ativo' : 'vazio';
       this.#body.replaceChildren();
 
       items.forEach((item, index) => {
@@ -250,15 +257,14 @@ import { quotePage } from '@/lib/quote-content';
     };
 
     connectedCallback() {
-      const empty = this.querySelector('[data-empty]');
-      const filled = this.querySelector('[data-filled]');
+      // `[data-empty]` e `[data-filled]` NÃO são consultados aqui: a
+      // visibilidade dos dois é decidida pelo CSS, a partir do `data-quote`
+      // do <html>. Ver a nota do contrato em src/styles/global.css.
       const body = this.querySelector('tbody');
       const template = this.querySelector('template[data-row]');
       const announce = this.querySelector('[data-announce]');
 
       if (
-        !(empty instanceof HTMLElement) ||
-        !(filled instanceof HTMLElement) ||
         !(body instanceof HTMLTableSectionElement) ||
         !(template instanceof HTMLTemplateElement) ||
         !(announce instanceof HTMLElement)
@@ -266,8 +272,6 @@ import { quotePage } from '@/lib/quote-content';
         return;
       }
 
-      this.#empty = empty;
-      this.#filled = filled;
       this.#body = body;
       this.#template = template;
       this.#announce = announce;

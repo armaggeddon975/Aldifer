@@ -35,3 +35,6 @@ pnpm-debug.log*
 # store de lead em arquivo (driver json da Etapa 6) — NUNCA versionar:
 # contem dado pessoal de cliente
 /data/
+
+# relatorios do Lighthouse (gerados por npm run lighthouse / seo / cls)
+.lighthouse/

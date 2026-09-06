@@ -18,6 +18,8 @@
  * `noindex, nofollow` porque não é conteúdo. O `robots.txt` também bloqueia
  * `/admin` e `/keystatic`, e as duas ficam fora do sitemap.
  */
+import '@/styles/tokens.css';
+
 const DESTINO = '/keystatic';
 ---
 
@@ -30,14 +32,52 @@ const DESTINO = '/keystatic';
     <title>Painel de edição — Aldifer</title>
     <link rel="canonical" href={DESTINO} />
   </head>
-  <body
-    style="font-family: system-ui, sans-serif; margin: 0; display: grid; place-items: center; min-height: 100vh; background: #0b1b2e; color: #e8ebef;"
-  >
-    <p style="font-size: 1rem; text-align: center; padding: 1rem;">
+  <body>
+    <p>
       Abrindo o painel de edição…<br />
-      <a href={DESTINO} style="color: #ff6a2b; text-underline-offset: 4px;">
-        Clique aqui se não abrir sozinho
-      </a>
+      <a href={DESTINO}>Clique aqui se não abrir sozinho</a>
     </p>
   </body>
+
+  <!--
+    ESTILO EM <style>, NUNCA EM ATRIBUTO `style`.
+
+    Esta página nasceu com três atributos `style` inline, e em produção ela
+    aparecia SEM ESTILO NENHUM: a CSP gerada pelo Astro emite `style-src 'self'`,
+    e o `style-src-attr` — que governa o atributo — cai nesse fallback. `'self'`
+    não libera estilo em atributo, então o navegador descartava os três, sem erro
+    no build nem no `astro check`.
+
+    É a mesma armadilha da nota do CLAUDE.md sobre `<script is:inline>`, do outro
+    lado da política: o Astro hasheia o que ele processa. Um bloco <style> ele
+    processa; um atributo, não.
+
+    As cores vêm dos tokens, e não em hex — a versão anterior trazia #0b1b2e,
+    #e8ebef e #ff6a2b escritos à mão. Só `tokens.css` é importado: esta página é
+    um trampolim de redirecionamento e não precisa de Tailwind, das fontes nem
+    dos componentes.
+  -->
+  <style is:global>
+    body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--steel-950);
+      color: var(--on-dark);
+      font-family: system-ui, sans-serif;
+    }
+
+    p {
+      padding: 1rem;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    /* --accent-bright, e não --accent: o fundo é escuro. */
+    a {
+      color: var(--accent-bright);
+      text-underline-offset: 4px;
+    }
+  </style>
 </html>

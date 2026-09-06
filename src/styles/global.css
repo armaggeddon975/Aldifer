@@ -212,6 +212,62 @@
    fixo continua útil pela navegação e pelo telefone.
    -------------------------------------------------------------------------- */
 
+/* --- Lista de orçamento: quem mostra o quê ---------------------------------
+   O atributo `data-quote` no <html> é escrito ANTES DA PRIMEIRA PINTURA pelo
+   script de src/lib/quote-boot.mjs, que lê o localStorage. Daí a visibilidade
+   sair do CSS e não do JavaScript.
+
+   Antes disso o /orcamento entregava o formulário visível e o script o
+   escondia ao descobrir a lista vazia: colapsar ~1500px de formulário para
+   ~100px de aviso media CLS de 0,183 a 0,332, contra a meta de 0,100. Agora a
+   decisão acontece antes de haver o que deslocar.
+
+   SEM O ATRIBUTO — script bloqueado, ou navegador sem JavaScript — nenhuma
+   das duas regras casa e os DOIS blocos aparecem. É o comportamento certo:
+   sem script a lista não existe, então mostrar o aviso de lista vazia junto do
+   formulário é honesto.
+
+   CONTRATO: `data-quote` tem TRÊS estados e DOIS componentes que o escrevem —
+   o script de boot, a QuoteBar e o QuoteForm.
+
+     'ativo'   a lista tem itens
+     'vazio'   a lista está vazia, e alguém verificou
+     ausente   ninguém verificou ainda (sem JavaScript)
+
+   Quem escrever este atributo precisa usar 'vazio' em vez de APAGAR. A
+   QuoteBar apagava, e isso devolvia a página ao estado "não decidido" depois
+   da primeira pintura: o formulário reaparecia e o CSS o escondia outra vez.
+   Eram 0,198 de CLS em /orcamento.
+   -------------------------------------------------------------------------- */
+
+html[data-quote='vazio'] quote-form [data-form],
+html[data-quote='ativo'] quote-form [data-no-items] {
+  display: none;
+}
+
+/* A LISTA. O bloco preenchido começa escondido e o atributo o revela — ao
+   contrário do formulário, aqui o padrão sem JavaScript precisa ser o aviso de
+   lista vazia sozinho: sem script não existe lista, e uma tabela de zero linha
+   ao lado do aviso não diria nada. */
+quote-list [data-filled] {
+  display: none;
+}
+
+html[data-quote='ativo'] quote-list [data-filled] {
+  display: revert;
+}
+
+html[data-quote='ativo'] quote-list [data-empty] {
+  display: none;
+}
+
+/* O sucesso do envio vence tudo: ali o formulário sai e o aviso de lista
+   vazia não deve voltar, porque a lista esvaziou por ter sido enviada. */
+html quote-form:has([data-success]:not([hidden])) [data-form],
+html quote-form:has([data-success]:not([hidden])) [data-no-items] {
+  display: none;
+}
+
 @media (max-width: 47.9375rem) {
   html[data-quote='ativo'] body > header {
     position: static;

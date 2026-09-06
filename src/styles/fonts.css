@@ -38,7 +38,29 @@
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* JetBrains Mono — só tabelas de bitola e resultado da calculadora */
+/* JetBrains Mono — só tabelas de bitola e resultado da calculadora.
+
+   `font-display: swap`, como as outras duas — decidido na Etapa 12, depois de
+   medir a alternativa e o usuário recusá-la. Fica registrado aqui o que a
+   medição mostrou, para ninguém repetir o caminho:
+
+   A JetBrains Mono é 9,1% MAIS LARGA que a monoespaçada do sistema que a
+   substitui (medido no navegador, não estimado). Quando ela chega, todo texto
+   em mono muda de largura e a tabela de bitolas se reajusta embaixo do olho de
+   quem está lendo uma medida. Com `font-display: optional` isso desaparece —
+   medido: CLS 0,000 em todas as páginas, contra 0,021 na categoria e 0,016 na
+   calculadora com `swap`.
+
+   NÃO SE ADOTOU `optional` porque 0,021 contra uma meta de 0,100 é MARGEM, e
+   não conformidade. `optional` não faz troca depois da janela curta, então um
+   visitante em 4G de obra leria a primeira visita inteira sem a tipografia da
+   marca — custo que nenhum número de portão mostra. A regra do CLAUDE.md
+   ("font-display: swap", "preload apenas na fonte usada no LCP") vale, e foi
+   confirmada.
+
+   E cuidado com a atribuição: o CLS de 0,198 que abriu esta investigação NÃO
+   era das fontes. Era o QuoteList renderizando os dois estados e escondendo um
+   na hidratação. Fontes foram o palpite; o rastro do Lighthouse foi a prova. */
 @font-face {
   font-family: 'JetBrains Mono Variable';
   font-style: normal;

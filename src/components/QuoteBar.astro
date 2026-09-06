@@ -111,8 +111,21 @@ import { quoteBar } from '@/lib/quote-content';
       if (total === 0) {
         this.hidden = true;
         document.body.style.removeProperty('padding-bottom');
-        // Sem lista, o header volta a ser fixo no mobile.
-        delete document.documentElement.dataset.quote;
+        // 'vazio', e NÃO apagar o atributo.
+        //
+        // Esta barra e o formulário de /orcamento COMPARTILHAM `data-quote`,
+        // e ele tem três estados: 'ativo', 'vazio' e ausente. Ausente
+        // significa "ninguém decidiu ainda" — é o que o navegador sem
+        // JavaScript vê, e nele o /orcamento mostra o formulário E o aviso de
+        // lista vazia, que é o comportamento honesto.
+        //
+        // Apagar aqui, como esta linha fazia, jogava a página de volta para o
+        // estado "não decidido" DEPOIS da primeira pintura: o formulário
+        // reaparecia e o CSS o escondia de novo. Era 0,198 de CLS em
+        // /orcamento, medido na Etapa 12 — e não aparecia como problema de
+        // fonte nem de script, porque a atribuição do Lighthouse não
+        // encontrava o elemento.
+        document.documentElement.dataset.quote = 'vazio';
         return;
       }
 

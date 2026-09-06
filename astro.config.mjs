@@ -5,6 +5,25 @@ import keystatic from '@keystatic/astro';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
 import tailwindcss from '@tailwindcss/vite';
+import { createHash } from 'node:crypto';
+
+import { QUOTE_BOOT } from './src/lib/quote-boot.mjs';
+
+/**
+ * Hash do único script inline que eu escrevo à mão.
+ *
+ * CALCULADO da MESMA constante que o layout renderiza, em vez de digitado: um
+ * hash digitado sai de sincronia na primeira alteração do script e passa a
+ * BLOQUEAR o próprio site — foi o argumento para não escrever a CSP à mão, e
+ * vale aqui igual.
+ *
+ * O script decide, antes da primeira pintura, se a lista de orçamento tem
+ * itens. Sem ele o /orcamento media CLS de 0,183 a 0,332. Ver
+ * src/lib/quote-boot.mjs.
+ */
+const HASH_DO_BOOT = /** @type {`sha256-${string}`} */ (
+  `sha256-${createHash('sha256').update(QUOTE_BOOT, 'utf8').digest('base64')}`
+);
 
 /**
  * Host do Plausible, quando configurado.
@@ -52,6 +71,44 @@ export default defineConfig({
   // `prerender = false` são renderizadas sob demanda — hoje /api/orcamento e
   // /api/contato. As 16 páginas do site seguem HTML pré-gerado em build.
   adapter: vercel(),
+
+  build: {
+    /**
+     * CSS EMBUTIDO NO HTML, e não em arquivo linkado.
+     *
+     * O padrão do Astro é `'auto'`, que embute folha abaixo de 4 KB. A do site
+     * tem 32,7 KB crus / 7,3 KB gzip, então ficava em arquivo — e como
+     * `<link rel="stylesheet">` BLOQUEIA A PINTURA, ela custava um round-trip
+     * antes do primeiro pixel.
+     *
+     * POR QUE MUDOU (medido na Etapa 12, mediana de 9 execuções em /orcamento,
+     * que é a página mais pesada do site com 242 KB):
+     *
+     *   CSS em arquivo:  LCP 2,41–2,56s — 4 de 9 execuções ACIMA da meta
+     *   CSS embutido:    LCP 2,40–2,41s — 0 de 9 acima, e a variação sumiu
+     *
+     * O gargalo estava na ordem de descoberta: o `preload` da Archivo (88 KB)
+     * é escrito antes no <head>, e o Astro injeta o <link> da folha no FIM do
+     * head — então o navegador começava a fonte antes do CSS que bloqueia a
+     * pintura. Embutir tira a folha dessa disputa.
+     *
+     * O CUSTO, honestamente: some o cache compartilhado da folha, e cada
+     * página passa a carregar 6,6 KB gzip a mais. Em troca, o PRIMEIRO
+     * carregamento fica até um pouco mais leve — 14.775 bytes de HTML com o
+     * estilo dentro, contra 8.150 de HTML mais 7.279 de CSS — e com um
+     * round-trip a menos.
+     *
+     * A ALTERNATIVA MEDIDA E RECUSADA foi tirar o `preload` da Archivo: o LCP
+     * também passava, mas o FCP piorava 0,6s em TODA página (1,58s → 2,19s na
+     * home), porque o `font-display: swap` mantém o texto invisível durante o
+     * período de bloqueio. Perder meio segundo de primeira pintura em todo o
+     * site para poupar 6,6 KB não se paga.
+     *
+     * A CSP acompanha: o Astro hasheia o <style> que ele mesmo embute e o
+     * inclui em `style-src-elem`. Verificado no HTML gerado.
+     */
+    inlineStylesheets: 'always',
+  },
 
   security: {
     /**
@@ -118,6 +175,10 @@ export default defineConfig({
       ],
 
       scriptDirective: {
+        // O hash do script de boot, calculado acima da mesma constante que o
+        // layout usa. `kind: 'element'` porque é um <script>, não um atributo.
+        hashes: [{ hash: HASH_DO_BOOT, kind: /** @type {const} */ ('element') }],
+
         // 'self' para os módulos que o Astro emite como arquivo, mais o script
         // do Turnstile e o do analytics. Os inline entram por hash, calculado
         // pelo Astro — não são listados aqui.

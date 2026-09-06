@@ -38,7 +38,7 @@ export { PRODUCT_CATEGORIES };
  * renderizar uma lista de horários VAZIA em vez do aviso de pendência. Quem
  * limpasse o campo no painel apagaria o aviso sem colocar nada no lugar.
  */
-const vazioComoNulo = <T extends z.ZodTypeAny>(schema: T) =>
+const vazioComoNulo = <T extends z.ZodType>(schema: T) =>
   z.preprocess((valor) => {
     if (valor === '' || valor === undefined) return null;
     if (Array.isArray(valor) && valor.length === 0) return null;

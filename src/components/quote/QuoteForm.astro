@@ -34,8 +34,14 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
   data-phone-e164={site.phoneE164}
   data-whatsapp={site.whatsapp ?? undefined}
 >
-  {/* Lista vazia: o pedido não tem o que enviar. */}
-  <div class="form-notice" hidden data-no-items>
+{/*
+    Lista vazia: o pedido não tem o que enviar.
+
+    SEM `hidden` no HTML, de propósito: quem decide a visibilidade é o CSS, a
+    partir do `data-quote` que o script de boot escreve antes da primeira
+    pintura. Ver a nota em src/styles/global.css.
+  */}
+  <div class="form-notice" data-no-items>
     <p class="font-semibold">{formCopy.emptyListHeading}</p>
     <p class="mt-2">{formCopy.emptyListBody}</p>
   </div>
@@ -175,7 +181,6 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     #summary!: HTMLElement;
     #success!: HTMLElement;
     #sendError!: HTMLElement;
-    #noItems!: HTMLElement;
     #loadedAt = Date.now();
     #turnstileToken: string | undefined;
 
@@ -188,7 +193,8 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 
       this.#sendError.hidden = estado !== 'erro';
       this.#success.hidden = estado !== 'sucesso';
-      this.#form.hidden = estado === 'sucesso';
+      // O formulário sai de cena pelo CSS, na regra de :has([data-success]).
+      // Mexer em .hidden aqui competiria com ela.
 
       if (estado === 'erro') {
         const body = this.#sendError.querySelector('[data-send-error-body]');
@@ -337,13 +343,22 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 
     // --- ciclo de vida ------------------------------------------------------
 
+    /**
+     * Reflete o estado da lista no atributo do <html>, para o CSS decidir.
+     *
+     * NÃO mexe em `.hidden` do formulário nem do aviso. O script de boot
+     * escreve este mesmo atributo antes da primeira pintura, e manter as duas
+     * escritas no mesmo lugar é o que garante que a hidratação não desloque
+     * nada: o valor que o JavaScript calcula é o valor que já estava lá.
+     */
     #sincronizarLista = () => {
-      const vazia = getAll().length === 0;
-      // Não esconde o formulário depois do sucesso, quando a lista fica vazia
-      // justamente porque o pedido foi enviado.
+      // Depois do sucesso a lista fica vazia porque o pedido foi ENVIADO.
+      // Voltar o atributo para "vazio" faria o aviso de lista vazia aparecer
+      // em cima da confirmação.
       if (!this.#success.hidden) return;
-      this.#noItems.hidden = !vazia;
-      this.#form.hidden = vazia;
+
+      const vazia = getAll().length === 0;
+      document.documentElement.dataset.quote = vazia ? 'vazio' : 'ativo';
     };
 
     connectedCallback() {
@@ -370,7 +385,6 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
       this.#summary = summary;
       this.#success = success;
       this.#sendError = sendError;
-      this.#noItems = noItems;
 
       form.addEventListener('submit', (event) => {
         event.preventDefault();

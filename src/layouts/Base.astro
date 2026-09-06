@@ -7,6 +7,7 @@ import NoticeBar from '@/components/NoticeBar.astro';
 import QuoteBar from '@/components/QuoteBar.astro';
 import Analytics from '@/components/Analytics.astro';
 import { getSite } from '@/lib/site';
+import { QUOTE_BOOT } from '@/lib/quote-boot.mjs';
 import { businessJsonLd } from '@/lib/structured-data';
 
 const site = await getSite();
@@ -64,6 +65,19 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site ?? Astr
     {/* Ícones gerados do logotipo real da Aldifer por `npm run assets`. Até a
         Etapa 8 aqui estava o favicon PADRÃO DO ASTRO, que teria ido ao ar no
         site do cliente. */}
+    {/*
+      Decide o estado da lista de orçamento ANTES DA PRIMEIRA PINTURA.
+
+      SÍNCRONO e no <head> de propósito: é o que evita o formulário de
+      /orcamento aparecer e colapsar quando o script de hidratação descobre
+      que a lista está vazia — o Lighthouse media CLS de até 0,332 ali.
+
+      `is:inline` para o Astro não o transformar em módulo (módulo é diferido
+      e chegaria tarde). O hash dele entra na CSP em astro.config.mjs,
+      calculado da mesma constante. Ver src/lib/quote-boot.mjs.
+    */}
+    <script is:inline set:html={QUOTE_BOOT} />
+
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />

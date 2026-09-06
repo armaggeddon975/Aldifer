@@ -729,6 +729,63 @@ sucesso falso. Nenhuma checagem foi pulada, só invertida.
 
 ---
 
+## Os portões de qualidade, e cinco defeitos que eles acharam
+
+Os quatro portões do `CLAUDE.md` viraram scripts na Etapa 12, e rodam em TODAS as
+rotas do build em vez de numa amostra. Os números medidos estão em
+[`docs/QUALIDADE.md`](docs/QUALIDADE.md); a parte manual de acessibilidade, em
+[`docs/ACESSIBILIDADE.md`](docs/ACESSIBILIDADE.md).
+
+Resumo do que passou: **performance 97–99** com LCP de 2,11 a 2,41s e TBT 0ms,
+home com **218 KB** contra o limite de 1 MB · **SEO 100** em nove moldes de
+página, com 89 blocos de JSON-LD validados · **zero violação** de acessibilidade
+`critical` ou `serious` em 43 rotas · **172 medições** responsivas sem quebra,
+sem scroll horizontal e sem corte.
+
+O que o portão achou, e que estava indo ao ar:
+
+1. **A calculadora não funcionava sem JavaScript.** Os 12 grupos de campo e os 12
+   desenhos de seção transversal saíam do servidor com `hidden`, e o script
+   desescondia um depois de hidratar — quem chegasse sem script veria o seletor
+   de perfil e mais nada. Isso também causava CLS de 0,304, contra a meta de
+   0,100. E havia um descasamento por baixo: o script tinha `'tubo-quadrado'`
+   como padrão enquanto o `<select>`, sem `<option selected>`, começava na barra
+   redonda. Agora o padrão é uma constante única, `DEFAULT_PROFILE_SLUG`, e um
+   teste garante que ela aponta para um perfil com fórmula e campos.
+
+2. **A página `/admin` ia ao ar sem estilo nenhum.** Ela usava três atributos
+   `style` inline, e a CSP gerada bloqueia estilo em atributo — sem erro no
+   build, sem erro no `astro check`, sem erro no `dev`. É a mesma armadilha do
+   `<script is:inline>` já anotada no `CLAUDE.md`, do lado do estilo. De
+   passagem, saíram três hexes soltos que contrariavam a regra dos tokens.
+
+3. **A lista de orçamento com itens gerava 285px de scroll horizontal a 360px.**
+   Os `<label class="sr-only">` das células são `position: absolute`, e sem
+   ancestral posicionado o bloco contentor deles é o ICB — então o
+   `overflow: auto` do `<table-scroller>` **não os recortava**, e eles ficavam na
+   coordenada de layout da célula, a 954px, empurrando o documento e arrastando a
+   barra fixa. Só apareceu porque o portão passou a testar a lista COM itens.
+
+4. **O CSS crítico perdia a corrida para o `preload` da fonte.** O Astro injeta o
+   `<link rel="stylesheet">` no fim do `<head>`, depois do `preload` da Archivo
+   de 88 KB — então o navegador começava a fonte antes da folha que bloqueia a
+   pintura. Em 9 execuções no `/orcamento`: 4 de 9 acima da meta de LCP com o CSS
+   em arquivo, 0 de 9 com ele embutido.
+
+5. **O próprio portão passava o que não devia.** A mediana do CLS escondia uma
+   distribuição bimodal — `0,000 · 0,016 · 0,016 · 0,304 · 0,304` virava "0,016"
+   e passava folgado. O portão responsivo confundia a marca-d'água decorativa do
+   hero com quebra de layout, e ao mesmo tempo dava por rolável uma tabela
+   cortada por `overflow: hidden`. E media o painel do Keystatic acreditando
+   medir `/admin`, que faz `<meta refresh>` de 0s para lá. As quatro correções
+   estão em `docs/QUALIDADE.md`.
+
+Uma lição atravessa três dos cinco: **markup renderizado em dois estados, com um
+escondido na hidratação.** É o defeito mais caro deste projeto. O `CLAUDE.md` tem
+a regra agora.
+
+---
+
 ## Como rodar
 
 Requer **Node >= 22.12.0** (exigência do Astro 7).
@@ -742,9 +799,9 @@ npm run dev
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento em `http://localhost:4321`. Mostra os rascunhos. |
 | `npm run build` | Build de produção. **Exclui os rascunhos** e valida todos os schemas. |
-| `npm run preview` | Serve o build de produção, para medir performance de verdade. |
+| `npm run preview` | `astro preview`. **NÃO funciona com o adapter da Vercel** — use `npm run servir`. Fica na tabela só porque é script padrão do Astro. |
 | `npm run check` | Verificação de tipos, inclusive nos arquivos `.astro`. |
-| `npm test` | 215 testes: fórmulas, rótulos, busca, legendas, lista de orçamento e e-mail. |
+| `npm test` | 243 testes: fórmulas, rótulos, busca, legendas, lista de orçamento e e-mail. |
 | `npm run contrast` | 22 contrastes, 4 separações de matiz, e varre o código procurando o acento usado como cor de texto. |
 | `npm run meta` | Confere title, description, canonical, og:image e h1 único em TODA rota do build. Reprova em título repetido. |
 | `npm run assets` | Regera favicon, ícones e og-image a partir do logotipo. Rode ao trocar o logo. |
@@ -755,6 +812,11 @@ npm run dev
 | `npm run testar-redirects` | SEGUE as 117 URLs de verdade contra `npm run servir` e confirma 301 em um salto com destino 200. Aceita `BASE=` para apontar para produção. |
 | `npm run js` | Mede o JS de cada página em gzip, contra o portão de 100 KB. Reprova página pública acima de 40 KB, que é sinal de runtime de framework vazando. |
 | `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
+| `npm run lighthouse` | Portão de performance. 3 execuções por página (`EXECUCOES=5` para mais): tempo pela mediana, **CLS pelo pior caso**. Aceita rotas extras como argumento. |
+| `npm run seo` | Portão de SEO. Nota 100 do Lighthouse em 9 moldes de página, mais validação estrutural do JSON-LD em TODAS as rotas. `SEM_LIGHTHOUSE=1` roda só a parte estática, em segundos. |
+| `npm run axe` | Portão de acessibilidade, em TODAS as rotas do build. Reprova em violação `critical` ou `serious`. |
+| `npm run responsivo` | Portão responsivo: 4 larguras × toda rota, mais um cenário com a lista de orçamento semeada. **Autoverifica-se em toda execução** — 8 provas injetam a quebra que cada balde existe para pegar. |
+| `npm run cls -- /rota 4` | Diagnóstico: imprime o retângulo ANTES e DEPOIS de cada elemento que se moveu. Use quando o CLS reprovar — a atribuição de causa do Lighthouse é heurística e já apontou o culpado errado. |
 
 ---
 
@@ -861,5 +923,5 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 9 — SEO técnico | ✅ |
 | 10 — Migração de URLs | ✅ |
 | 11 — CMS Keystatic | ✅ |
-| 12 — Portões de qualidade | ⬜ |
+| 12 — Portões de qualidade | ✅ números em `docs/QUALIDADE.md` |
 | 13 — Deploy e entrega | ⬜ |

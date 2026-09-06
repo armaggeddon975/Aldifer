@@ -246,6 +246,20 @@ Fontes **variáveis, auto-hospedadas** via `@fontsource-variable`, subset `latin
 `font-display: swap`. `preload` **apenas** na fonte usada no LCP (Archivo do hero).
 Nada de Google Fonts por CDN.
 
+**As duas regras acima foram testadas contra a alternativa e CONFIRMADAS** na
+Etapa 12 — não reabra. Eu propus `font-display: optional` na Inter e na
+JetBrains Mono, mais um `preload` da Inter, com medição a favor: CLS 0,000 em
+todas as páginas, contra 0,021 e 0,016 com `swap`. Foi recusado, e a razão é boa:
+**0,021 contra uma meta de 0,100 é margem, não conformidade**, e `optional` não
+troca a fonte depois da janela curta — um visitante em 4G de obra leria a
+primeira visita inteira sem a tipografia da marca.
+
+O que sobra de CLS com `swap` é reflow de texto, e é aceito: 0,075 no pior caso,
+na página de tabela mais larga. Se um número de performance reprovar de verdade,
+**procure a causa fora da tipografia primeiro** — na Etapa 12 o CLS de 0,304 da
+calculadora e o de 0,198 do /orcamento eram markup escondido na hidratação, e o
+Lighthouse culpou as web fonts nos dois casos.
+
 ### Espaçamento e raio
 
 ```
@@ -350,14 +364,59 @@ tocar em `astro:content` nem no DOM — e deixe no `.astro` apenas a ligação c
 Nenhuma entrega passa sem os quatro. Medir em **build de produção**, perfil **mobile
 com throttling**. Medir em dev não conta.
 
+Os quatro viraram scripts na Etapa 12. Rode `npm run servir` num terminal — que
+sobe o build em `:4330` com gzip e os cabeçalhos do `vercel.json` — e no outro:
+
 | Portão | Meta | Comando |
 |---|---|---|
-| Performance | LCP < 2,5s · CLS < 0,1 · INP < 200ms · JS inicial < 100KB gzip | `npx lighthouse http://localhost:4321 --preset=perf --form-factor=mobile` |
-| SEO | title/description únicos, canonical, sitemap, robots, JSON-LD válido | Lighthouse + Rich Results Test |
-| Acessibilidade | WCAG 2.2 AA, zero violação crítica ou séria | `npx @axe-core/cli http://localhost:4321 --exit` |
-| Responsivo | 360 · 768 · 1280 · 1920px sem quebra nem scroll horizontal | Inspeção manual, **360px primeiro** |
+| Performance | LCP < 2,5s · CLS < 0,1 · INP < 200ms · JS inicial < 100KB gzip | `npm run lighthouse` |
+| SEO | title/description únicos, canonical, sitemap, robots, JSON-LD válido | `npm run seo` (+ Rich Results Test no deploy) |
+| Acessibilidade | WCAG 2.2 AA, zero violação crítica ou séria | `npm run axe` (todas as rotas) |
+| Responsivo | 360 · 768 · 1280 · 1920px sem quebra nem scroll horizontal | `npm run responsivo` (todas as rotas × 4 larguras) |
 
 Peso total da home: **< 1MB**.
+
+`npm run cls -- /rota 4` quando o CLS reprovar: ele imprime o retângulo ANTES e
+DEPOIS de cada elemento que se moveu. **Não confie na atribuição de causa do
+Lighthouse** — ela nomeia a requisição que terminou perto do salto, e na Etapa 12
+apontou "Web font loaded" para um defeito que era markup escondido na hidratação.
+
+Os números medidos ficam em `docs/QUALIDADE.md`, e a parte manual de
+acessibilidade em `docs/ACESSIBILIDADE.md`. `npm run meta`, `npm run js`,
+`npm run contrast`, `npm test` e `npm run check` rodam sem servidor.
+
+### CLS pelo PIOR caso, tempo pela mediana
+
+Os portões de tempo rodam 3 a 5 vezes e tiram a **mediana**, porque LCP e FCP
+variam por carga de máquina — o `/orcamento` já deu 2,56s numa execução e 1,95s
+em cinco seguidas, sem mudança de código.
+
+**Para CLS a mediana MENTE.** Em `/calculadora-de-peso` as cinco execuções deram
+`0,000 · 0,016 · 0,016 · 0,304 · 0,304`: distribuição bimodal, conforme a fonte
+chegar antes ou depois de uma pintura grande. A mediana é 0,016 e passava folgado,
+escondendo que 40% das visitas levavam o triplo da meta. CLS não é ruído de
+medição, é evento: se acontece em 2 de 5 execuções aqui, acontece com 2 de 5
+visitantes lá.
+
+### Nunca renderize dois estados e esconda um na hidratação
+
+**É o defeito mais caro deste projeto, e ele apareceu três vezes na Etapa 12.**
+
+O `QuoteList` renderizava lista vazia e lista cheia, as duas com `hidden`, e
+desescondia uma ao hidratar: 292px inseridos, CLS 0,198. A `WeightCalculator`
+renderizava os 12 grupos de campo e os 12 desenhos de seção transversal com
+`hidden`: CLS 0,304 — e, de quebra, **a calculadora não funcionava sem
+JavaScript**, mostrando o seletor de perfil e mais nada.
+
+A saída é sempre a mesma: **o servidor renderiza o estado certo, visível**, e o
+script só troca depois. Quando o estado depende do `localStorage`, um script de
+boot síncrono no `<head>` escreve um atributo no `<html>` antes da primeira
+pintura e o CSS decide a visibilidade — ver `src/lib/quote-boot.mjs`.
+
+E se o padrão aparece em dois lugares, ele vira **constante compartilhada**: o
+script da calculadora tinha `findProfile('tubo-quadrado')` enquanto o `<select>`,
+sem `<option selected>`, começava no primeiro perfil do registro. Servidor e
+cliente discordavam em toda visita, e ninguém via porque tudo estava escondido.
 
 ---
 
@@ -448,6 +507,47 @@ O `src/middleware.ts` relaxa a CSP **só** nas rotas do painel, porque o `@keyst
 injeta estilo em tempo de execução. E atenção a uma regra da CSP que eu aprendi errando:
 `'unsafe-inline'` é **ignorado** quando há hash na mesma diretiva — é preciso substituir
 a diretiva, não ampliá-la.
+
+---
+
+### Nota de segurança — a CSP também bloqueia atributo `style` (05/09/2026)
+
+A nota acima vale para o `<script is:inline>`. **O espelho dela é o atributo
+`style`**, e ele já mordeu: a página `/admin` foi ao build com três atributos
+`style` inline e renderizava **sem estilo nenhum**.
+
+A CSP gerada emite `style-src 'self'`. O `style-src-attr` — que é quem governa o
+atributo — cai nesse fallback quando não é declarado, e `'self'` **não** libera
+estilo em atributo. O navegador descarta os três, sem erro no build, sem erro no
+`astro check` e sem erro no `npm run dev`.
+
+> **Estilo vai em bloco `<style>`, nunca em atributo `style`.** O Astro hasheia o
+> bloco e a política acompanha; atributo ele não processa. Manipular
+> `element.style.foo` por CSSOM continua valendo — o que a CSP bloqueia é o
+> ATRIBUTO vindo do markup.
+
+Exceção legítima: o HTML de e-mail em `src/lib/quote-email.ts`. Cliente de e-mail
+exige estilo inline e não tem CSP.
+
+---
+
+### Nota de performance — o CSS é embutido no HTML (05/09/2026)
+
+`build.inlineStylesheets: 'always'` no `astro.config.mjs`. O padrão do Astro
+embute folha abaixo de 4 KB; a deste site tem 32,7 KB crus e ficava em arquivo.
+
+`<link rel="stylesheet">` bloqueia a pintura, e o `preload` da Archivo (88 KB) é
+descoberto ANTES dele, porque o Astro injeta a folha no fim do `<head>`. Medido
+em 9 execuções no `/orcamento`: em arquivo dava LCP 2,41–2,56s com **4 de 9 acima
+da meta**; embutido dá 2,40–2,41s com **0 de 9**.
+
+O custo, honestamente: some o cache compartilhado da folha e cada página carrega
+6,6 KB gzip a mais. O primeiro carregamento fica um pouco mais leve mesmo assim,
+e com um round-trip a menos. A alternativa — tirar o `preload` da Archivo —
+também passava o LCP, mas piorava o FCP em **0,6s em toda página**, porque o
+`font-display: swap` mantém o texto invisível durante o período de bloqueio.
+
+O raciocínio inteiro está no comentário do `astro.config.mjs`, com os números.
 
 ---
 

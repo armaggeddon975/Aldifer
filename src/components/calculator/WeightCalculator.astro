@@ -1,6 +1,6 @@
 ---
 import CrossSection from '@/components/CrossSection.astro';
-import { CALCULATOR_PROFILES, legendFor } from '@/lib/calculator';
+import { CALCULATOR_PROFILES, DEFAULT_PROFILE_SLUG, legendFor } from '@/lib/calculator';
 import { calculatorUi, calculatorWarnings } from '@/lib/calculator-content';
 import { WEIGHT_FORMULAS } from '@/lib/steel';
 
@@ -29,6 +29,34 @@ interface Props {
 const { productProfiles = {} }: Props = Astro.props;
 
 const profiles = CALCULATOR_PROFILES;
+
+/**
+ * Perfil que a página já mostra ABERTA, sem JavaScript nenhum.
+ *
+ * Vem de `DEFAULT_PROFILE_SLUG`, no registro de perfis — a MESMA constante que
+ * o script usa como último recurso. A `<option>` correspondente sai com
+ * `selected`, então markup, controle e script começam os três concordando.
+ *
+ * POR QUE ISSO IMPORTA (corrigido na Etapa 12): antes, TODOS os grupos de campo
+ * e TODOS os 12 desenhos saíam do servidor com `hidden`, e o script desescondia
+ * um depois de hidratar. Duas consequências, as duas ruins:
+ *
+ *   1. SEM JAVASCRIPT a calculadora mostrava o seletor de perfil e mais nada —
+ *      nenhum campo, nenhum desenho. O CLAUDE.md exige "comportamento sem JS
+ *      preservado", e ele não estava.
+ *   2. O desenho de seção transversal aparecia DEPOIS da primeira pintura e
+ *      empurrava a página inteira para baixo. O Lighthouse mediu CLS de 0,304
+ *      em 2 de 5 execuções, contra a meta de 0,100, e atribuiu o salto às web
+ *      fonts — atribuição heurística, que nomeia a requisição que terminou
+ *      perto do salto e não a causa. Persegui as fontes por três configurações
+ *      diferentes antes de olhar o `previousRect` de cada deslocamento.
+ *
+ * É o MESMO defeito que o /orcamento tinha nesta etapa: markup renderizado nos
+ * dois estados, com um escondido na hidratação.
+ */
+const defaultProfile =
+  profiles.find((profile) => profile.slug === DEFAULT_PROFILE_SLUG) ?? profiles[0];
+
 const fieldId = (slug: string, name: string) => `calc-${slug}-${name}`;
 ---
 
@@ -40,18 +68,25 @@ const fieldId = (slug: string, name: string) => `calc-${slug}-${name}`;
         <select id="calc-perfil" data-profile aria-describedby="calc-perfil-dica">
           {
             profiles.map((profile) => (
-              <option value={profile.slug}>{profile.label}</option>
+              <option value={profile.slug} selected={profile.slug === defaultProfile.slug}>
+                {profile.label}
+              </option>
             ))
           }
         </select>
         <span class="calc__hint" id="calc-perfil-dica">{calculatorUi.profileHint}</span>
       </p>
 
-      {/* Campos de TODOS os perfis, um grupo por perfil. O script revela o
-          grupo do perfil escolhido e ignora o resto. */}
+      {/* Campos de TODOS os perfis, um grupo por perfil. O do perfil padrão
+          já vem VISÍVEL — ver a nota em `defaultProfile`. O script troca qual
+          está visível quando o cliente muda o seletor. */}
       {
         profiles.map((profile) => (
-          <div class="calc__fields" data-fields={profile.slug} hidden>
+          <div
+            class="calc__fields"
+            data-fields={profile.slug}
+            hidden={profile.slug !== defaultProfile.slug}
+          >
             {profile.params.length > 0 && (
               <>
                 <p class="calc__group-label">{calculatorUi.dimensionsHeading}</p>
@@ -116,11 +151,12 @@ const fieldId = (slug: string, name: string) => `calc-${slug}-${name}`;
     </div>
 
     <div class="calc__panel">
-      {/* Desenhos de todos os perfis; o script mostra o do perfil escolhido. */}
+      {/* Desenhos de todos os perfis. O do perfil padrão já vem VISÍVEL: era
+          ele, aparecendo depois da hidratação, que empurrava a página. */}
       <div class="calc__drawing">
         {
           profiles.map((profile) => (
-            <div data-drawing={profile.slug} hidden>
+            <div data-drawing={profile.slug} hidden={profile.slug !== defaultProfile.slug}>
               <CrossSection variant={profile.crossSection} decorative />
               {/* Liga as letras cotadas no desenho aos campos ao lado. Sem
                   ela o cliente vê "A", "B", "e" e tem de adivinhar. */}
@@ -458,6 +494,7 @@ const fieldId = (slug: string, name: string) => `calc-${slug}-${name}`;
 
 <script>
   import {
+    DEFAULT_PROFILE_SLUG,
     URL_PRODUCT_KEY,
     calculate,
     findProfile,
@@ -678,7 +715,7 @@ const fieldId = (slug: string, name: string) => `calc-${slug}-${name}`;
         }
       }
 
-      this.#showProfile((inicial ?? findProfile('tubo-quadrado'))!.slug);
+      this.#showProfile((inicial ?? findProfile(DEFAULT_PROFILE_SLUG))!.slug);
 
       // Preenche o que veio da URL.
       for (const input of this.#activeInputs()) {

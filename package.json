@@ -16,13 +16,18 @@
     "assets": "node scripts/gerar-assets-de-marca.mjs",
     "meta": "node scripts/check-meta.mjs",
     "js": "node scripts/check-js.mjs",
+    "lighthouse": "node scripts/check-lighthouse.mjs",
+    "axe": "node scripts/check-axe.mjs",
     "servir": "node scripts/servir-build.mjs",
     "urls-antigas": "node scripts/extrair-urls-antigas.mjs",
     "redirects": "node scripts/gerar-redirects.mjs",
     "check-redirects": "node scripts/check-redirects.ts",
     "testar-redirects": "node scripts/testar-redirects-vivos.mjs",
     "test": "node --test \"src/**/*.test.ts\"",
-    "astro": "astro"
+    "astro": "astro",
+    "responsivo": "node scripts/check-responsivo.mjs",
+    "seo": "node scripts/check-seo.mjs",
+    "cls": "node scripts/diagnosticar-cls.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.5",

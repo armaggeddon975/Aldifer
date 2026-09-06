@@ -75,6 +75,29 @@ const {
   .table-shell {
     display: block;
     overflow-x: auto;
+
+    /*
+      POSITION: RELATIVE NÃO É DECORAÇÃO — ELE CONTÉM OS ABSOLUTOS DE DENTRO.
+
+      `overflow` recorta um descendente absoluto SÓ SE o bloco contentor dele
+      estiver dentro deste elemento. Sem `position` aqui, um
+      `position: absolute` numa célula tem como bloco contentor o ICB, e então
+      escapa do recorte: ele fica na coordenada de LAYOUT da célula, que numa
+      tabela de 954px chega muito além da tela, e passa a empurrar a página.
+
+      Medido em /orcamento a 360px, com 3 itens na lista: os
+      `<label class="sr-only">` que dão nome aos campos de quantidade e
+      observação de cada linha punham o documento em 645px de largura contra
+      360px de viewport — 285px de scroll horizontal — e arrastavam a
+      quote-bar, que é `position: fixed`, junto. `position: relative` aqui
+      derruba para 360px.
+
+      O `.sr-only` estava correto (1×1px, `clip-path: inset(50%)`,
+      `margin: -1px`): quem faltava era o bloco contentor. Vale para qualquer
+      contêiner de rolagem deste site que venha a ter absoluto dentro.
+    */
+    position: relative;
+
     border: 1px solid var(--surface-border);
 
     /* A tabela declara superfície clara, independente do tom da seção em que
