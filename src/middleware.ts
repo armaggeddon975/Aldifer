@@ -144,6 +144,30 @@ export const onRequest = defineMiddleware(async (context, next) => {
   partes = ampliarDiretiva(partes, 'form-action', ["'self'", GITHUB_WEB]);
   partes = ampliarDiretiva(partes, 'img-src', ["'self'", 'data:', GITHUB_AVATARS]);
 
+  /*
+    `frame-ancestors` PRECISA SER DECLARADO AQUI, e a razão foi medida em
+    produção na Etapa 13.
+
+    O `vercel.json` manda `Content-Security-Policy: frame-ancestors 'none'` em
+    toda rota, como segunda política — o `<meta>` do Astro não aceita essa
+    diretiva, então ela só existe em cabeçalho. No servidor de teste local as
+    DUAS políticas chegavam, em duas linhas de CSP, e as duas valiam.
+
+    Na Vercel NÃO: a resposta da função SUBSTITUI o cabeçalho da configuração.
+    Medido em https://aldifer.vercel.app/keystatic — uma linha de CSP, a desta
+    função, sem `frame-ancestors`. As rotas estáticas continuam com a da
+    configuração, porque ali não há função para sobrescrever.
+
+    O `X-Frame-Options: DENY` do vercel.json sobrevive e cobre o clickjacking em
+    todo navegador que importa, então nada estava aberto. Mas contar com o
+    cabeçalho obsoleto num painel de edição é pedir para quebrar no dia em que
+    ele for removido.
+
+    Declarar aqui é idempotente: se um dia a Vercel passar a somar em vez de
+    substituir, as duas linhas dirão a mesma coisa.
+  */
+  partes = substituirDiretiva(partes, 'frame-ancestors', "'none'");
+
   response.headers.set('content-security-policy', partes.join('; '));
 
   // Injeta o @font-face da Inter local na página HTML do painel.
