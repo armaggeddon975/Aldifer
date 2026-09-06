@@ -13,9 +13,6 @@ yarn-error.log*
 pnpm-debug.log*
 
 
-# environment variables
-.env
-.env.production
 
 # macOS-specific files
 .DS_Store
@@ -23,10 +20,6 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# variáveis de ambiente locais (o .env.example É versionado)
-.env.local
-.env.*.local
-!.env.example
 
 # vercel
 .vercel/
@@ -38,3 +31,21 @@ pnpm-debug.log*
 
 # relatorios do Lighthouse (gerados por npm run lighthouse / seo / cls)
 .lighthouse/
+
+# ---------------------------------------------------------------------------
+# Variáveis de ambiente
+#
+# `.env*` cobre tudo, e a NEGAÇÃO VEM DEPOIS de propósito: em .gitignore a
+# última regra que casa é a que vale, e o CLAUDE.md exige que o .env.example
+# seja versionado (é ele que documenta cada chave). Com a negação antes do
+# padrão amplo, o exemplo passaria a ser ignorado sem ninguém notar — foi o que
+# aconteceu quando o `vercel link` acrescentou `.env*` no fim do arquivo.
+#
+# O `.env.local` é criado pelo próprio CLI da Vercel e contém um
+# VERCEL_OIDC_TOKEN. Nunca versionar.
+# ---------------------------------------------------------------------------
+.env*
+!.env.example
+
+# Vercel: .vercel guarda projectId e orgId; .env.local guarda token.
+.vercel
