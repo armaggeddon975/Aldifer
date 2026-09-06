@@ -70,7 +70,20 @@ config.redirects = redirects.map((r) => ({
   destination: r.to,
   // 301 e não 308: o Google trata os dois como permanentes, mas 301 é o que
   // toda ferramenta de SEO reconhece, e a Vercel usa 308 por padrão.
-  permanent: true,
+  //
+  // SÓ `statusCode`, NUNCA junto com `permanent` (corrigido na Etapa 13).
+  // A Vercel RECUSA O DEPLOY quando os dois aparecem no mesmo redirect:
+  //
+  //   Error: Redirect at index 0 cannot define both `permanent` and
+  //   `statusCode` properties.
+  //
+  // E `permanent: true` não daria 301 de todo jeito — no vercel.json ele
+  // significa 308, e 307 quando falso. Quem escolhe 301 é o `statusCode`.
+  //
+  // Isso passou por TODOS os portões locais: o npm run check-redirects lê
+  // `statusCode` e aprovava, e o npm run testar-redirects seguia os 117 contra
+  // o servidor de teste, que aplica os redirects por conta própria e não valida
+  // o schema da Vercel. Só apareceu no `vercel deploy`.
   statusCode: 301,
 }));
 

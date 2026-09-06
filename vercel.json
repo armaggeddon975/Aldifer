@@ -119,703 +119,586 @@
     {
       "source": "/acessorios.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-chata-galvanizada.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-chata.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-de-ferro-em-sao-bernardo.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-de-ferro-quadrada.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-de-ferro-redonda.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-de-ferro-retangular.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-quadrada-no-abc.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-quadrada.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-redonda-no-abc.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barra-redonda.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barras-chata-no-abc.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barras-chata.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barras-de-aco-em-sp.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barras-de-aco.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barras-de-ferro-em-sp.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barras-de-ferro.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/barras.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/cantoneira-de-ferro-em-sao-bernardo.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/cantoneira-de-ferro-preco.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/cantoneira-galvanizada-em-sp.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/cantoneira-galvanizada.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/cantoneira.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/cantoneiras-de-aco-em-sao-bernardo.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/cantoneiras-de-ferro-em-sp.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/cantoneiras-de-ferro.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapa-antiderrapante.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapa-de-ferro-em-sao-bernardo.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapa-de-ferro-preco.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapa-galvanizada-preco.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapa-galvanizada.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapas-de-aco-em-sao-bernardo.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapas-de-ferro-em-sp.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapas-de-ferro.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapas-finas-a-frio.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapas-finas-a-quente.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapas-galvanizadas.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapas-xadrez.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/chapas.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/comercio-de-ferro-e-aco-em-sao-bernardo.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/contato.php",
       "destination": "/contato",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/degrau-de-escada-caracol-de-aco.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/degrau-de-ferro-para-escada-reta.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/degraus-para-escada-de-ferro.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/degraus.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/discos-de-corte.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-barras-de-aco.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-barras-de-ferro.php",
       "destination": "/produtos/barras",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-cantoneiras-de-ferro.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-chapas-de-aco.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-chapas-de-ferro.php",
       "destination": "/produtos/chapas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-ferro-e-aco-no-abc.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-ferro-e-aco.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-perfis-de-aco.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-telhas-galvanizadas.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-tubos-de-aco.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidor-de-vigas-de-aco.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/distribuidora-de-ferro-e-aco.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/diversos.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/eletrodos.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/empresa-de-ferro-e-aco-no-abc.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/empresa.php",
       "destination": "/empresa",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/fechaduras.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/ferro-e-aco-em-sp.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/ferro-galvanizado-preco.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/index.php",
       "destination": "/",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfil-cantoneira.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfil-de-ferro-em-u.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfil-galvanizado-em-sao-bernardo.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfil-i-h-w.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfil-i-w.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfil-i.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfil-t.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfil-u.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfis-de-aco-em-sp.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfis-de-aco.php",
       "destination": "/produtos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/perfis.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/responsivo.php",
       "destination": "/",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tela-alambrado.php",
       "destination": "/produtos/telas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tela-alambrados.php",
       "destination": "/produtos/telas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tela-galvanizada.php",
       "destination": "/produtos/telas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tela-hexagonais.php",
       "destination": "/produtos/telas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tela-hexagonal.php",
       "destination": "/produtos/telas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tela-ondulada.php",
       "destination": "/produtos/telas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telas-hexagonais.php",
       "destination": "/produtos/telas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telas.php",
       "destination": "/produtos/telas",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telha-de-ferro-galvanizado-preco.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telha-de-ferro-galvanizado.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telha-galvanizada.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telhas-galvanizadas-em-sp.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telhas-galvanizadas-no-abc.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telhas-galvanizadas-preco.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/telhas-galvanizadas.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tintas-e-solventes.php",
       "destination": "/produtos/diversos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubo-galvanizado-preco.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubo-galvanizado.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubo-quadrado-de-ferro.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubo-quadrado.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubo-redondo-galvanizado.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubo-redondo.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubo-retangular-de-ferro.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubo-retangular.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubos-de-aco-em-sp.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubos-de-aco-no-abc.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubos-de-aco.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubos-galvanizados-em-sp.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubos-galvanizados.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/tubos.php",
       "destination": "/produtos/tubos",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/viga-h-preco.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/viga-i-preco.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/viga-u-preco.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/vigas-de-aco-em-sp.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/vigas-de-aco.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/vigas-de-ferro-em-sao-bernardo.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/vigas-de-ferro-em-sp.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/vigas-de-ferro-preco.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     },
     {
       "source": "/vigas-de-ferro.php",
       "destination": "/produtos/perfis",
-      "permanent": true,
       "statusCode": 301
     }
   ]

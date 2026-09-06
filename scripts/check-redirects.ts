@@ -117,6 +117,31 @@ for (const r of redirects) {
   }
 }
 
+// --- 5b. o schema que a VERCEL aceita --------------------------------------
+//
+// `permanent` e `statusCode` no mesmo redirect fazem a Vercel RECUSAR O DEPLOY:
+//
+//   Error: Redirect at index 0 cannot define both `permanent` and `statusCode`
+//   properties.
+//
+// Os 117 redirects saíram do gerador com os dois, e passaram por todos os
+// portões locais — este script lia `statusCode` e aprovava, e o
+// `npm run testar-redirects` seguia as 117 URLs contra o servidor de teste, que
+// aplica os redirects por conta própria e não valida o schema da Vercel. O erro
+// só apareceu no `vercel deploy`, na Etapa 13.
+//
+// Vale notar que `permanent: true` não daria 301 nem se fosse aceito: no
+// vercel.json ele significa 308, e 307 quando falso.
+
+for (const [i, r] of redirects.entries()) {
+  if (r.permanent !== undefined && r.statusCode !== undefined) {
+    falhas.push(
+      `SCHEMA DA VERCEL: redirect ${i} (${r.source}) define \`permanent\` E ` +
+        '`statusCode`. A Vercel recusa o deploy. Use só `statusCode: 301`.',
+    );
+  }
+}
+
 // --- 6. redirect órfão: aponta origem que não está na lista antiga ---------
 //
 // Não reprova: pode ser uma URL que a Aldifer conheça e o rastreamento não

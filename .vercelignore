@@ -1,0 +1,25 @@
+# O que NÃO sobe para a Vercel.
+#
+# POR QUE ESTE ARQUIVO EXISTE: o CLI da Vercel não respeita o `.gitignore`. Sem
+# ele, `vercel deploy` empacotava 29,7 MB do diretório de trabalho — dos quais
+# 23 MB eram relatórios do Lighthouse e o resto artefato de build — e o upload
+# falhou no meio ("fetch failed"). Nada disso é necessário: a Vercel roda o
+# `npm ci && npm run build` do zero.
+#
+# O caminho normal de publicação nem passa por aqui: o projeto está conectado ao
+# repositório do GitHub, então a Vercel CLONA o repositório, e aí o `.gitignore`
+# é que manda. Este arquivo serve para o deploy manual pelo CLI, que é o caminho
+# de emergência.
+
+# Relatórios de medição (npm run lighthouse / seo / cls)
+.lighthouse
+
+# Artefatos de build — a Vercel gera os dela
+dist
+.astro
+.vercel
+
+node_modules
+
+# Store de lead em arquivo: contém dado pessoal de cliente. NUNCA sobe.
+data
