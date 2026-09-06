@@ -165,9 +165,9 @@ const BY_SLUG = new Map(CALCULATOR_PROFILES.map((profile) => [profile.slug, prof
  *
  * A discordância ficou invisível desde a Etapa 7 porque o servidor renderizava
  * TODOS os grupos de campo escondidos: nenhum estava "errado" antes do script
- * rodar, porque nenhum estava aparecendo.
- * Assim que o grupo do padrão passou a vir visível — para a calculadora
- * funcionar sem JavaScript — a discordância virou um deslocamento de layout.
+ * rodar, porque nenhum estava aparecendo. Assim que o grupo do padrão passou a
+ * vir visível — para a calculadora funcionar sem JavaScript — a discordância
+ * virou um deslocamento de layout.
  */
 export const DEFAULT_PROFILE_SLUG = 'tubo-quadrado';
 
