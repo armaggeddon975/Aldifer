@@ -143,15 +143,13 @@ Nenhum destes é verificável daqui. Exigem URL pública, DNS ou chave de tercei
       `CLAUDE.md` define como sucesso do projeto
 - [ ] **Certificado emitido** para `www.aldifer.com.br` e para o apex
 - [ ] **Apex redirecionando para `www`**, e não servindo os dois
-- [ ] **Remedir se o CSS ainda precisa ser embutido.** `inlineStylesheets:
-      'always'` foi decidido quando a Archivo tinha 90 KB e disputava banda com
-      a folha, e medindo em **http/1.1** no servidor local. Duas coisas mudaram
-      a favor da folha LINKADA: a fonte caiu para 34,6 KB, e a Vercel serve
-      **http/2**, onde a requisição da folha é multiplexada e custa bem menos
-      que um round-trip. Se passar linkada, é melhor: 6,6 KB gzip a menos por
-      página, com cache compartilhado entre elas — e o público navega várias
-      páginas do catálogo. Medir na URL de preview, com
-      `BASE=<preview> npm run lighthouse`
+- [x] **O CSS voltou a ser LINKADO, medido em produção.** O
+      `inlineStylesheets: 'always'` da Etapa 12 tinha sido decidido em http/1.1
+      contra uma Archivo de 90 KB — duas condições que deixaram de existir.
+      Remedido nas duas variantes publicadas: a folha linkada ganhou em TUDO
+      (LCP da home 1,38s → 1,11s, do Orçamento 1,53s → 1,37s; FCP do Orçamento
+      1,37s → 1,07s; pior CLS dele 0,052 → 0,018) e ainda economiza 6,6 KB gzip
+      por página nas navegações seguintes, por ter cache compartilhado
 - [ ] **Teclado e leitor de tela** — Tab por toda a página, Esc fechando menu e
       diálogo, NVDA ou VoiceOver na tabela de bitolas, zoom de texto a 200%.
       As teclas não chegam à página pelo ambiente de automação usado aqui; o

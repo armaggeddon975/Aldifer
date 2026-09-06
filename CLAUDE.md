@@ -564,29 +564,43 @@ exige estilo inline e não tem CSP.
 
 ---
 
-### Nota de performance — o CSS é embutido no HTML (05/09/2026)
+### Nota de performance — o CSS voltou a arquivo linkado (06/09/2026)
 
-`build.inlineStylesheets: 'always'` no `astro.config.mjs`. O padrão do Astro
-embute folha abaixo de 4 KB; a deste site tem 32,7 KB crus e ficava em arquivo.
+`build.inlineStylesheets: 'auto'` no `astro.config.mjs`, que é o padrão do
+Astro. **Esta linha já foi `'always'`, e a reversão é a lição mais útil que este
+projeto produziu sobre medição.**
 
-`<link rel="stylesheet">` bloqueia a pintura, e o `preload` da Archivo era
-descoberto ANTES dele, porque o Astro injeta a folha no fim do `<head>`. Medido
-em 9 execuções no `/orcamento`: em arquivo, **4 de 9 acima da meta de LCP**;
-embutido, **0 de 9**.
+Na Etapa 12 embutir a folha era mesmo melhor: `<link rel="stylesheet">` bloqueia
+a pintura, e o `preload` da Archivo é escrito antes no `<head>` enquanto o Astro
+injeta o `<link>` no fim — o navegador começava a fonte antes do CSS crítico. Em
+9 execuções no `/orcamento`, a folha em arquivo ficava acima da meta de LCP em
+**4 de 9**, e embutida em **0 de 9**.
 
-Os valores absolutos daquela medição (2,41–2,56s contra 2,40–2,41s) eram
-OTIMISTAS, porque o servidor de teste ainda não mandava os cabeçalhos de
-produção — ver a correção nº 4 em `docs/QUALIDADE.md`. **A comparação continua
-valendo**, porque os dois lados foram medidos do mesmo jeito; os números de hoje
-estão no `docs/QUALIDADE.md`.
+Só que aquela medição valia num mundo que deixou de existir: ela foi feita em
+**http/1.1**, no servidor de teste local, contra uma **Archivo de 90 KB**.
+Depois disso a fonte passou a ser instanciada e caiu para 34,6 KB, e o site foi
+para a Vercel, que serve **http/2** — onde a requisição da folha é multiplexada
+na conexão já aberta em vez de custar um round-trip inteiro.
 
-O custo, honestamente: some o cache compartilhado da folha e cada página carrega
-6,6 KB gzip a mais. O primeiro carregamento fica um pouco mais leve mesmo assim,
-e com um round-trip a menos. A alternativa — tirar o `preload` da Archivo —
-também passava o LCP, mas piorava o FCP em **0,6s em toda página**, porque o
-`font-display: swap` mantém o texto invisível durante o período de bloqueio.
+Remedido em produção, com as duas variantes publicadas e 3 execuções por página,
+a folha linkada ganhou em TUDO:
 
-O raciocínio inteiro está no comentário do `astro.config.mjs`, com os números.
+```
+             LCP embutido   LCP linkado
+Home            1,38s          1,11s
+Categoria       1,36s          1,22s
+Calculadora     1,52s          1,37s
+Orçamento       1,53s          1,37s
+```
+
+O FCP do `/orcamento` caiu de 1,37s para 1,07s e o pior CLS dele de 0,052 para
+0,018. E a folha linkada ainda é melhor pelo que a medição de UMA página não
+mostra: cache compartilhado, então cada página seguinte carrega 6,6 KB gzip a
+menos — e o público navega várias páginas do catálogo, de 4G.
+
+> **Número de performance tem prazo de validade.** Antes de confiar numa
+> otimização antiga, olhe se as condições da medição ainda valem: protocolo,
+> tamanho dos recursos, ambiente. Esta inverteu quando as três mudaram.
 
 ---
 

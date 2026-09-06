@@ -781,11 +781,16 @@ O que o portão achou, e que estava indo ao ar:
    coordenada de layout da célula, a 954px, empurrando o documento e arrastando a
    barra fixa. Só apareceu porque o portão passou a testar a lista COM itens.
 
-4. **O CSS crítico perdia a corrida para o `preload` da fonte.** O Astro injeta o
+4. **O CSS crítico perdia a corrida para o `preload` da fonte** — e a correção
+   disso teve de ser DESFEITA na Etapa 13. O Astro injeta o
    `<link rel="stylesheet">` no fim do `<head>`, depois do `preload` da Archivo
-   que então tinha 90 KB — então o navegador começava a fonte antes da folha que bloqueia a
-   pintura. Em 9 execuções no `/orcamento`: 4 de 9 acima da meta de LCP com o CSS
-   em arquivo, 0 de 9 com ele embutido.
+   que então tinha 90 KB, então o navegador começava a fonte antes da folha que
+   bloqueia a pintura: 4 de 9 execuções acima da meta de LCP no `/orcamento`,
+   contra 0 de 9 com o CSS embutido. Mas aquela medição era em **http/1.1**
+   contra uma fonte de 90 KB, e as duas coisas mudaram — a fonte caiu para
+   34,6 KB e a Vercel serve **http/2**. Remedido em produção, a folha linkada
+   ganha em tudo, e ainda economiza 6,6 KB por página por ter cache
+   compartilhado. **Número de performance tem prazo de validade.**
 
 5. **O próprio portão passava o que não devia.** A mediana do CLS escondia uma
    distribuição bimodal — `0,000 · 0,016 · 0,016 · 0,304 · 0,304` virava "0,016"

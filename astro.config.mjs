@@ -92,55 +92,49 @@ export default defineConfig({
 
   build: {
     /**
-     * CSS EMBUTIDO NO HTML, e não em arquivo linkado.
+     * CSS EM ARQUIVO LINKADO — `'auto'`, que é o padrão do Astro.
      *
-     * O padrão do Astro é `'auto'`, que embute folha abaixo de 4 KB. A do site
-     * tem 32,7 KB crus / 7,3 KB gzip, então ficava em arquivo — e como
-     * `<link rel="stylesheet">` BLOQUEIA A PINTURA, ela custava um round-trip
-     * antes do primeiro pixel.
+     * Esta linha já foi `'always'`, e a reversão é o exemplo mais claro deste
+     * projeto de uma otimização que envelheceu. Fica registrada porque quem ler
+     * o histórico vai encontrar a decisão anterior bem argumentada.
      *
-     * POR QUE MUDOU (medido na Etapa 12, mediana de 9 execuções em /orcamento,
-     * que é a página mais pesada do site com 242 KB):
+     * POR QUE ELA FOI EMBUTIDA (Etapa 12). `<link rel="stylesheet">` bloqueia a
+     * pintura, e o `preload` da Archivo — que então tinha 90.104 bytes, porque
+     * carregava o eixo de largura — é escrito antes no <head>, enquanto o Astro
+     * injeta o <link> da folha no FIM. O navegador começava 90 KB de fonte
+     * antes do CSS crítico. Medido em 9 execuções no /orcamento: 4 de 9 acima
+     * da meta de LCP com a folha em arquivo, 0 de 9 embutida.
      *
-     *   CSS em arquivo:  LCP 2,41–2,56s — 4 de 9 execuções ACIMA da meta
-     *   CSS embutido:    LCP 2,40–2,41s — 0 de 9 acima, e a variação sumiu
+     * POR QUE VOLTOU (Etapa 13). Duas condições daquela medição mudaram:
      *
-     * O gargalo estava na ordem de descoberta: o `preload` da Archivo é escrito
-     * antes no <head>, e o Astro injeta o <link> da folha no FIM do head —
-     * então o navegador começava a fonte antes do CSS que bloqueia a pintura.
-     * Embutir tira a folha dessa disputa.
-     *
-     * [REMEDIR — ver docs/CHECKLIST-LANCAMENTO.md] O contexto daquela medição
-     * mudou duas vezes desde então, e nos dois casos a favor da folha LINKADA:
-     *
-     *   1. A Archivo tinha 90.104 bytes porque carregava o eixo de largura.
-     *      Instanciada em wdth 125%, caiu para 34.648 — a disputa por banda
-     *      com o CSS ficou muito menor.
+     *   1. A Archivo passou a ser instanciada em wdth 125% e caiu para 34.648
+     *      bytes. A disputa por banda encolheu 55 KB.
      *   2. A medição foi feita em http/1.1, no servidor de teste local. A
      *      Vercel serve http/2, onde a requisição da folha é multiplexada na
-     *      conexão já aberta e custa muito menos que um round-trip inteiro.
+     *      conexão já aberta em vez de custar um round-trip inteiro.
      *
-     * Ou seja: é provável que hoje a folha linkada passe o portão, e ela é
-     * melhor para quem navega várias páginas do catálogo — 6,6 KB gzip a menos
-     * por página, com cache compartilhado. A medição certa é na URL de preview
-     * da Vercel, não aqui.
+     * Remedido EM PRODUÇÃO, em https://aldifer.vercel.app, 3 execuções por
+     * página. A folha linkada ganhou em tudo:
      *
-     * O CUSTO, honestamente: some o cache compartilhado da folha, e cada
-     * página passa a carregar 6,6 KB gzip a mais. Em troca, o PRIMEIRO
-     * carregamento fica até um pouco mais leve — 14.775 bytes de HTML com o
-     * estilo dentro, contra 8.150 de HTML mais 7.279 de CSS — e com um
-     * round-trip a menos.
+     *              LCP embutido   LCP linkado
+     *   Home           1,38s         1,11s
+     *   Categoria      1,36s         1,22s
+     *   Calculadora    1,52s         1,37s
+     *   Orçamento      1,53s         1,37s
      *
-     * A ALTERNATIVA MEDIDA E RECUSADA foi tirar o `preload` da Archivo: o LCP
-     * também passava, mas o FCP piorava 0,6s em TODA página (1,58s → 2,19s na
-     * home), porque o `font-display: swap` mantém o texto invisível durante o
-     * período de bloqueio. Perder meio segundo de primeira pintura em todo o
-     * site para poupar 6,6 KB não se paga.
+     * O FCP do /orcamento caiu de 1,37s para 1,07s e o pior CLS dele de 0,052
+     * para 0,018. Nenhuma métrica piorou.
      *
-     * A CSP acompanha: o Astro hasheia o <style> que ele mesmo embute e o
-     * inclui em `style-src-elem`. Verificado no HTML gerado.
+     * E a folha linkada ainda é melhor pelo lado que a medição de UMA página
+     * não mostra: ela tem cache compartilhado, então cada página seguinte da
+     * navegação carrega 6,6 KB gzip a menos. O público deste site navega várias
+     * páginas do catálogo, de 4G, e o CLAUDE.md diz que cada KB conta.
+     *
+     * A LIÇÃO, que vale além deste caso: número de performance tem prazo de
+     * validade. Este foi medido em http/1.1 contra uma fonte que não existe
+     * mais, e a conclusão inverteu.
      */
-    inlineStylesheets: 'auto', // EXPERIMENTO — medindo a folha linkada em producao
+    inlineStylesheets: 'auto',
   },
 
   security: {

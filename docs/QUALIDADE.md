@@ -49,12 +49,65 @@ Os dois foram medidos. O de 17 rotas é o que vai ao ar hoje; o de 44 é o que v
 ao ar quando a planilha chegar, e por isso não podia ficar sem medição. Onde só
 aparece um número, é o de produção.
 
-### Performance — 5 execuções válidas por página
+### Performance EM PRODUÇÃO — o número que vale
+
+Medido em **https://aldifer.vercel.app**, que é o site servido pela Vercel:
+
+```
+  perf    LCP    CLS pior  CLS med   TBT     FCP     peso   LCP min-max    n/tent  página
+   100    1.11s     0.000    0.000    30ms   1.11s    167KB     1.09-1.38s     3/3  Home
+   100    1.22s     0.021    0.021     5ms   1.01s    161KB     1.22-1.29s     3/3  Categoria
+   100    1.37s     0.016    0.016     0ms   1.22s    172KB     1.23-1.37s     3/3  Calculadora
+   100    1.37s     0.018    0.018     0ms   1.07s    191KB     1.37-1.37s     3/4  Orçamento
+```
+
+**Performance 100 nas quatro páginas**, com LCP de 1,11 a 1,37s contra a meta de
+2,50s — mais de um segundo de folga. Peso da home: **167 KB** contra o limite de
+1 MB.
+
+#### A produção desfez uma otimização da Etapa 12
+
+O `inlineStylesheets: 'always'` foi decidido na Etapa 12 com números boas: a
+folha em arquivo deixava o /orcamento acima da meta de LCP em 4 de 9 execuções,
+embutida em 0 de 9. Aquela medição foi feita em **http/1.1**, no servidor local,
+contra uma **Archivo de 90 KB** que disputava banda com o CSS crítico.
+
+Nenhuma das duas condições existe mais: a fonte caiu para 34,6 KB e a Vercel
+serve **http/2**, onde a requisição da folha é multiplexada em vez de custar um
+round-trip. Remedido em produção, 3 execuções por página:
+
+```
+             LCP embutido   LCP linkado     FCP embutido   FCP linkado
+Home            1,38s          1,11s           1,23s          1,11s
+Categoria       1,36s          1,22s           1,12s          1,01s
+Calculadora     1,52s          1,37s           1,22s          1,22s
+Orçamento       1,53s          1,37s           1,37s          1,07s
+```
+
+A folha linkada ganhou em tudo, e o pior CLS do /orcamento caiu de 0,052 para
+0,018. Nenhuma métrica piorou. Ela ainda é melhor pelo lado que a medição de UMA
+página não mostra: tem cache compartilhado, então cada página seguinte carrega
+6,6 KB gzip a menos.
+
+**A lição vale além deste caso: número de performance tem prazo de validade.**
+Este foi medido em http/1.1 contra uma fonte que não existe mais, e a conclusão
+inverteu.
+
+É bem melhor que a medição local (LCP até 2,11s), e a diferença não é sorte: a
+Vercel serve por CDN e **http/2**, onde as requisições são multiplexadas na
+mesma conexão, enquanto o `npm run servir` é um servidor http/1.1 numa máquina
+que também roda o `astro dev`. O local mede pessimista — o que é o erro certo a
+ter num portão.
+
+O TBT aparece diferente de zero aqui (4 a 32ms) porque em produção há execução
+real de script medida sobre latência real; a meta é 200ms.
+
+### Performance no build local — 5 execuções válidas por página
 
 Perfil mobile, `--throttling-method=simulate`. **Tempo pela mediana, CLS pelo
 pior caso** — o porquê está na seção "O que o portão aprendeu".
 
-Build de produção (17 rotas):
+Build de produção (17 rotas), servido por `npm run servir`:
 
 ```
   perf    LCP    CLS pior  CLS med   TBT     FCP     peso   LCP min-max    n/tent  página
