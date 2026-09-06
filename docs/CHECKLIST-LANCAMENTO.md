@@ -66,9 +66,10 @@ throttling. Detalhe e método em [`QUALIDADE.md`](./QUALIDADE.md).
 - [x] **Sem cadeia, sem loop, todos 301** — `npm run check-redirects`
 - [x] **Seguidos de verdade** contra `npm run servir`: 301 em um salto, destino
       200 — `npm run testar-redirects`
-- [ ] **Os mesmos 117 seguidos em produção** —
-      `BASE=https://www.aldifer.com.br npm run testar-redirects`. Só depois do
-      DNS
+- [x] **Os mesmos 117 seguidos em produção**, contra
+      `https://aldifer.vercel.app`: **117/117 com 301 em um salto e destino
+      200**, nenhum 404, nenhuma cadeia, nenhum loop. Refazer com
+      `BASE=https://www.aldifer.com.br` depois do DNS, que é o host final
 
 ## 4. Segurança — verificada, exceto onde marcado
 
@@ -92,23 +93,40 @@ throttling. Detalhe e método em [`QUALIDADE.md`](./QUALIDADE.md).
       bloqueados no `robots.txt` e fora do sitemap
 - [x] **LGPD** — consentimento não pré-marcado, honeypot, limite por IP e
       Turnstile no formulário
-- [ ] **Console limpo em produção** — abrir `/`, `/orcamento`,
-      `/calculadora-de-peso` e `/keystatic` na URL de preview e confirmar que a
-      CSP não bloqueou nada. É o primeiro lugar onde ela roda fora do
-      `npm run servir`
-- [ ] **`curl -sI` na preview** confirmando que a Vercel aplica a mesma configuração
-- [ ] ⚠️ **Duas linhas de CSP em `/keystatic`** na preview:
-      `curl -sI <preview>/keystatic | grep -ci content-security-policy` deve dar
-      **2** — a política do painel mais o `frame-ancestors` da configuração. Se
-      der 1, a Vercel substituiu em vez de somar e uma das duas se perdeu. É o
-      único ponto que não dá para verificar fora da Vercel; o que fazer está no
-      passo 4 do [`DEPLOY.md`](./DEPLOY.md)
+- [x] **Console limpo em produção** — `/`, `/orcamento` e
+      `/calculadora-de-peso` abertas em `https://aldifer.vercel.app` com **zero
+      erro de console**. A CSP não bloqueou nada: 1 folha de estilo com 130
+      regras aplicadas, as três fontes carregadas, a Archivo em
+      `font-stretch: 125%`
+- [x] **Os oito cabeçalhos confirmados em produção** por `curl -sI`: HSTS
+      com `max-age=63072000` e **sem** `includeSubDomains`, `nosniff`,
+      `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY`,
+      `frame-ancestors 'none'`, COOP e `X-Permitted-Cross-Domain-Policies`.
+      `/api/*`, `/admin` e `/keystatic` com `X-Robots-Tag: noindex, nofollow`
+- [x] ⚠️ **A CSP do painel: resolvido, e o resultado foi o OPOSTO do local.**
+      Em `/keystatic` a Vercel serve UMA linha de CSP — a resposta da função
+      SUBSTITUI o cabeçalho da configuração, e o `frame-ancestors 'none'` do
+      `vercel.json` desaparecia. No servidor local as duas chegavam e as duas
+      valiam. Nada ficou aberto (o `X-Frame-Options: DENY` sobrevive), mas
+      contar com o cabeçalho obsoleto num painel de edição é frágil: o
+      `src/middleware.ts` passou a declarar `frame-ancestors 'none'` na própria
+      política. Confirmado em produção
 
 ## 5. Só depois do deploy
 
 Nenhum destes é verificável daqui. Exigem URL pública, DNS ou chave de terceiro.
 
-- [ ] **Site no ar na URL de preview**, com todas as variáveis cadastradas
+- [x] **Site no ar em https://aldifer.vercel.app** — build da Vercel em 40s,
+      a partir do repositório `armaggeddon975/Aldifer` conectado. **Sem
+      variáveis de ambiente cadastradas** (ver o bloco 6), então o formulário,
+      o painel e o analytics estão nas degradações documentadas
+- [x] **A calculadora calcula em produção** — tubo quadrado 30×2mm devolveu
+      1,758 kg/m, conferido contra a conta manual
+      `(30−2) × 2 × 4 × 0,00785`. O link compartilhável sincronizou:
+      `?perfil=tubo-quadrado&l=30&e=2&m=6`
+- [x] **O canonical protege contra conteúdo duplicado** — as páginas servidas em
+      `aldifer.vercel.app` apontam o canonical para `https://www.aldifer.com.br/`,
+      então a URL da Vercel não disputa indexação com o domínio final
 - [ ] **O e-mail de orçamento chega** — e chega **fora do spam**, com SPF, DKIM e
       DMARC como `pass` no cabeçalho da mensagem recebida. Passo 6 do
       [`DEPLOY.md`](./DEPLOY.md). Sem isto a Aldifer perde lead em silêncio, que

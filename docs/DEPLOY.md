@@ -8,22 +8,32 @@ Para o que fazer **depois** do domínio apontado, veja
 [`POS-DEPLOY.md`](./POS-DEPLOY.md). Para marcar item por item antes de apontar,
 [`CHECKLIST-LANCAMENTO.md`](./CHECKLIST-LANCAMENTO.md).
 
-## O que eu NÃO fiz, e por quê
+## Onde o site está agora
 
-Sejamos explícitos, porque isto é entrega:
+| | |
+|---|---|
+| Repositório | [`armaggeddon975/Aldifer`](https://github.com/armaggeddon975/Aldifer), branch `main` — **público** |
+| Projeto na Vercel | `armaggeddon975s-projects/aldifer` |
+| No ar em | **https://aldifer.vercel.app** |
+| Domínio final | **ainda NÃO apontado** — `aldifer.com.br` segue na Locaweb, servindo o site de 2016 |
 
-- **O deploy não foi feito.** Ele exige uma conta na Vercel e uma conta no
-  GitHub, que são da Aldifer ou de quem administra o projeto. Nenhuma credencial
-  desse tipo passou por aqui, e não deve passar.
-- **O repositório não tem remote.** Ele é local (`git remote -v` não devolve
-  nada). Sem repositório remoto não há deploy contínuo na Vercel e o painel do
-  Keystatic não sai do modo local.
+O repositório está conectado ao projeto, então **cada push na `main` publica**.
+A URL imutável de cada deployment (`aldifer-<hash>-...vercel.app`) fica atrás do
+SSO da Vercel; o alias `aldifer.vercel.app` é público.
+
+### O que ainda NÃO foi feito, e por quê
+
+- **O domínio não foi apontado.** É o último passo, e depende do bloco de
+  pendências da Aldifer — ver
+  [`CHECKLIST-LANCAMENTO.md`](./CHECKLIST-LANCAMENTO.md). Enquanto o DNS não
+  muda, o site atual continua no ar para o público.
+- **Nenhuma variável de ambiente foi cadastrada.** Não havia os valores, e chave
+  não se inventa. As consequências estão no passo 3, e são todas degradações
+  documentadas: o formulário aceita o pedido e avisa que o e-mail não saiu, o
+  painel não salva, o analytics fica desligado.
 - **O DNS não foi alterado.** Só foi CONSULTADO, e o que a consulta achou está
-  registrado abaixo — inclusive um problema que precisa de decisão antes de
-  apontar o domínio.
-
-O resto — build, cabeçalhos, redirects, variáveis, portões de qualidade — está
-pronto e verificado. Ver [`QUALIDADE.md`](./QUALIDADE.md).
+  no passo 5 — inclusive um problema que precisava de decisão antes de apontar o
+  domínio.
 
 ## Passo 1 — Repositório no GitHub
 
@@ -110,23 +120,25 @@ E confira à mão, que é o que automação não cobre:
   Localmente eles já são servidos pelo `npm run servir`, que lê o
   `vercel.json` — então o que muda aqui é só a Vercel aplicando a mesma
   configuração.
-- ⚠️ **A CSP do painel convive com a da configuração?** Este é o único ponto
-  que não dá para verificar fora da Vercel:
+- ✅ **A CSP do painel: já respondido, e o resultado foi o oposto do local.**
+  Medido em `https://aldifer.vercel.app/keystatic`: a Vercel serve **UMA** linha
+  de CSP, porque a resposta da FUNÇÃO substitui o cabeçalho da configuração — e
+  o `frame-ancestors 'none'` do `vercel.json` desaparecia naquela rota. No
+  servidor local as duas chegavam e as duas valiam.
+
+  Nada ficou aberto: o `X-Frame-Options: DENY` sobrevive e cobre clickjacking em
+  todo navegador que importa. Mas o `src/middleware.ts` passou a declarar
+  `frame-ancestors 'none'` na própria política, para não depender de um
+  cabeçalho obsoleto num painel de edição.
+
+  **Vale reconferir a cada mudança no `vercel.json` ou no middleware:**
 
   ```bash
-  curl -sI https://<preview>.vercel.app/keystatic | grep -ci content-security-policy
+  curl -sI https://<url>/keystatic | grep -i content-security-policy
   ```
 
-  **Esperado: 2.** Uma linha é a política do painel, montada pelo
-  `src/middleware.ts`; a outra é o `frame-ancestors 'none'` do `vercel.json`.
-  Duas linhas significam que as duas valem, que é o comportamento seguro.
-
-  **Se vier 1**, a Vercel substituiu em vez de somar, e alguma coisa se perdeu:
-  ou o relaxamento de estilo de que o `@keystar/ui` precisa — e aí o painel abre
-  desmontado — ou a proteção contra clickjacking. Confira qual sobrou e ajuste:
-  se sobrou a da configuração, remova o `Content-Security-Policy` do
-  `vercel.json` e passe o `frame-ancestors 'none'` para dentro da política que o
-  middleware monta.
+  A política do painel deve conter `frame-ancestors 'none'` junto do
+  `style-src 'self' 'unsafe-inline'`.
 
 ## Passo 5 — Domínio e DNS
 

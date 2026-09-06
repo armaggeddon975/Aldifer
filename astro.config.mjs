@@ -140,7 +140,7 @@ export default defineConfig({
      * A CSP acompanha: o Astro hasheia o <style> que ele mesmo embute e o
      * inclui em `style-src-elem`. Verificado no HTML gerado.
      */
-    inlineStylesheets: 'always',
+    inlineStylesheets: 'auto', // EXPERIMENTO — medindo a folha linkada em producao
   },
 
   security: {
