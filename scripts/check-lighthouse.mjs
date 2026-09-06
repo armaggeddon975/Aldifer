@@ -92,12 +92,29 @@ const mediana = (valores) => {
 
 const linhas = [];
 const falhas = [];
+const descartadas = [];
 
 for (const pagina of PAGINAS) {
   const base = `${SAIDA}/${pagina.rota.replace(/[^a-z0-9]/gi, '_') || 'raiz'}`;
   const execucoes = [];
 
-  for (let i = 1; i <= EXECUCOES; i++) {
+  /*
+    TENTATIVAS EXTRAS PARA FALHA DE GRAVAÇÃO, e não para métrica ruim.
+
+    `NO_NAVSTART` é o Lighthouse avisando que não conseguiu gravar o trace —
+    a mensagem dele termina em "Please run Lighthouse again". Aconteceu em 6 de
+    20 execuções nesta máquina. Sem repetir, uma página podia acabar com duas
+    medições válidas e o portão reprovava por falta de amostra, sem ter nada a
+    ver com o site.
+
+    A repetição vale SÓ para execução que não mediu. Métrica medida e ruim
+    entra na agregação e reprova, como deve.
+  */
+  const TENTATIVAS_MAXIMAS = EXECUCOES * 3;
+  let i = 0;
+
+  while (execucoes.length < EXECUCOES && i < TENTATIVAS_MAXIMAS) {
+    i += 1;
     const arquivo = `${base}-${i}.json`;
 
     try {
@@ -123,19 +140,49 @@ for (const pagina of PAGINAS) {
     if (!existsSync(arquivo)) continue;
 
     const r = JSON.parse(readFileSync(arquivo, 'utf8'));
+
+    /*
+      EXECUÇÃO SEM MÉTRICA É DESCARTADA, E NÃO AGREGADA.
+
+      O Lighthouse às vezes falha em gravar o trace e ESCREVE O RELATÓRIO
+      ASSIM MESMO, com `runtimeError: NO_NAVSTART` e as auditorias em
+      `scoreDisplayMode: 'error'`. O arquivo existe, o JSON é válido, e
+      `numericValue` não existe.
+
+      Isso passou a valer depois de eu ver `CLS pior: NaN` no relatório: a
+      execução ruim entrava na agregação, `Math.max` devolvia NaN — e
+      `NaN > 0,1` é FALSO, então o portão PASSAVA. Um portão que passa por
+      não ter conseguido medir é pior que um portão que falha.
+    */
     const num = (id) => r.audits[id]?.numericValue ?? Number.NaN;
-    execucoes.push({
+    const medida = {
       performance: Math.round((r.categories.performance?.score ?? 0) * 100),
       lcp: num('largest-contentful-paint'),
       cls: num('cumulative-layout-shift'),
       tbt: num('total-blocking-time'),
       fcp: num('first-contentful-paint'),
       pesoKb: num('total-byte-weight') / 1024,
-    });
+    };
+
+    const invalida =
+      r.runtimeError !== undefined ||
+      Object.values(medida).some((v) => !Number.isFinite(v));
+
+    if (invalida) {
+      descartadas.push(`${pagina.nome} #${i}: ${r.runtimeError?.code ?? 'métrica ausente'}`);
+      continue;
+    }
+
+
+    execucoes.push(medida);
   }
 
-  if (execucoes.length === 0) {
-    falhas.push(`${pagina.nome}: o Lighthouse não gerou relatório em ${EXECUCOES} tentativas`);
+  // Metade das execuções é o mínimo para a mediana significar algo.
+  if (execucoes.length * 2 <= EXECUCOES) {
+    falhas.push(
+      `${pagina.nome}: só ${execucoes.length} medições válidas em ${i} tentativas — ` +
+        'poucas para agregar. Rode de novo com a máquina menos ocupada.',
+    );
     continue;
   }
 
@@ -143,6 +190,7 @@ for (const pagina of PAGINAS) {
     nome: pagina.nome,
     rota: pagina.rota,
     execucoes: execucoes.length,
+    tentativas: i,
     performance: mediana(execucoes.map((e) => e.performance)),
     lcp: mediana(execucoes.map((e) => e.lcp)),
     // Pior caso, pelo motivo explicado acima.
@@ -158,6 +206,14 @@ for (const pagina of PAGINAS) {
   };
 
   linhas.push(dados);
+
+  // Nenhuma comparação abaixo pode ser feita com valor não finito: `NaN < x` e
+  // `NaN > x` são os dois falsos, e o portão passaria sem ter medido.
+  for (const [chave, valor] of Object.entries(dados)) {
+    if (typeof valor === 'number' && !Number.isFinite(valor)) {
+      falhas.push(`${pagina.nome}: métrica "${chave}" não é finita (${valor})`);
+    }
+  }
 
   if (dados.performance < METAS.performance) {
     falhas.push(`${pagina.nome}: performance ${dados.performance}, meta ${METAS.performance}`);
@@ -182,10 +238,11 @@ for (const pagina of PAGINAS) {
 }
 
 console.log(
-  '  perf    LCP    CLS pior  CLS med   TBT     FCP     peso   LCP min-max     página',
+  '  perf    LCP    CLS pior  CLS med   TBT     FCP     peso   LCP min-max    n/tent  página',
 );
 console.log(
-  '  ----  -------  --------  -------  ------  ------  -------  -------------  ' + '-'.repeat(24),
+  '  ----  -------  --------  -------  ------  ------  -------  -------------  ------  ' +
+    '-'.repeat(24),
 );
 for (const l of linhas) {
   console.log(
@@ -197,6 +254,11 @@ for (const l of linhas) {
       `${(l.fcp / 1000).toFixed(2).padStart(5)}s  ` +
       `${String(Math.round(l.pesoKb)).padStart(5)}KB  ` +
       `${(l.lcpMin / 1000).toFixed(2)}-${(l.lcpMax / 1000).toFixed(2)}s`.padStart(13) +
+      // AMOSTRA VISÍVEL: uma linha com 2 medições de 15 tentativas não vale o
+      // mesmo que uma com 5 de 5, e esconder isso convida a confiar demais no
+      // número. Nesta máquina o Lighthouse falha em gravar o trace com
+      // frequência — ver docs/QUALIDADE.md.
+      `  ${String(l.execucoes)}/${String(l.tentativas)}`.padStart(8) +
       `  ${l.nome}`,
   );
 }
@@ -207,6 +269,15 @@ console.log(
     'metas: performance ≥ 90 · LCP ≤ 2,50s · CLS ≤ 0,100 · TBT ≤ 200ms',
 );
 console.log('       (TBT no lugar do INP: laboratório não mede INP, que é métrica de campo)');
+
+if (descartadas.length > 0) {
+  console.log(
+    `
+${descartadas.length} execução(ões) descartada(s) por não medir — ` +
+      'não entram na mediana nem no pior caso:',
+  );
+  for (const d of descartadas) console.log(`  . ${d}`);
+}
 
 console.log('');
 if (falhas.length > 0) {

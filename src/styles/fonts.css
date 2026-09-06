@@ -11,16 +11,28 @@
    Itálico não entra — o design system não usa, e são 3 arquivos a menos.
    ========================================================================== */
 
-/* Archivo — display. O arquivo `standard` traz peso E largura (wdth 62-125%),
-   necessário para o "Archivo Expanded" do design system. Custa 88KB contra
-   34KB da versão só-peso; ver README, seção de pendências técnicas. */
+/* Archivo — display.
+
+   ARQUIVO GERADO, e não copiado do pacote. "Archivo Expanded" do design system
+   é o eixo `wdth` em 125%, e pedir 125% por CSS obrigaria o arquivo a carregar
+   o eixo INTEIRO (62% a 125%): 90.104 B. O `npm run fonts` instancia a fonte
+   com `wdth` já fixado em 125, e o mesmo desenho passa a caber em 34.648 B.
+
+   Isso importa porque esta é a fonte do H1, que é o elemento de LCP, e por isso
+   a única com `<link rel="preload">` — os 55 KB ficavam no caminho crítico.
+   Medido em /orcamento com 9 execuções: 7 de 9 acima da meta de LCP com o eixo
+   de largura, 0 de 9 sem. Ver scripts/instanciar-archivo.py.
+
+   `font-stretch: 125%` aqui é DESCRIÇÃO, não pedido: esta face É a de 125%, e
+   declarar isso mantém o casamento com o `font-stretch: var(--display-stretch)`
+   da utility `display-expanded`. O eixo de peso continua variável. */
 @font-face {
   font-family: 'Archivo Variable';
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  font-stretch: 62% 125%;
-  src: url('/fonts/archivo-latin-standard-normal.woff2') format('woff2-variations');
+  font-stretch: 125%;
+  src: url('/fonts/archivo-latin-expanded-normal.woff2') format('woff2-variations');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;

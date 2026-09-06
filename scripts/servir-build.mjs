@@ -59,12 +59,99 @@ const SOB_DEMANDA = /^\/(api\/|keystatic(\/|$))/;
 const COMPRIMIR = /^(text\/|application\/(json|javascript|xml|manifest))/;
 
 /**
- * Cabeçalhos de cache do vercel.json, aplicados aqui também.
+ * TODOS os cabeçalhos do vercel.json, lidos do próprio arquivo.
  *
- * O Lighthouse audita política de cache, e sem isto o relatório acusaria um
- * problema que a produção não tem.
+ * POR QUE LER O ARQUIVO EM VEZ DE REPETIR OS VALORES AQUI (Etapa 13)
+ *
+ * Antes, este servidor só reproduzia o `Cache-Control` imutável, com a regra
+ * escrita à mão — porque o Lighthouse audita política de cache e sem ela o
+ * relatório acusava um problema que a produção não tem.
+ *
+ * O efeito colateral é que os NOVE cabeçalhos de segurança do `vercel.json`
+ * nunca eram servidos aqui, e portanto nunca foram verificados em
+ * COMPORTAMENTO — só lidos do arquivo. HSTS, `X-Frame-Options`,
+ * `Referrer-Policy`, `Permissions-Policy`, COOP e o `frame-ancestors` viviam
+ * numa configuração que ninguém tinha visto responder. Um erro de digitação em
+ * qualquer um deles só apareceria em produção.
+ *
+ * Agora as regras vêm do arquivo, então `curl -sI http://localhost:4330/`
+ * mostra o que a Vercel vai mandar. Valor errado no `vercel.json` é valor
+ * errado aqui — que é exatamente o que se quer de um servidor de verificação.
  */
-const CACHE_IMUTAVEL = /^\/(_astro|fonts)\//;
+const REGRAS_DE_CABECALHO = (() => {
+  const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
+
+  /**
+   * Converte o `source` do Vercel em expressão regular.
+   *
+   * Só o necessário para os padrões que este projeto usa — `/(.*)`,
+   * `/fonts/(.*)`, `/admin`. Escapa tudo e devolve `(.*)` ao seu papel de
+   * curinga. Um padrão mais exótico no vercel.json exigiria path-to-regexp, e
+   * aí é melhor falhar visível do que casar errado em silêncio.
+   */
+  const paraRegex = (source) => {
+    if (/[:?+{}[\]]/.test(source)) {
+      throw new Error(
+        `padrão de cabeçalho não suportado por este servidor de teste: "${source}". ` +
+          'Ele reconhece caminho literal e "(.*)".',
+      );
+    }
+    // Escapa tudo, e só então devolve `(.*)` ao papel de curinga.
+    const escapado = source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const corpo = escapado.replaceAll('\\(\\.\\*\\)', '(.*)');
+    return new RegExp(`^${corpo}$`);
+  };
+
+  /*
+    TODOS os cabeçalhos vão, o HSTS INCLUSO — e isso foi uma decisão testada.
+
+    Sobre transporte inseguro o navegador DEVE ignorar
+    `Strict-Transport-Security`, então em http://localhost ele é inerte. Cheguei
+    a filtrá-lo daqui suspeitando que fosse a causa das falhas de gravação de
+    trace do Lighthouse (`NO_NAVSTART`), que aconteceram em 22 de 42 execuções.
+
+    A HIPÓTESE FOI MEDIDA E REFUTADA. Mesma rota, mesma build, 6 execuções em
+    cada servidor:
+
+      com HSTS     2 de 6 falharam
+      sem HSTS     4 de 6 falharam
+
+    Ou seja: o cabeçalho não tem relação com a falha, que é instabilidade do
+    Chrome headless nesta máquina. O portão lida com ela repetindo a execução
+    que não mediu — ver scripts/check-lighthouse.mjs.
+
+    Então o cabeçalho fica, porque o objetivo deste servidor é reproduzir a
+    resposta da produção. Filtrar um cabeçalho reduziria a fidelidade em troca
+    de nada.
+  */
+  return (config.headers ?? []).map((bloco) => ({
+    padrao: paraRegex(bloco.source),
+    cabecalhos: bloco.headers.map((h) => [h.key.toLowerCase(), h.value]),
+  }));
+})();
+
+/**
+ * Cabeçalhos do vercel.json que casam com um caminho.
+ *
+ * A Vercel aplica TODAS as regras que casam, e um cabeçalho repetido vira duas
+ * linhas na resposta. Isso importa para a CSP: a regra global manda
+ * `frame-ancestors 'none'`, e o middleware do painel manda a política dele —
+ * duas linhas de CSP significam que AS DUAS valem, o que é o comportamento
+ * seguro. Daí o valor ser acumulado em array em vez de sobrescrito.
+ */
+function cabecalhosDoVercel(caminho, base = {}) {
+  const saida = { ...base };
+  for (const regra of REGRAS_DE_CABECALHO) {
+    if (!regra.padrao.test(caminho)) continue;
+    for (const [chave, valor] of regra.cabecalhos) {
+      const atual = saida[chave];
+      if (atual === undefined) saida[chave] = valor;
+      else if (Array.isArray(atual)) saida[chave] = [...atual, valor];
+      else if (atual !== valor) saida[chave] = [atual, valor];
+    }
+  }
+  return saida;
+}
 
 const TIPOS = {
   '.html': 'text/html; charset=utf-8',
@@ -162,7 +249,11 @@ createServer(async (req, res) => {
         }),
       );
 
-      res.writeHead(resposta.status, Object.fromEntries(resposta.headers));
+      // Os cabeçalhos da configuração valem também para a rota sob demanda.
+      res.writeHead(
+        resposta.status,
+        cabecalhosDoVercel(caminhoPedido, Object.fromEntries(resposta.headers)),
+      );
       res.end(Buffer.from(await resposta.arrayBuffer()));
     } catch (erro) {
       res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
@@ -185,11 +276,7 @@ createServer(async (req, res) => {
   }
 
   const tipo = TIPOS[extname(arquivo)] ?? 'application/octet-stream';
-  const cabecalhos = { 'content-type': tipo };
-
-  if (CACHE_IMUTAVEL.test(caminhoPedido)) {
-    cabecalhos['cache-control'] = 'public, max-age=31536000, immutable';
-  }
+  const cabecalhos = cabecalhosDoVercel(caminhoPedido, { 'content-type': tipo });
 
   const aceitaGzip = (req.headers['accept-encoding'] ?? '').includes('gzip');
 

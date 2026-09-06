@@ -10,6 +10,17 @@ As regras do projeto estão em [`CLAUDE.md`](./CLAUDE.md). O conteúdo aprovado 
 [`docs/CONTEUDO.md`](./docs/CONTEUDO.md). O roteiro de construção está em
 [`docs/PROMPTS.md`](./docs/PROMPTS.md).
 
+| Para... | Leia |
+|---|---|
+| publicar o site | [`docs/DEPLOY.md`](./docs/DEPLOY.md) |
+| conferir item por item antes de apontar o domínio | [`docs/CHECKLIST-LANCAMENTO.md`](./docs/CHECKLIST-LANCAMENTO.md) |
+| o que fazer depois do domínio apontado | [`docs/POS-DEPLOY.md`](./docs/POS-DEPLOY.md) |
+| editar o site sem programar | [`docs/COMO-EDITAR.md`](./docs/COMO-EDITAR.md) — escrito para a Aldifer, não para dev |
+| os números dos portões de qualidade | [`docs/QUALIDADE.md`](./docs/QUALIDADE.md) |
+| o roteiro manual de acessibilidade | [`docs/ACESSIBILIDADE.md`](./docs/ACESSIBILIDADE.md) |
+| por que cada cabeçalho HTTP existe | [`docs/CABECALHOS.md`](./docs/CABECALHOS.md) |
+| o que cada chave faz e onde consegui-la | [`.env.example`](./.env.example) |
+
 ---
 
 ## ⛔ BLOQUEANTE — antes de qualquer lançamento
@@ -135,17 +146,16 @@ com valor `null`. Campo nulo não renderiza.
 |---|---|---|
 | **Logotipo em vetor** | O `logo.png` do site atual foi baixado na Etapa 8 e é o logotipo REAL: dele saem o favicon, o apple-touch-icon, os ícones do manifest e a marca da og-image. Mas ele tem 240×60, e o marco circular dentro dele só 58×58 — o `apple-touch-icon` de 180px é ampliação de 3×. Fica levemente macio. Um SVG ou um PNG grande resolveria de vez. **Não redesenhei o marco em SVG de propósito:** um logotipo traçado a olho de um raster de 58px sai *quase* igual, e quase igual em identidade de marca é pior que macio. | 8 · 12 |
 | **Onde persistir o lead** | E-mail sozinho perde lead. Ordem de preferência: Google Sheets → Notion → Supabase. Depende da pergunta 10. | 6 |
-| **`www` ou apex** | Fixado em `https://www.aldifer.com.br` no `astro.config.mjs`, para casar com o JSON-LD. Se mudar, muda nos dois lugares. | 13 |
-| **Fonte Archivo** | O arquivo com eixo de largura custa 88 KB contra 34 KB da versão só-peso. É o preço do "Expanded". Candidata nº 1 de otimização. | 12 |
+| **`www` ou apex** | ✅ **DECIDIDO na Etapa 13: `www`.** Não por gosto — o site antigo responde 200 nos dois hosts, sem redirect e sem canonical, e **todo link e todo asset do HTML antigo é URL absoluta com `www`**. Na falta de canonical, o link interno é o sinal mais forte, então `www` é o host que o Google indexou, e é nele que o histórico dos 117 redirects vale. O DNS precisa acompanhar: apex com 301 para `www`. Hoje o `www` é CNAME do apex, o inverso. Ver `docs/DEPLOY.md`. | 13 |
+| **Fonte Archivo** | ✅ **RESOLVIDO na Etapa 13, sem perder o Expanded.** O `npm run fonts` passou a INSTANCIAR a fonte com o eixo `wdth` fixado em 125%, aplicando o valor aos contornos: **90.104 B → 34.648 B**, menor até que a versão só-peso. O desenho é idêntico, medido em 16 comparações de largura de texto com diferença de 0,0000 px. Era o único item de 55 KB no caminho crítico, e o LCP do `/orcamento` saiu de 7 execuções em 9 acima da meta para nenhuma. | 12 · 13 |
 | **Script inline** | O menu mobile sai como 372 B de JS inline. Ótimo para performance, mas a CSP restrita precisará de hash ou de forçar arquivo externo. | 9 |
 | **Revisão da Política de Privacidade** | É MINUTA. O texto descreve com precisão o que o site tecnicamente faz, mas documento legal precisa de revisão de quem responde por ele. Faltam o CNPJ do controlador e a definição do prazo de retenção do lead. | 6 · 13 |
 | **Limite por IP é por instância** | O contador vive na memória do processo. Em serverless cada instância tem a sua, então o limite real é 5/hora **por instância**. Contra abuso distribuído o portão é o Turnstile. Um limite global exige Vercel KV ou Upstash Redis — decidir se vale a dependência. | 13 |
 | **Conta no Plausible** | O analytics está implementado e desligado: sem `PUBLIC_PLAUSIBLE_DOMAIN`, nenhum script carrega e o host nem entra na CSP. Falta criar a conta em plausible.io, cadastrar o domínio e preencher a variável na Vercel. **É como se mede a métrica que o CLAUDE.md define como sucesso do projeto** — sem ela o lançamento vai às cegas. |
-| **`includeSubDomains` no HSTS** | O cabeçalho vale para todo subdomínio de `aldifer.com.br`. Se existir algo em `algo.aldifer.com.br` sem certificado válido, ele quebra depois do primeiro acesso ao site. Confirmar antes de submeter à lista `preload` do Chrome, que é irreversível na prática. |
+| **`includeSubDomains` no HSTS** | ✅ **RESOLVIDO na Etapa 13: removido, junto com `preload`.** A confirmação reprovou. O e-mail da Aldifer é da Locaweb, e `https://webmail.aldifer.com.br` serve um certificado de `*.webmail-seguro.com.br` — nome errado para aquele host. Hoje o navegador mostra um aviso que se pode ignorar; com `includeSubDomains` no apex ele fica **inignorável**, e a equipe perderia o webmail pelo endereço que decorou. Para ligar depois: certificado válido no webmail primeiro. Ver `docs/CABECALHOS.md`. |
 | **Rich Results Test** | O JSON-LD foi validado no validador oficial do schema.org: 3 tipos reconhecidos, 0 erros, 0 avisos. O Rich Results Test do Google **não** foi rodado: ele precisa de URL pública, e a aba de colar código resiste a automação. Rodar no deploy da Etapa 13. Vale saber que ele só reporta tipos que geram resultado enriquecido — aqui, só o Breadcrumb: dados de negócio local alimentam o Perfil da Empresa, não um card de busca. |
 | **Repositório no GitHub** | O projeto é local, sem remote. O painel roda em modo LOCAL (grava no disco), o que serve para desenvolvimento e **não** para produção: na Vercel o disco é efêmero e somente leitura. Subir o repositório e preencher as quatro variáveis do Keystatic é o que faz cada Save virar commit. Passo a passo no `.env.example`. | 11 · 13 |
 | **Nova sessão fotográfica** | As 5 fotos hoje no site são de 2016, 900×540, tiradas de celular, baixadas do site antigo com autorização. Servem porque mostram ESTOQUE REAL etiquetado por bitola — prova, não decoração. Mas 900px é o limite: em tela de 1280 a galeria já exibe a 587px, quase 1:1. Aço bem fotografado é metade da credibilidade da página Empresa. Vale notar que a placa do caminhão aparece legível na `empresa-05`. | 8 |
-| **Nova sessão fotográfica** | O site atual tem 4 fotos das instalações, pequenas e antigas. Aço bem fotografado é metade da credibilidade da página Empresa. | 8 |
 
 ---
 
@@ -736,11 +746,16 @@ rotas do build em vez de numa amostra. Os números medidos estão em
 [`docs/QUALIDADE.md`](docs/QUALIDADE.md); a parte manual de acessibilidade, em
 [`docs/ACESSIBILIDADE.md`](docs/ACESSIBILIDADE.md).
 
-Resumo do que passou: **performance 97–99** com LCP de 2,11 a 2,41s e TBT 0ms,
-home com **218 KB** contra o limite de 1 MB · **SEO 100** em nove moldes de
+Resumo do que passou: **performance 98–99** com LCP de 1,66 a 2,11s e TBT 0ms,
+home com **169 KB** contra o limite de 1 MB · **SEO 100** em nove moldes de
 página, com 89 blocos de JSON-LD validados · **zero violação** de acessibilidade
 `critical` ou `serious` em 43 rotas · **172 medições** responsivas sem quebra,
 sem scroll horizontal e sem corte.
+
+Os números melhoraram na Etapa 13 por duas razões, e uma delas é desconfortável:
+a **Archivo instanciada** tirou 55 KB do caminho crítico, e o servidor de teste
+**passou a mandar os cabeçalhos de produção** — o que revelou que as medições da
+Etapa 12 eram otimistas. Ver [`docs/QUALIDADE.md`](docs/QUALIDADE.md).
 
 O que o portão achou, e que estava indo ao ar:
 
@@ -768,7 +783,7 @@ O que o portão achou, e que estava indo ao ar:
 
 4. **O CSS crítico perdia a corrida para o `preload` da fonte.** O Astro injeta o
    `<link rel="stylesheet">` no fim do `<head>`, depois do `preload` da Archivo
-   de 88 KB — então o navegador começava a fonte antes da folha que bloqueia a
+   que então tinha 90 KB — então o navegador começava a fonte antes da folha que bloqueia a
    pintura. Em 9 execuções no `/orcamento`: 4 de 9 acima da meta de LCP com o CSS
    em arquivo, 0 de 9 com ele embutido.
 
@@ -811,12 +826,57 @@ npm run dev
 | `npm run check-redirects` | Confere 100% de cobertura, sem cadeia, sem loop, todo destino existente, todos 301. |
 | `npm run testar-redirects` | SEGUE as 117 URLs de verdade contra `npm run servir` e confirma 301 em um salto com destino 200. Aceita `BASE=` para apontar para produção. |
 | `npm run js` | Mede o JS de cada página em gzip, contra o portão de 100 KB. Reprova página pública acima de 40 KB, que é sinal de runtime de framework vazando. |
-| `npm run fonts` | Recopia as fontes de `node_modules` para `public/fonts/`. |
+| `npm run fonts` | Copia Inter e JetBrains de `node_modules` e **gera** a Archivo instanciada em `wdth` 125%. Só é necessário ao trocar a versão de uma fonte — o arquivo gerado é versionado. Exige `python -m pip install --user "fonttools[woff]"`. |
 | `npm run lighthouse` | Portão de performance. 3 execuções por página (`EXECUCOES=5` para mais): tempo pela mediana, **CLS pelo pior caso**. Aceita rotas extras como argumento. |
 | `npm run seo` | Portão de SEO. Nota 100 do Lighthouse em 9 moldes de página, mais validação estrutural do JSON-LD em TODAS as rotas. `SEM_LIGHTHOUSE=1` roda só a parte estática, em segundos. |
 | `npm run axe` | Portão de acessibilidade, em TODAS as rotas do build. Reprova em violação `critical` ou `serious`. |
 | `npm run responsivo` | Portão responsivo: 4 larguras × toda rota, mais um cenário com a lista de orçamento semeada. **Autoverifica-se em toda execução** — 8 provas injetam a quebra que cada balde existe para pegar. |
 | `npm run cls -- /rota 4` | Diagnóstico: imprime o retângulo ANTES e DEPOIS de cada elemento que se moveu. Use quando o CLS reprovar — a atribuição de causa do Lighthouse é heurística e já apontou o culpado errado. |
+
+---
+
+## Como publicar
+
+O passo a passo completo, com DNS, Resend e transferência de acessos, está em
+[`docs/DEPLOY.md`](./docs/DEPLOY.md). O resumo:
+
+1. **Suba o repositório para o GitHub**, privado. Hoje ele é local, sem remote —
+   e sem remote não há deploy contínuo nem painel de edição em produção.
+2. **Importe na Vercel.** Ela detecta o Astro sozinha; não mexa em build command
+   nem em output directory, que o adapter `@astrojs/vercel` resolve.
+3. **Cadastre as variáveis de ambiente no painel da Vercel**, nunca no
+   repositório. Ver a tabela abaixo.
+4. **Verifique na URL de preview** antes do domínio: os 117 redirects
+   (`BASE=<preview> npm run testar-redirects`), o console limpo (a CSP é um
+   `<meta>` gerado no build e só roda fora do `npm run dev`), um envio real do
+   formulário, e um Save no `/keystatic`.
+5. **Percorra o [checklist de lançamento](./docs/CHECKLIST-LANCAMENTO.md).**
+6. **Aponte o DNS** — `www` como canônico, apex com 301 para ele.
+7. **Siga o [`POS-DEPLOY.md`](./docs/POS-DEPLOY.md)**: redirects em produção,
+   sitemap no Search Console, Rich Results Test, analytics.
+
+Depois disso, cada `git push` na branch `main` publica. E cada Save no painel de
+edição é um commit, portanto também publica.
+
+### Onde ficam as chaves, e o que cada uma faz
+
+Todas no **painel da Vercel**. O `.env` local nunca é versionado; o
+[`.env.example`](./.env.example) é, e traz o passo a passo de onde tirar cada
+valor.
+
+| Chave | Para que serve | Sem ela |
+|---|---|---|
+| `RESEND_API_KEY` | Enviar o e-mail do pedido | O pedido é aceito e persistido, e a resposta **avisa que o e-mail não saiu**. Não se perde o pedido; ninguém é notificado |
+| `QUOTE_MAIL_FROM` | Remetente. Domínio verificado no Resend | Idem |
+| `QUOTE_MAIL_TO` | Quem recebe os pedidos. **[CONFIRMAR]** | Idem |
+| `CONTACT_MAIL_TO` | Caixa separada para o formulário de contato | A mensagem cai em `QUOTE_MAIL_TO` — melhor chegar no lugar quase certo que não chegar |
+| `PUBLIC_TURNSTILE_SITE_KEY` · `TURNSTILE_SECRET_KEY` | Portão anti-robô do formulário | O formulário funciona; restam o honeypot e o limite por IP |
+| `LEAD_STORE_DRIVER` (+ chaves do driver) | Persistir o lead. **[CONFIRMAR]** | Fica em `json`, que **não persiste em serverless**. O código detecta e carimba o aviso no assunto do e-mail |
+| `PUBLIC_KEYSTATIC_GITHUB_REPO` · `KEYSTATIC_GITHUB_CLIENT_ID` · `KEYSTATIC_GITHUB_CLIENT_SECRET` · `KEYSTATIC_SECRET` | Painel de edição em modo GitHub, em que cada Save vira commit | O painel abre mas **não salva nada em produção**: o disco da Vercel é efêmero e somente leitura |
+| `PUBLIC_PLAUSIBLE_DOMAIN` | Analytics sem cookie | Nenhum script de analytics carrega e o host nem entra na CSP. **É como se mede o sucesso do projeto** — sem ela o lançamento vai às cegas. Lida em tempo de build: exige redeploy |
+
+As `PUBLIC_` vão para o navegador — não ponha segredo nelas. As outras ficam só
+no servidor.
 
 ---
 
@@ -924,4 +984,4 @@ admitem fórmula. Ver a seção bloqueante acima.
 | 10 — Migração de URLs | ✅ |
 | 11 — CMS Keystatic | ✅ |
 | 12 — Portões de qualidade | ✅ números em `docs/QUALIDADE.md` |
-| 13 — Deploy e entrega | ⬜ |
+| 13 — Deploy e entrega | ◐ tudo documentado e pronto; **o deploy em si depende de conta na Vercel e no GitHub** — ver `docs/DEPLOY.md` |

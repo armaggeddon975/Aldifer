@@ -55,9 +55,27 @@ const fontes = (...partes) =>
 
 // https://astro.build/config
 export default defineConfig({
-  // Necessário para canonical absoluto e para o sitemap.
-  // [DECIDIR na Etapa 13] www x apex. Fixado em www para casar com o JSON-LD
-  // da seção 11 do docs/CONTEUDO.md.
+  /**
+   * Necessário para canonical absoluto e para o sitemap.
+   *
+   * WWW É O CANÔNICO. Decidido na Etapa 13 por medição, não por preferência.
+   *
+   * O site antigo responde 200 tanto em `aldifer.com.br` quanto em
+   * `www.aldifer.com.br`, sem redirect entre os dois e sem
+   * `<link rel="canonical">` em página nenhuma. Na ausência de canonical, o
+   * sinal mais forte é o link interno — e TODO link e TODO asset do HTML antigo
+   * é URL absoluta com `www`:
+   *
+   *   href="https://www.aldifer.com.br/barra-chata.php"
+   *   href="https://www.aldifer.com.br/css/main.css"
+   *
+   * Então `www` é o host que o Google indexou, e é nele que o histórico dos 117
+   * redirects da Etapa 10 vale. Escolher o apex jogaria fora esse histórico
+   * duas vezes: no redirect de host e no de caminho.
+   *
+   * O DNS precisa acompanhar: apex com 301 para www. Hoje o `www` é CNAME do
+   * apex, o inverso do que passa a valer. Ver docs/DEPLOY.md.
+   */
   site: 'https://www.aldifer.com.br',
 
   // Sem @astrojs/react: as ilhas deste site são custom elements em JS puro.
@@ -87,10 +105,25 @@ export default defineConfig({
      *   CSS em arquivo:  LCP 2,41–2,56s — 4 de 9 execuções ACIMA da meta
      *   CSS embutido:    LCP 2,40–2,41s — 0 de 9 acima, e a variação sumiu
      *
-     * O gargalo estava na ordem de descoberta: o `preload` da Archivo (88 KB)
-     * é escrito antes no <head>, e o Astro injeta o <link> da folha no FIM do
-     * head — então o navegador começava a fonte antes do CSS que bloqueia a
-     * pintura. Embutir tira a folha dessa disputa.
+     * O gargalo estava na ordem de descoberta: o `preload` da Archivo é escrito
+     * antes no <head>, e o Astro injeta o <link> da folha no FIM do head —
+     * então o navegador começava a fonte antes do CSS que bloqueia a pintura.
+     * Embutir tira a folha dessa disputa.
+     *
+     * [REMEDIR — ver docs/CHECKLIST-LANCAMENTO.md] O contexto daquela medição
+     * mudou duas vezes desde então, e nos dois casos a favor da folha LINKADA:
+     *
+     *   1. A Archivo tinha 90.104 bytes porque carregava o eixo de largura.
+     *      Instanciada em wdth 125%, caiu para 34.648 — a disputa por banda
+     *      com o CSS ficou muito menor.
+     *   2. A medição foi feita em http/1.1, no servidor de teste local. A
+     *      Vercel serve http/2, onde a requisição da folha é multiplexada na
+     *      conexão já aberta e custa muito menos que um round-trip inteiro.
+     *
+     * Ou seja: é provável que hoje a folha linkada passe o portão, e ela é
+     * melhor para quem navega várias páginas do catálogo — 6,6 KB gzip a menos
+     * por página, com cache compartilhado. A medição certa é na URL de preview
+     * da Vercel, não aqui.
      *
      * O CUSTO, honestamente: some o cache compartilhado da folha, e cada
      * página passa a carregar 6,6 KB gzip a mais. Em troca, o PRIMEIRO

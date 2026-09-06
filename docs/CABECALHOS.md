@@ -33,12 +33,100 @@ primeiro.
 
 | Cabeçalho | Valor | O que evita |
 |---|---|---|
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | Que a **primeira** visita saia em http e seja interceptada. Dois anos e `includeSubDomains`, que são os requisitos da lista `preload` do Chrome. **Cuidado:** com `includeSubDomains`, todo subdomínio passa a exigir https válido — se a Aldifer tiver algo em `algo.aldifer.com.br` sem certificado, quebra. Confirmar na Etapa 13. |
+| `Strict-Transport-Security` | `max-age=63072000` | Que a **primeira** visita saia em http e seja interceptada. Dois anos, **sem `includeSubDomains` e sem `preload`** — ver a seção abaixo, que não é escolha estética. |
 | `X-Content-Type-Options` | `nosniff` | Que o navegador adivinhe o tipo de um arquivo e execute como script algo servido como texto |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Que a URL completa vaze para terceiro. Ao clicar num link externo, o Google recebe `https://www.aldifer.com.br`, sem o caminho. Preserva o referenciador interno, que o analytics usa |
 | `Permissions-Policy` | tudo `()` exceto `fullscreen=(self)` | Que um script de terceiro comprometido peça câmera, microfone ou localização. `()` é lista vazia: nem o próprio site pode. `fullscreen=(self)` fica porque o mapa em tela cheia é uso legítimo |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Que uma janela aberta pelo site mantenha referência à nossa, vetor de *tabnabbing* |
 | `X-Permitted-Cross-Domain-Policies` | `none` | Que um `crossdomain.xml` autorize cliente Flash/PDF a ler dados do domínio. Legado, mas custa um cabeçalho |
+
+## Como verificar, sem depender de produção
+
+Desde a Etapa 13 o `npm run servir` **lê os cabeçalhos deste `vercel.json` e os
+aplica**, em vez de reproduzir só o `Cache-Control` à mão. Antes disso os nove
+cabeçalhos de segurança nunca tinham sido servidos localmente: eles existiam
+numa configuração que ninguém havia visto responder, e um erro de digitação só
+apareceria em produção.
+
+```
+$ curl -sI http://localhost:4330/
+strict-transport-security: max-age=63072000
+x-content-type-options: nosniff
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: accelerometer=(), autoplay=(), camera=(), ...
+x-frame-options: DENY
+content-security-policy: frame-ancestors 'none'
+cross-origin-opener-policy: same-origin
+x-permitted-cross-domain-policies: none
+
+$ curl -sI http://localhost:4330/fonts/archivo-latin-expanded-normal.woff2
+cache-control: public, max-age=31536000, immutable
+
+$ curl -sI http://localhost:4330/api/orcamento
+cache-control: no-store
+x-robots-tag: noindex, nofollow
+```
+
+### Duas linhas de CSP no painel, e por que está certo
+
+```
+$ curl -sI http://localhost:4330/keystatic | grep -c content-security-policy
+2
+content-security-policy: default-src 'none'; img-src 'self' data: https://avatars...
+content-security-policy: frame-ancestors 'none'
+```
+
+A regra global do `vercel.json` manda `frame-ancestors 'none'`, e o
+`src/middleware.ts` manda a política do painel. **Duas linhas de CSP significam
+que as DUAS valem** — o navegador aplica a interseção — e é o resultado que se
+quer: o painel mantém o relaxamento de estilo de que o `@keystar/ui` precisa, e
+o site inteiro mantém a proteção contra clickjacking.
+
+⚠️ **Isto precisa ser reconferido na Vercel.** Se ela SUBSTITUIR o cabeçalho da
+função pelo da configuração, em vez de somar, uma das duas políticas se perde —
+e as duas consequências são ruins: ou o painel quebra, ou o `frame-ancestors`
+desaparece. O teste está no passo 4 do [`DEPLOY.md`](./DEPLOY.md).
+
+## Por que o HSTS NÃO tem `includeSubDomains` nem `preload`
+
+Decidido na Etapa 13, **com medição do DNS real da Aldifer**, e não por
+preferência.
+
+A versão anterior deste cabeçalho trazia `includeSubDomains; preload`, que são
+os requisitos da lista de *preload* do Chrome. O comentário aqui dizia
+"confirmar na Etapa 13", e a confirmação reprovou:
+
+```
+mail.aldifer.com.br      CNAME -> mail.ita.locamail.com.br
+pop.aldifer.com.br       CNAME -> mail.ita.locamail.com.br
+webmail.aldifer.com.br   CNAME -> webmail.ita.locamail.com.br
+
+$ curl https://webmail.aldifer.com.br
+curl: (60) SNI or certificate check failed: SEC_E_WRONG_PRINCIPAL
+
+$ openssl s_client -servername webmail.aldifer.com.br ...
+subject=CN=*.webmail-seguro.com.br
+X509v3 Subject Alternative Name: DNS:*.webmail-seguro.com.br, DNS:webmail-seguro.com.br
+```
+
+O e-mail da Aldifer é da **Locaweb**, e o certificado servido em
+`webmail.aldifer.com.br` é de `*.webmail-seguro.com.br` — nome errado para
+aquele host. **Hoje** o navegador mostra um aviso que a pessoa pode ignorar e
+seguir. **Com `includeSubDomains` no apex, esse aviso passa a ser inignorável:**
+o Chrome não oferece o botão "prosseguir" em host sob HSTS. A equipe da Aldifer
+perderia o webmail pelo endereço que ela decorou.
+
+E `preload` é praticamente irreversível: a remoção da lista leva meses e só
+chega ao usuário na atualização do navegador.
+
+Então o HSTS fica no host exato, que é onde ele protege o site — e é o site que
+este repositório controla.
+
+**Para ligar `includeSubDomains` depois**, e vale a pena, a ordem é: pedir à
+Locaweb um certificado válido para `webmail.aldifer.com.br` (ou mover a equipe
+para o endereço próprio da Locaweb), conferir que **todo** subdomínio responde
+https válido, e só então acrescentar a diretiva. `preload` depois disso, e não
+antes.
 
 ## Cache
 

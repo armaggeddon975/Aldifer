@@ -235,6 +235,7 @@ já trocam `--surface-danger` e `--surface-success` sozinhas, então o component
 ```
 Display: Archivo Expanded — pesos 600/700, tracking -0.02em
          Grotesca expandida. Lê como placa de identificação de máquina.
+         O ARQUIVO É GERADO: ver a nota "Archivo instanciada" abaixo.
 Texto:   Inter — peso 400/500, entrelinha 1.6
 Mono:    JetBrains Mono — só em tabelas de bitola e resultado da calculadora.
          Números técnicos precisam alinhar em coluna.
@@ -254,11 +255,43 @@ todas as páginas, contra 0,021 e 0,016 com `swap`. Foi recusado, e a razão é 
 troca a fonte depois da janela curta — um visitante em 4G de obra leria a
 primeira visita inteira sem a tipografia da marca.
 
-O que sobra de CLS com `swap` é reflow de texto, e é aceito: 0,075 no pior caso,
-na página de tabela mais larga. Se um número de performance reprovar de verdade,
-**procure a causa fora da tipografia primeiro** — na Etapa 12 o CLS de 0,304 da
-calculadora e o de 0,198 do /orcamento eram markup escondido na hidratação, e o
-Lighthouse culpou as web fonts nos dois casos.
+O que sobra de CLS com `swap` é reflow de texto, e é aceito. Se um número de
+performance reprovar de verdade, **procure a causa fora da tipografia primeiro**
+— na Etapa 12 o CLS de 0,304 da calculadora e o de 0,198 do /orcamento eram
+markup escondido na hidratação, e o Lighthouse culpou as web fonts nos dois
+casos.
+
+### Archivo instanciada em wdth 125% (registrado na Etapa 13)
+
+**"Archivo Expanded" não é família separada: é o eixo `wdth` em 125%.** Pedir
+125% por CSS obriga o arquivo a CARREGAR o eixo inteiro, de 62% a 125%, e isso
+custa 90.104 B contra 34.928 B da versão só-peso — que por sua vez não tem
+Expanded nenhum.
+
+Como a Archivo é a fonte do H1, que é o elemento de LCP, e por isso a única com
+`preload`, esses 55 KB ficavam no CAMINHO CRÍTICO. Medido em /orcamento com 9
+execuções: **7 de 9 acima da meta de LCP** com o eixo de largura, 0 de 9 sem.
+
+A saída não foi abrir mão do Expanded: `npm run fonts` **instancia** a fonte com
+`wdth` fixado em 125, aplicando o valor aos contornos. Fica em 34.648 B — menor
+que a versão só-peso, porque perdeu também as tabelas de variação daquele eixo —
+e o eixo de peso continua variável.
+
+**O desenho é idêntico, e isso foi medido**, não afirmado: largura de texto em 4
+pesos (400, 600, 700, 900) × 4 frases com todos os acentos do português, fonte
+antiga em `font-stretch: 125%` contra a instanciada. Diferença de **0,0000 px**
+em todas as 16 comparações. O controle negativo — a antiga em largura 100% — deu
+1,2931× mais estreita, o que prova que a medição discrimina.
+
+Duas coisas para lembrar:
+
+> O arquivo gerado é **versionado**. Quem clona e roda `npm install && npm run
+> build` não precisa de Python. O `npm run fonts` só é necessário ao trocar a
+> versão da fonte, e exige `python -m pip install --user "fonttools[woff]"`.
+
+> `font-stretch: 125%` no `@font-face` é DESCRIÇÃO, não pedido: aquela face É a
+> de 125%. Não troque por `normal` — o `font-stretch: var(--display-stretch)` da
+> utility `display-expanded` casa com ela.
 
 ### Espaçamento e raio
 
@@ -536,10 +569,16 @@ exige estilo inline e não tem CSP.
 `build.inlineStylesheets: 'always'` no `astro.config.mjs`. O padrão do Astro
 embute folha abaixo de 4 KB; a deste site tem 32,7 KB crus e ficava em arquivo.
 
-`<link rel="stylesheet">` bloqueia a pintura, e o `preload` da Archivo (88 KB) é
+`<link rel="stylesheet">` bloqueia a pintura, e o `preload` da Archivo era
 descoberto ANTES dele, porque o Astro injeta a folha no fim do `<head>`. Medido
-em 9 execuções no `/orcamento`: em arquivo dava LCP 2,41–2,56s com **4 de 9 acima
-da meta**; embutido dá 2,40–2,41s com **0 de 9**.
+em 9 execuções no `/orcamento`: em arquivo, **4 de 9 acima da meta de LCP**;
+embutido, **0 de 9**.
+
+Os valores absolutos daquela medição (2,41–2,56s contra 2,40–2,41s) eram
+OTIMISTAS, porque o servidor de teste ainda não mandava os cabeçalhos de
+produção — ver a correção nº 4 em `docs/QUALIDADE.md`. **A comparação continua
+valendo**, porque os dois lados foram medidos do mesmo jeito; os números de hoje
+estão no `docs/QUALIDADE.md`.
 
 O custo, honestamente: some o cache compartilhado da folha e cada página carrega
 6,6 KB gzip a mais. O primeiro carregamento fica um pouco mais leve mesmo assim,

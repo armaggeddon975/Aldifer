@@ -4,8 +4,8 @@ O `CLAUDE.md` define quatro portões e diz: "Nenhuma entrega passa sem os quatro
 Medir em **build de produção**, perfil **mobile com throttling**. Medir em dev
 não conta."
 
-Este arquivo registra os números da Etapa 12. Não é resumo: é o que os comandos
-imprimiram.
+Este arquivo registra os números das Etapas 12 e 13. Não é resumo: é o que os
+comandos imprimiram.
 
 ## Como rodar
 
@@ -45,46 +45,64 @@ Aldifer não chegou (ver README, seção BLOQUEANTE). Em produção `SHOW_DRAFTS
 `import.meta.env.DEV`, então **nenhuma página de produto é gerada**: o build tem
 17 rotas em vez de 44.
 
-Os dois foram medidos. O segundo é o que vai ao ar hoje; o primeiro é o que vai
-ao ar quando a planilha chegar, e por isso não podia ficar sem medição.
+Os dois foram medidos. O de 17 rotas é o que vai ao ar hoje; o de 44 é o que vai
+ao ar quando a planilha chegar, e por isso não podia ficar sem medição. Onde só
+aparece um número, é o de produção.
 
-### Performance — 5 execuções por página
+### Performance — 5 execuções válidas por página
 
 Perfil mobile, `--throttling-method=simulate`. **Tempo pela mediana, CLS pelo
 pior caso** — o porquê está na seção "O que o portão aprendeu".
 
-Catálogo completo (44 rotas, `SHOW_DRAFTS` ligado):
-
-```
-  perf    LCP    CLS pior  CLS med   TBT     FCP     peso   LCP min-max     página
-    98    2.26s     0.000    0.000     0ms   1.58s    218KB     2.26-2.41s  Home
-    99    2.11s     0.021    0.021     0ms   1.43s    214KB     2.10-2.26s  Categoria
-    98    2.26s     0.016    0.016     0ms   1.58s    223KB     2.26-2.41s  Calculadora
-    97    2.41s     0.059    0.018     0ms   1.73s    241KB     2.41-2.56s  Orçamento
-    98    2.26s     0.001    0.001     0ms   1.58s    216KB     2.26-2.41s  /produtos/barras/barra-chata
-    97    2.26s     0.075    0.075     0ms   1.58s    216KB     2.11-2.26s  /produtos/chapas/chapa-xadrez
-```
-
 Build de produção (17 rotas):
 
 ```
-  perf    LCP    CLS pior  CLS med   TBT     FCP     peso   LCP min-max     página
-    98    2.26s     0.000    0.000     0ms   1.58s    218KB     2.26-2.46s  Home
-    99    2.11s     0.021    0.021     0ms   1.43s    213KB     2.10-2.11s  Categoria
-    98    2.26s     0.016    0.016     0ms   1.58s    223KB     2.25-2.26s  Calculadora
-    97    2.41s     0.052    0.018     0ms   1.73s    241KB     2.41-2.71s  Orçamento
+  perf    LCP    CLS pior  CLS med   TBT     FCP     peso   LCP min-max    n/tent  página
+    99    1.81s     0.000    0.000     0ms   1.59s    169KB     1.81-1.82s     5/6  Home
+    99    1.66s     0.021    0.021     0ms   1.43s    165KB     1.66-1.66s    5/14  Categoria
+    99    1.90s     0.016    0.016     0ms   1.58s    175KB     1.81-1.96s    5/16  Calculadora
+    98    2.11s     0.059    0.052     0ms   1.79s    195KB     1.97-2.11s     5/6  Orçamento
 ```
 
-Peso da home: **218 KB** contra o limite de 1 MB do `CLAUDE.md`. TBT **0ms** em
+Peso da home: **169 KB** contra o limite de 1 MB do `CLAUDE.md`. TBT **0ms** em
 todas — o site quase não tem JavaScript de inicialização.
 
-O número mais apertado é o **LCP do Orçamento, 2,41s contra a meta de 2,50s**. É
-a página mais pesada (241 KB) e a que carrega mais script (26,9 KB gzip). É o
-número a observar em qualquer mudança futura.
+O número mais apertado é o **CLS de `/produtos/chapas/chapa-xadrez`, 0,075 contra
+0,100** — reflow do `swap` da Archivo e da Inter na página de tabela mais larga.
+É consequência aceita da decisão de tipografia; ver `src/styles/fonts.css`.
 
-O segundo mais apertado é o **CLS de `/produtos/chapas/chapa-xadrez`, 0,075
-contra 0,100** — reflow do `swap` da Archivo e da Inter na página de tabela mais
-larga. É consequência aceita da decisão de tipografia; ver `src/styles/fonts.css`.
+Depois dele vem o **LCP do Orçamento, 2,11s contra 2,50s**: é a página mais
+pesada (195 KB) e a que carrega mais script (26,9 KB gzip). É o número a
+observar em qualquer mudança futura.
+
+#### Estes números são MELHORES que os da Etapa 12, e os antigos estavam errados
+
+A Etapa 12 reportou LCP de 2,11s a 2,41s e home com 218 KB. **Aquela medição era
+otimista**: o servidor de teste não mandava os cabeçalhos de produção, que contam
+no peso — ver a correção nº 4 abaixo. Com eles servidos, o `/orcamento` que
+parecia passar em 2,41s media 2,41–2,56s e reprovava em **7 de 9 execuções**.
+
+O que trouxe os números para onde estão hoje foi a **Archivo instanciada** na
+Etapa 13: fixar o eixo `wdth` em 125% tirou 55 KB do caminho crítico
+(90.104 → 34.648 bytes) sem mudar o desenho. Medido no `/orcamento`, 9 execuções
+de cada lado:
+
+```
+com o eixo de largura   LCP 2,41-2,56s   7 de 9 acima da meta
+sem o eixo de largura   LCP 1,96-2,11s   0 de 9 acima
+```
+
+#### A coluna `n/tent`, e por que ela existe
+
+`5/16` significa cinco medições válidas em dezesseis tentativas. Nesta máquina o
+Lighthouse falha em gravar o trace (`NO_NAVSTART`) com frequência — em uma
+execução do portão, 34 de 68 tentativas. A causa é memória: **1,6 GB livres de
+8 GB**, com o `astro dev` do desenvolvedor rodando ao lado.
+
+O portão lida com isso repetindo a execução que NÃO MEDIU, nunca a que mediu
+mal. Mas amostra fraca não pode ficar invisível: uma linha com 2 medições de 15
+tentativas não vale o mesmo que uma com 5 de 5, e é por isso que a contagem
+aparece no relatório.
 
 ### SEO
 
@@ -144,10 +162,15 @@ visitante novo — e a tabela da lista de orçamento SÓ EXISTE com itens:
   lista de orçamento com 3 itens   360:ok(tab 954/326 rola)  768:ok(tab 954/703 rola)  1280:ok  1920:ok
 ```
 
-## O que o portão aprendeu nesta etapa
+## O que o portão aprendeu
 
-Quatro correções no INSTRUMENTO, todas porque ele estava passando algo que não
-devia — ou reprovando algo que não era defeito.
+Seis correções no INSTRUMENTO, todas porque ele estava passando algo que não
+devia — ou reprovando algo que não era defeito. As três primeiras são da Etapa
+12, a quarta e a quinta da 13, e a sexta é anterior às duas.
+
+Vale o padrão: **em quase todos os casos, o portão errado era mais perigoso que
+o defeito que ele deixava passar**, porque ensinava a confiar num número que não
+significava o que parecia.
 
 ### 1. Mediana esconde falha bimodal
 
@@ -192,7 +215,50 @@ o 404 de `/produtos/barras/barra-chata` e reportava "SEO 0". Não havia página
 reprovando, havia página ausente. Portão que mente sobre a causa é pior que
 portão que falha.
 
-### 4. Um verificador com `try/catch` silencioso
+### 4. O servidor de teste não mandava os cabeçalhos de produção
+
+Achado na Etapa 13. O `npm run servir` reproduzia apenas o `Cache-Control`
+imutável, escrito à mão — os **nove cabeçalhos de segurança** do `vercel.json`
+nunca eram servidos localmente.
+
+Duas consequências. A primeira é que eles nunca foram verificados em
+COMPORTAMENTO: existiam numa configuração que ninguém tinha visto responder, e
+um erro de digitação só apareceria em produção. A segunda é que as medições de
+performance estavam **otimistas**: cabeçalho conta no `total-byte-weight`, e são
+~6 KB por página que a produção manda e a medição não via.
+
+O `/orcamento` mostrou o tamanho do erro: media 2,40–2,41s de LCP com 0 de 9
+execuções acima da meta; com os cabeçalhos servidos, 2,41–2,56s com **7 de 9
+acima**. A conclusão "passa" tinha vindo de um servidor que mentia por omissão.
+
+Agora o servidor LÊ as regras do próprio `vercel.json`, então `curl -sI` mostra
+o que a Vercel vai mandar, e valor errado na configuração é valor errado aqui.
+
+### 5. O portão passava quando NÃO CONSEGUIA medir
+
+O pior dos cinco, achado na Etapa 13 ao ver `CLS pior: NaN` no relatório.
+
+O Lighthouse às vezes falha em gravar o trace e **escreve o relatório assim
+mesmo**, com `runtimeError: NO_NAVSTART` e as auditorias em
+`scoreDisplayMode: 'error'`. O arquivo existe, o JSON é válido, e
+`numericValue` não existe. Minha agregação incluía essa execução, `Math.max`
+devolvia `NaN` — e **`NaN > 0,1` é FALSO**, então o portão passava.
+
+Um portão que passa por não ter conseguido medir é pior que um portão que falha.
+Três correções: execução sem métrica é **descartada** e listada no relatório;
+toda comparação passa por `Number.isFinite`, então métrica não finita reprova
+explicitamente; e a página precisa de mais da metade das execuções válidas para
+a mediana significar algo.
+
+Como o `NO_NAVSTART` é transitório — a mensagem do próprio Lighthouse termina em
+"Please run Lighthouse again", e ele apareceu em 6 de 20 execuções nesta máquina
+— o portão dá **até três vezes o número de tentativas**, mas só para execução
+que não mediu. Métrica medida e ruim entra na agregação e reprova, como deve.
+
+Provado apontando o portão para uma porta morta: 4 execuções descartadas, 4
+reprovações nomeadas, `exit code 1`. Antes ele passaria.
+
+### 6. Um verificador com `try/catch` silencioso
 
 Já corrigido antes desta etapa, mas vale o registro porque é o mesmo padrão: o
 `servir-build.mjs` engolia um `readFileSync` ausente. O catch ficou explícito.
@@ -241,7 +307,8 @@ E dois que não eram de layout:
    saíram três hexes soltos.
 
 5. **O CSS passou a ser embutido no HTML.** `<link rel="stylesheet">` bloqueia a
-   pintura, e o `preload` da Archivo (88 KB) é descoberto ANTES dele no `<head>`,
+   pintura, e o `preload` da Archivo — que então tinha 90 KB, antes de ser
+   instanciada — era descoberto ANTES dele no `<head>`,
    porque o Astro injeta a folha no fim. O navegador começava a fonte antes do CSS
    crítico. Em 9 execuções no `/orcamento`: CSS em arquivo dava LCP 2,41–2,56s com
    **4 de 9 acima da meta**; embutido dá 2,40–2,41s com **0 de 9**. O raciocínio
