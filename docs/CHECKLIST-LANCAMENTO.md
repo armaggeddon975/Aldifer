@@ -173,6 +173,12 @@ topo do [README](../README.md).
       `diego.alvite.moreira@gmail.com`, e o remetente é o
       `onboarding@resend.dev` de teste do Resend. Trocar pelo destino da Aldifer
       (pergunta 10) e pelo remetente do domínio verificado
+- [⛔] **`SHOW_DRAFTS=true` está ligada em produção**, publicando os 27 produtos
+      em rascunho para a revisão. As bitolas continuam sendo faixa comercial de
+      mercado, e o site avisa isso em toda página. Decidir antes do domínio: ou
+      as bitolas reais chegaram e os produtos saem do rascunho de verdade, ou a
+      variável é apagada. **Não regerar os redirects com ela ligada** — hoje os
+      destinos são categorias, que existem nos dois estados
 - [⛔] **A planilha de bitolas em estoque** (pergunta 7). É o bloqueio maior: os
       **27 produtos estão como `rascunho`** e não são gerados em produção. O
       build de hoje tem 17 rotas e **nenhuma página de produto** — um catálogo

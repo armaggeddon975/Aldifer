@@ -17,8 +17,33 @@ export type Category = CollectionEntry<'categories'>;
  * da Aldifer. Publicar bitola que a empresa não tem gera pedido que ela não
  * consegue atender — pior que não publicar nada. Ver README, seção de
  * pendências bloqueantes.
+ *
+ * A CHAVE `SHOW_DRAFTS` EXISTE PARA REVISÃO, e é variável de ambiente de
+ * propósito (acrescentada em 07/09/2026).
+ *
+ * Durante a revisão do site é preciso ver o catálogo cheio — as 27 páginas de
+ * produto, o filtro, as tabelas de bitola, o botão de adicionar ao orçamento.
+ * Sem isso a revisão acontece num catálogo de categorias vazias, que não é o
+ * site que vai existir.
+ *
+ * POR QUE VARIÁVEL DE AMBIENTE E NÃO UMA LINHA DE CÓDIGO: durante as Etapas 12
+ * e 13 eu troquei esta linha por `true` várias vezes para medir, e tive de
+ * lembrar de reverter em cada uma. Uma delas quase foi commitada. Trocar código
+ * para revisar é convite para o valor de teste chegar à produção; variável de
+ * ambiente se apaga com um clique no painel da Vercel, e o código nunca deixa
+ * de dizer a verdade.
+ *
+ * O QUE PROTEGE QUEM VÊ O SITE ASSIM: cada produto em rascunho renderiza o
+ * `<DraftNotice>`, e o /produtos mostra "N de M produtos estão em rascunho. As
+ * bitolas são faixa comercial padrão de mercado, não o estoque real da
+ * Aldifer." Ou seja, o catálogo de revisão se identifica como tal em toda
+ * página — não é o site fingindo estar pronto.
+ *
+ * Não tem prefixo `PUBLIC_` porque este módulo só roda em build e no servidor;
+ * assim a chave não vai para o bundle do navegador.
  */
-export const SHOW_DRAFTS: boolean = import.meta.env.DEV;
+export const SHOW_DRAFTS: boolean =
+  import.meta.env.DEV || import.meta.env.SHOW_DRAFTS === 'true';
 
 export function isDraft(product: Product): boolean {
   return product.data.status === 'rascunho';

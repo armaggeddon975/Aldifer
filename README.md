@@ -51,6 +51,29 @@ Para onde os PEDIDOS vão não é conteúdo do site, e sim variável de ambiente
 Vercel — hoje `QUOTE_MAIL_TO` e `CONTACT_MAIL_TO` apontam para o e-mail do
 desenvolvedor. Trocar por lá, sem tocar no código.
 
+### 0b. O CATÁLOGO DE PRODUÇÃO ESTÁ PUBLICANDO OS RASCUNHOS
+
+`SHOW_DRAFTS=true` está cadastrada na Vercel (produção e preview) desde
+07/09/2026, para a revisão do site acontecer com o catálogo cheio: as 27 páginas
+de produto, o filtro, as tabelas de bitola e o botão de adicionar ao orçamento.
+Sem isso a revisão seria num catálogo de categorias vazias, que não é o site que
+vai existir.
+
+**As bitolas continuam sendo faixa comercial padrão de mercado, não o estoque da
+Aldifer** — ver o item 1. O site diz isso em toda página: cada produto renderiza
+o aviso `⚠ Tabela em conferência`, e o `/produtos` mostra "27 de 27 produtos
+estão em rascunho".
+
+**Para desligar:** apagar a variável `SHOW_DRAFTS` na Vercel e refazer o deploy.
+Não há código a mudar — foi por isso que virou variável de ambiente e não uma
+linha em `src/lib/products.ts`.
+
+⚠️ **Não regere os redirects com esta chave ligada.** Os 117 destinos hoje
+apontam para páginas de CATEGORIA, que existem nos dois estados. Rodar
+`npm run redirects` com os rascunhos visíveis faria 69 deles apontarem para
+páginas de produto — que desaparecem quando a chave sair, virando 301 para 404.
+Regerar só quando os produtos saírem do rascunho de verdade.
+
 ### 1. A planilha de estoque real da Aldifer precisa ser solicitada
 
 **Os 27 produtos deste repositório estão todos com `status: 'rascunho'`.**
