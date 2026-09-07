@@ -25,6 +25,32 @@ As regras do projeto estão em [`CLAUDE.md`](./CLAUDE.md). O conteúdo aprovado 
 
 ## ⛔ BLOQUEANTE — antes de qualquer lançamento
 
+### 0. O TELEFONE DO SITE É DE TESTE AGORA — não é o da Aldifer
+
+Posto de propósito em 07/09/2026, para as ligações de teste não caírem na
+Aldifer enquanto o site está sendo revisado em
+[aldifer.vercel.app](https://aldifer.vercel.app).
+
+| Campo | Valor de teste | O que tem de voltar |
+|---|---|---|
+| `phone` | `(11) 93230-7756` | `(11) 4344-1919` |
+| `phoneE164` | `+5511932307756` | `+551143441919` |
+| `whatsapp` | `5511932307756` | **vazio** — o número da Aldifer nunca foi confirmado |
+
+O `phoneE164` é o que mais importa: ele vai para o `tel:` de **16 páginas** e
+para o `telephone` dos dados estruturados que o Google lê.
+
+Os três estão em [`src/content/site-config.json`](./src/content/site-config.json),
+e cada um leva o aviso na descrição do campo dentro do painel de edição — quem
+abrir o `/keystatic` para reverter vê o valor real ao lado.
+
+O **e-mail exibido continua sendo o da Aldifer** (`contato@aldifer.com.br`), de
+propósito: só o telefone foi trocado.
+
+Para onde os PEDIDOS vão não é conteúdo do site, e sim variável de ambiente na
+Vercel — hoje `QUOTE_MAIL_TO` e `CONTACT_MAIL_TO` apontam para o e-mail do
+desenvolvedor. Trocar por lá, sem tocar no código.
+
 ### 1. A planilha de estoque real da Aldifer precisa ser solicitada
 
 **Os 27 produtos deste repositório estão todos com `status: 'rascunho'`.**

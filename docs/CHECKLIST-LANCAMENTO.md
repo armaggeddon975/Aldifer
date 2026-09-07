@@ -161,6 +161,18 @@ Nenhum destes é verificável daqui. Exigem URL pública, DNS ou chave de tercei
 As perguntas completas estão na seção 12 do [`CONTEUDO.md`](./CONTEUDO.md) e no
 topo do [README](../README.md).
 
+- [⛔] **O TELEFONE DO SITE É DE TESTE.** `(11) 93230-7756` e o WhatsApp
+      `5511932307756` são o celular do desenvolvedor, postos para as ligações de
+      teste não caírem na Aldifer. Tem de voltar a `(11) 4344-1919` /
+      `+551143441919`, e o **WhatsApp a VAZIO** — o número da Aldifer nunca foi
+      confirmado, e vazio o site simplesmente não mostra o botão. O `phoneE164`
+      é o mais importante: ele alimenta o `tel:` de 16 páginas e o `telephone`
+      dos dados estruturados. Ver o item 0 do [README](../README.md)
+- [⛔] **O destino dos pedidos é o e-mail do desenvolvedor.** `QUOTE_MAIL_TO` e
+      `CONTACT_MAIL_TO` na Vercel apontam para
+      `diego.alvite.moreira@gmail.com`, e o remetente é o
+      `onboarding@resend.dev` de teste do Resend. Trocar pelo destino da Aldifer
+      (pergunta 10) e pelo remetente do domínio verificado
 - [⛔] **A planilha de bitolas em estoque** (pergunta 7). É o bloqueio maior: os
       **27 produtos estão como `rascunho`** e não são gerados em produção. O
       build de hoje tem 17 rotas e **nenhuma página de produto** — um catálogo

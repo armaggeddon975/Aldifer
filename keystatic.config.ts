@@ -144,13 +144,21 @@ export default config({
 
         phone: fields.text({
           label: 'Telefone (como se escreve)',
-          description: 'Do jeito que a pessoa lê: (11) 4344-1919.',
+          description:
+            '⛔ VALOR DE TESTE AGORA — (11) 93230-7756 é o celular do desenvolvedor, ' +
+            'posto de propósito para as ligações de teste não caírem na Aldifer. ' +
+            'O REAL da Aldifer é (11) 4344-1919, e é ele que tem de voltar antes de ' +
+            'apontar o domínio. Ver docs/CHECKLIST-LANCAMENTO.md.',
           validation: { isRequired: true },
         }),
         phoneE164: fields.text({
           label: 'Telefone (para discar)',
           description:
-            'O MESMO número, sem espaço nem parêntese, começando com +55. É o que o celular disca ao tocar no telefone. Exemplo: +551143441919',
+            '⛔ VALOR DE TESTE AGORA — +5511932307756. O REAL da Aldifer é ' +
+            '+551143441919. Este campo vai para o `tel:` de 16 páginas E para o ' +
+            '`telephone` dos dados estruturados que o Google lê, então é o que mais ' +
+            'importa reverter. É o MESMO número do campo acima, sem espaço nem ' +
+            'parêntese, começando com +55.',
           validation: { isRequired: true, pattern: { regex: /^\+\d{8,15}$/ } },
         }),
         email: fields.text({
@@ -181,7 +189,12 @@ export default config({
         whatsapp: fields.text({
           label: 'WhatsApp — só números, com DDI',
           description:
-            'PENDENTE. Exemplo: 5511943441919. Enquanto estiver vazio, o site não mostra botão de WhatsApp em lugar nenhum — hoje o botão do hero cai no telefone.',
+            '⛔ VALOR DE TESTE AGORA — 5511932307756, o celular do desenvolvedor. ' +
+            'O número da Aldifer NUNCA FOI CONFIRMADO (o site antigo manda para um ' +
+            'linktr.ee), então este campo precisa VOLTAR A VAZIO antes de apontar o ' +
+            'domínio, e não ser trocado por um chute. Vazio, o site não mostra botão ' +
+            'de WhatsApp em lugar nenhum e o botão do hero cai no telefone. ' +
+            'Formato: só números com DDI, exemplo 5511943441919.',
         }),
         openingHours: fields.array(fields.text({ label: 'Linha' }), {
           label: 'Horário de funcionamento',
