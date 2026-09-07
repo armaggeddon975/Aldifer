@@ -2,13 +2,27 @@
 import { SHOW_DRAFTS } from '@/lib/products';
 
 /**
- * Aviso de conteúdo em conferência. Aparece SÓ em desenvolvimento — produto
- * com status "rascunho" não entra no build de produção.
+ * Aviso de conteúdo em conferência.
+ *
+ * APARECE EM PRODUÇÃO TAMBÉM, desde 07/09/2026. Antes disso este comentário
+ * dizia "aparece SÓ em desenvolvimento" e o texto visível afirmava "visível
+ * apenas em desenvolvimento" — as duas coisas deixaram de ser verdade quando a
+ * chave `SHOW_DRAFTS` passou a publicar os rascunhos para a revisão do site.
+ * Ver a nota em `src/lib/products.ts`.
+ *
+ * O texto se ADAPTA ao ambiente por isso: um aviso que mente sobre onde está
+ * sendo lido não serve para nada. Em desenvolvimento ele diz que os rascunhos
+ * ficam fora do build; em produção, que o catálogo está em revisão e as bitolas
+ * não foram confirmadas — que é a informação de que quem estiver revisando
+ * precisa.
  *
  * Sobre o `⚠`: o CLAUDE.md proíbe emoji no site, e o texto deste aviso está
- * especificado com o símbolo na seção 4 do docs/CONTEUDO.md. Não há conflito,
- * porque este componente nunca é publicado: é instrumentação de
- * desenvolvimento, não conteúdo do site.
+ * especificado com o símbolo na seção 4 do docs/CONTEUDO.md. A justificativa
+ * anterior era que o componente nunca chegava ao público, e ela caiu junto com
+ * o resto. A que vale agora: este aviso é instrumentação de REVISÃO e sai do ar
+ * junto com a chave `SHOW_DRAFTS`, antes de o domínio ser apontado — está no
+ * bloco de pendências bloqueantes do README. Se por algum motivo o site for ao
+ * ar com rascunhos, o símbolo é o menor dos problemas.
  */
 interface Props {
   /** O que precisa de conferência. Aparece na segunda linha. */
@@ -26,8 +40,11 @@ const { detail }: Props = Astro.props;
       </p>
       {detail && <p class="draft-notice__detail">{detail}</p>}
       <p class="draft-notice__meta">
-        Visível apenas em desenvolvimento. Produtos em rascunho são excluídos do build de
-        produção.
+        {
+          import.meta.env.DEV
+            ? 'Visível apenas em desenvolvimento. Produtos em rascunho são excluídos do build de produção.'
+            : 'Catálogo em REVISÃO: os produtos em rascunho estão publicados de propósito, pela chave SHOW_DRAFTS. As bitolas são faixa comercial padrão de mercado e ainda não foram confirmadas pela Aldifer.'
+        }
       </p>
     </aside>
   )
