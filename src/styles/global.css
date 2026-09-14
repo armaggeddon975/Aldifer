@@ -67,6 +67,11 @@
   /* Em seção escura o --steel-700 daria 1,91:1. O --accent-bright dá 6,07:1,
      e um link em texto não se confunde com o CTA, que é botão preenchido. */
   --surface-link: var(--accent-bright);                     /* 6,07:1 */
+
+  /* Letreiro da marca: ALDI no azul, FER no laranja — a divisão de cor do
+     logotipo. Ver src/components/Wordmark.astro. */
+  --surface-wordmark: var(--on-dark);                       /* 14,51:1 */
+  --surface-wordmark-accent: var(--accent-bright);          /* 6,07:1 */
   --surface-danger: var(--danger-bright);                   /* 10,2:1 */
   --surface-success: var(--success-bright);                 /* 13,4:1 */
   --cta-bg: var(--accent-bright);
@@ -87,6 +92,11 @@
   --surface-control-border: var(--ink-soft);                /* 6,0:1 */
   --surface-hover: var(--accent);
   --surface-link: var(--steel-700);                         /* 9,07:1 */
+
+  /* Letreiro da marca: ALDI no azul, FER no laranja — a divisão de cor do
+     logotipo. Ver src/components/Wordmark.astro. */
+  --surface-wordmark: var(--brand-navy);                    /* 13,35:1 */
+  --surface-wordmark-accent: var(--brand-orange);           /* 4,81:1 */
   --surface-danger: var(--danger);                          /* 6,5:1 */
   --surface-success: var(--success);                        /* 6,5:1 */
   --cta-bg: var(--accent);
@@ -105,6 +115,16 @@
   --surface-control-border: var(--ink-soft);
   --surface-hover: var(--accent);
   --surface-link: var(--steel-700);                         /* 8,38:1 */
+
+  /* Letreiro da marca: ALDI no azul, FER no laranja — a divisão de cor do
+     logotipo. Ver src/components/Wordmark.astro. */
+  --surface-wordmark: var(--brand-navy);                    /* 12,33:1 */
+  /* 4,45:1 — ABAIXO do mínimo de texto. Vale só porque a WCAG 1.4.3
+     isenta logotipo, e o letreiro NÃO é usado em faixa alternada: ele
+     vive no cabeçalho (tone-light) e no rodapé (tone-dark), os dois
+     verificados pelo npm run contrast. Se algum dia for preciso pôr a
+     marca numa faixa alt, meça antes. */
+  --surface-wordmark-accent: var(--brand-orange);
   --surface-danger: var(--danger);
   --surface-success: var(--success);
   --cta-bg: var(--accent);

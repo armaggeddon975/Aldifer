@@ -1,0 +1,71 @@
+---
+import { getSite } from '@/lib/site';
+
+/**
+ * Letreiro da marca, COM A DIVISÃO DE COR DO LOGOTIPO.
+ *
+ * O logotipo da Aldifer tem duas cores na palavra: **ALDI em azul, FER em
+ * laranja**. Até 13/09/2026 o site escrevia "ALDIFER" inteiro numa cor só, e o
+ * markup estava duplicado no Header e no Footer — ou seja, jogava fora o traço
+ * mais reconhecível da marca, em dois lugares ao mesmo tempo.
+ *
+ * As cores não foram estimadas: foram lidas dos pixels de
+ * `src/assets/aldifer/logo.png` (240×60). O histograma das cores opacas dá
+ * `#123053` com 1901 px e `#CD4116` com 1150 px — exatamente `--brand-navy` e
+ * `--brand-orange`, que o CLAUDE.md já dizia terem saído do logotipo. A troca
+ * acontece entre x=162 (último pixel azul) e x=169 (primeiro laranja), o que no
+ * letreiro é a fronteira entre o "I" e o "F".
+ *
+ * POR QUE TEXTO E NÃO O PNG: a marca é tipografia, e a Archivo Expanded do
+ * design system é a mesma classe de grotesca do logotipo. Texto fica nítido em
+ * qualquer tamanho e densidade, não custa requisição e acompanha o tom da
+ * seção. O DISCO da marca — o "A" angular com o arco laranja — é outra coisa:
+ * ele é desenho, e o README registra a decisão de NÃO traçá-lo a olho a partir
+ * de um raster de 57×57, porque "quase igual em identidade de marca é pior que
+ * macio".
+ *
+ * O CORTE VEM DA CONFIG, não de uma string aqui: `shortName` é "Aldifer" e o
+ * corte é depois do quarto caractere. Assim o letreiro acompanha se o nome
+ * mudar, em vez de virar um literal esquecido.
+ */
+interface Props {
+  /** Classes extras para tamanho e espaçamento no ponto de uso. */
+  class?: string;
+}
+
+const { class: className }: Props = Astro.props;
+
+const site = await getSite();
+
+const nome = site.shortName.toUpperCase();
+
+/** "ALDI" | "FER" — ver a nota acima sobre a medição do pixel x=162. */
+const CORTE = 4;
+const base = nome.slice(0, CORTE);
+const acento = nome.slice(CORTE);
+---
+
+{/*
+  `role="img"` com `aria-label` de propósito: sem ele, o leitor de tela lê dois
+  elementos vizinhos e pode anunciar "ALDI FER", separado. Com ele a marca é
+  anunciada uma vez, pelo nome inteiro, e a divisão de cor fica sendo o que ela
+  é — informação visual.
+*/}
+<span class:list={['wordmark display-expanded font-bold', className]} role="img" aria-label={nome}>
+  <span class="wordmark__base">{base}</span><span class="wordmark__acento">{acento}</span>
+</span>
+
+<style>
+  /*
+    Tokens de CONTEXTO, como o `--surface-link`. O azul da marca sobre a seção
+    escura do rodapé daria 1,3:1 e sumiria; por isso cada tom aponta o par para
+    a cor que passa nele. Ver src/styles/global.css.
+  */
+  .wordmark__base {
+    color: var(--surface-wordmark);
+  }
+
+  .wordmark__acento {
+    color: var(--surface-wordmark-accent);
+  }
+</style>

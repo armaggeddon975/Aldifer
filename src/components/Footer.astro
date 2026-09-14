@@ -1,5 +1,6 @@
 ---
 import Container from './ui/Container.astro';
+import Wordmark from './Wordmark.astro';
 import { getSite } from '@/lib/site';
 import { categoryNav, mainNav } from '@/lib/navigation';
 
@@ -15,7 +16,7 @@ const { address } = site;
 <footer class="tone-dark">
   <Container class="grid gap-10 py-12 md:grid-cols-2 lg:grid-cols-4 lg:py-16">
     <div class="flex flex-col gap-3">
-      <span class="display-expanded text-lg font-bold">ALDIFER</span>
+      <Wordmark class="text-lg" />
       <p class="text-sm text-surface-fg-soft">{site.legalName}</p>
       <address class="text-sm not-italic text-surface-fg-soft">
         {address.street}<br />

@@ -151,6 +151,17 @@ const PAIRS = [
   { fg: '--steel-700', bg: '--paper-alt', min: 4.5, what: 'link no corpo, faixa alternada' },
   { fg: '--accent-bright', bg: '--steel-950', min: 4.5, what: 'link no corpo, seção escura' },
 
+  // Letreiro da marca. As duas cores saíram dos PIXELS do logo.png — o
+  // histograma das cores opacas dá #123053 com 1901 px e #CD4116 com 1150 px,
+  // que são exatamente --brand-navy e --brand-orange.
+  //
+  // A WCAG 1.4.3 isenta logotipo de contraste mínimo. Mesmo assim os dois pares
+  // são verificados aqui, porque um letreiro ilegível é ruim mesmo sendo
+  // permitido — e porque o par do rodapé já é coberto pelas linhas de
+  // "texto sobre seção escura" e "destaque sobre escuro" acima.
+  { fg: '--brand-navy', bg: '--paper', min: 4.5, what: 'letreiro ALDI, cabeçalho' },
+  { fg: '--brand-orange', bg: '--paper', min: 4.5, what: 'letreiro FER, cabeçalho' },
+
   // Limite de componente e anel de foco — 3:1
   { fg: '--accent', bg: '--paper', min: 3, what: 'anel de foco no claro' },
   { fg: '--accent-bright', bg: '--steel-950', min: 3, what: 'anel de foco no escuro' },

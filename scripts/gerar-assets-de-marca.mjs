@@ -12,6 +12,7 @@
 //   public/icone-192.png        manifest
 //   public/icone-512.png        manifest
 //   public/og-image.jpg         1200x630 de compartilhamento
+//   src/assets/aldifer/marca.png  o disco isolado, para o cabecalho do site
 //   src/assets/aldifer/fachada.jpg  a fachada, sem o overlay promocional
 import { readFileSync, writeFileSync } from 'node:fs';
 import sharp from 'sharp';
@@ -49,6 +50,24 @@ if (mw < 40 || mh < 40) {
   throw new Error(`o recorte do marco saiu ${mw}x${mh} — esperado ~57x57. Confira o logo.png.`);
 }
 console.log(`marco isolado: ${mw}x${mh}`);
+
+/*
+  O marco tambem vira ATIVO DO SITE, e nao so fonte dos icones.
+
+  Ele vai para src/assets/ e nao para public/ porque o <Image> do Astro so
+  processa o que esta em src/: de la ele emite largura e altura explicitas,
+  hash no nome e o formato moderno. Em public/ o arquivo seria servido cru.
+
+  TRANSPARENTE e no TAMANHO NATIVO do recorte. Sem upscale: o cabecalho o
+  desenha a 28px de CSS, que em tela de 2x pede 56 px fisicos — praticamente os
+  57 que o logo.png tem. Ampliar aqui so amoleceria o traco.
+
+  O README registra a decisao de NAO redesenhar este disco em SVG a olho: um
+  logotipo tracado de um raster de 57 px sai quase igual, e quase igual em
+  identidade de marca e pior que macio. Entao usa-se o pixel real da Aldifer.
+*/
+writeFileSync(ORIGEM + 'marca.png', marco.data);
+registrar(ORIGEM + 'marca.png');
 
 /**
  * Ícone quadrado no tamanho pedido.
