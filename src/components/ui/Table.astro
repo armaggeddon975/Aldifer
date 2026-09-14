@@ -126,10 +126,25 @@ const {
     box-shadow: inset -16px 0 14px -14px color-mix(in oklab, var(--steel-950) 55%, transparent);
   }
 
+  /*
+    16px, E NÃO 14 (mudado em 13/09/2026).
+
+    O público do site são serralheiros e compradores, e boa parte deles lê a
+    tabela de bitolas com presbiopia. Medido numa página de produto: 117
+    elementos estavam em 14px ou menos, e 81 deles eram células DESTA tabela —
+    ou seja, o conteúdo mais importante do site era o menor de todos.
+
+    A escala do CLAUDE.md não muda: 16px é o `--size-base`, o corpo de texto.
+    A tabela apenas deixou de ser tratada como texto secundário.
+
+    Custo aceito: ela fica mais larga e rola um pouco mais em 360px. Já rolava
+    dentro do <table-scroller>, então o comportamento é o mesmo — quem confere
+    é o `npm run responsivo`.
+  */
   .table-shell table {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--size-sm);
+    font-size: var(--size-base);
   }
 
   .table-shell caption {
@@ -153,10 +168,13 @@ const {
     border-bottom: 0;
   }
 
+  /* 14px: acompanha o corpo da tabela, que subiu para 16. O cabeçalho de
+     coluna continua menor que o dado, que é a hierarquia certa — mas 12px
+     era pequeno demais para nomear "Espessura" ou "Peso por metro". */
   .table-shell :global(thead th) {
     background-color: var(--paper-alt);
     font-weight: 600;
-    font-size: var(--size-xs);
+    font-size: var(--size-sm);
     letter-spacing: 0.01em;
   }
 
