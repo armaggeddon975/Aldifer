@@ -36,6 +36,17 @@ const pathname = Astro.url.pathname;
         Pedir 32px faria o 2x querer 64 e o Astro emitiria só 32, que numa tela
         de alta densidade é ampliação. Medido antes de corrigir: o ativo saía
         com 32×32 naturais.
+
+        `hidden sm:block` porque O CABEÇALHO NÃO CABE COM ELE EM 360px. Medido:
+        o disco mais o gap somam 40px, e o grupo da direita — telefone, botão de
+        orçamento e menu — passava a terminar em 366px numa viewport de 360. O
+        portão `npm run responsivo` reprovou as rotas todas com +6px de scroll
+        horizontal.
+        
+        A alternativa seria tirar o telefone do cabeçalho no mobile, que é uma
+        decisão de conversão e não minha. Então em telas pequenas a marca é o
+        letreiro de duas cores, que já é o traço mais reconhecível dela; o disco
+        entra a partir de 640px, onde sobra espaço.
       */}
       <Image
         src={marca}
@@ -44,7 +55,7 @@ const pathname = Astro.url.pathname;
         height={28}
         densities={[1, 2]}
         loading="eager"
-        class="size-7 shrink-0"
+        class="hidden size-7 shrink-0 sm:block"
       />
       <span class="flex flex-col leading-none">
         <Wordmark class="text-lg" />

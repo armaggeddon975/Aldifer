@@ -2,6 +2,7 @@
 import WeightCalculator from '@/components/calculator/WeightCalculator.astro';
 import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
 import Heading from '@/components/ui/Heading.astro';
+import SectionWatermark from '@/components/SectionWatermark.astro';
 import Section from '@/components/ui/Section.astro';
 import Table from '@/components/ui/Table.astro';
 import Base from '@/layouts/Base.astro';
@@ -54,9 +55,25 @@ for (const product of products) {
     </div>
   </Section>
 
-  {/* Conteúdo estático: é o que sustenta a busca orgânica e o que resta sem JS. */}
-  <Section tone="alt" spacing="md" labelledBy="como-funciona">
-    <div class="max-w-2xl">
+  {/*
+    Conteúdo estático: é o que sustenta a busca orgânica e o que resta sem JS.
+
+    `tone="dark"` desde 13/09/2026. A página inteira era clara — medido: 0
+    seções escuras, contra a base de "aço escuro" que o CLAUDE.md declara. A
+    tabela de fórmulas não sofre: o Table.astro fixa superfície clara própria,
+    independente do tom em volta.
+  */}
+  <Section
+    tone="dark"
+    spacing="md"
+    labelledBy="como-funciona"
+    class="relative overflow-hidden"
+  >
+    <SectionWatermark
+      variant="round-tube"
+      class="-right-24 top-0 w-[24rem] md:w-[30rem] lg:-right-10"
+    />
+    <div class="relative max-w-2xl">
       <Heading level={2} id="como-funciona">{calculatorExplainer.heading}</Heading>
       {
         calculatorExplainer.paragraphs.map((paragraph) => (
@@ -65,7 +82,7 @@ for (const product of products) {
       }
     </div>
 
-    <div class="mt-10">
+    <div class="relative mt-10">
       <Heading level={3} size={4}>{calculatorExplainer.formulasHeading}</Heading>
       <div class="mt-4 max-w-3xl">
         <Table
@@ -85,7 +102,7 @@ for (const product of products) {
       </div>
     </div>
 
-    <div class="mt-10 max-w-2xl">
+    <div class="relative mt-10 max-w-2xl">
       <Heading level={3} size={4}>{calculatorExplainer.legendHeading}</Heading>
       <ul class="mt-4 flex flex-col gap-2 text-surface-fg-soft">
         {

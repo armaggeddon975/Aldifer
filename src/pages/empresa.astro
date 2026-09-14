@@ -3,6 +3,7 @@ import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
 import FacilityGallery from '@/components/company/FacilityGallery.astro';
 import Button from '@/components/ui/Button.astro';
 import Heading from '@/components/ui/Heading.astro';
+import SectionWatermark from '@/components/SectionWatermark.astro';
 import Section from '@/components/ui/Section.astro';
 import Base from '@/layouts/Base.astro';
 import {
@@ -92,8 +93,12 @@ const anos = new Date().getFullYear() - site.foundedYear;
     </div>
   </Section>
 
-  <Section tone="dark" spacing="md" labelledBy="empresa-fim">
-    <div class="max-w-2xl">
+  <Section tone="dark" spacing="md" labelledBy="empresa-fim" class="relative overflow-hidden">
+    <SectionWatermark
+      variant="u-channel"
+      class="-right-20 top-1/2 w-[26rem] -translate-y-1/2 md:w-[34rem] lg:right-0"
+    />
+    <div class="relative max-w-2xl">
       <Heading level={2} id="empresa-fim">{companyClosing.heading}</Heading>
       <p class="mt-4 text-surface-fg-soft">{companyClosing.body}</p>
 

@@ -1,5 +1,5 @@
 ---
-import CrossSection from '@/components/CrossSection.astro';
+import SectionWatermark from '@/components/SectionWatermark.astro';
 import Pending from '@/components/Pending.astro';
 import Button from '@/components/ui/Button.astro';
 import Container from '@/components/ui/Container.astro';
@@ -18,13 +18,10 @@ const site = await getSite();
 ---
 
 <section class="tone-dark relative overflow-hidden">
-  {/* Marca-d'água em traço, opacidade 0,06. aria-hidden e sem cotas. */}
-  <div
-    class="pointer-events-none absolute -right-24 top-1/2 w-[34rem] -translate-y-1/2 opacity-[0.06] md:-right-16 md:w-[42rem] lg:right-0"
-    aria-hidden="true"
-  >
-    <CrossSection variant="i-beam" decorative dimensions={false} />
-  </div>
+  <SectionWatermark
+    variant="i-beam"
+    class="-right-24 top-1/2 w-[34rem] -translate-y-1/2 md:-right-16 md:w-[42rem] lg:right-0"
+  />
 
   <Container class="relative py-16 md:py-24 lg:py-32">
     <div class="max-w-3xl">

@@ -1,0 +1,38 @@
+---
+import CrossSection from '@/components/CrossSection.astro';
+import type { CrossSectionVariant } from '@/components/cross-sections/types';
+
+/**
+ * Desenho de seção transversal em traço muito sutil, ao fundo de uma seção.
+ *
+ * É o "elemento de assinatura" que o CLAUDE.md define, no uso que ele já
+ * autoriza: "como marca-d'água em traço muito sutil no hero (opacidade
+ * ≤ 0,06)". O markup vivia inline no Hero; virou componente em 13/09/2026,
+ * quando uma auditoria mostrou que **Empresa e Contato não tinham desenho
+ * técnico nenhum** — as duas únicas páginas sem a assinatura do site.
+ *
+ * DUAS EXIGÊNCIAS DE QUEM USA, e as duas já morderam:
+ *
+ * 1. A seção precisa de `relative overflow-hidden`. O `relative` é o que faz o
+ *    absoluto se ancorar nela; o `overflow-hidden` é o que RECORTA a sangria.
+ *    Sem o recorte, o desenho passa da borda da viewport e gera scroll
+ *    horizontal — o portão `npm run responsivo` reprova.
+ * 2. A variante deve MUDAR a cada seção. Repetir o mesmo perfil em toda faixa
+ *    cairia no vício que o CLAUDE.md proíbe por nome: "card idêntico repetido
+ *    com a mesma sombra suave em toda seção".
+ *
+ * `aria-hidden` e sem cotas: é textura de fundo, não informação. O desenho com
+ * cotas é o da página de produto e o da calculadora, onde ele ensina a medida.
+ */
+interface Props {
+  variant: CrossSectionVariant;
+  /** Posição e tamanho. Sem isto o desenho encosta no canto superior esquerdo. */
+  class?: string;
+}
+
+const { variant, class: className }: Props = Astro.props;
+---
+
+<div class:list={['pointer-events-none absolute opacity-[0.06]', className]} aria-hidden="true">
+  <CrossSection variant={variant} decorative dimensions={false} />
+</div>

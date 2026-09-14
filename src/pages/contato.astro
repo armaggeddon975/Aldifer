@@ -7,6 +7,7 @@ import Pending from '@/components/Pending.astro';
 import Breadcrumb from '@/components/catalog/Breadcrumb.astro';
 import Button from '@/components/ui/Button.astro';
 import Heading from '@/components/ui/Heading.astro';
+import SectionWatermark from '@/components/SectionWatermark.astro';
 import Section from '@/components/ui/Section.astro';
 import Base from '@/layouts/Base.astro';
 import fachada from '@/assets/aldifer/fachada.jpg';
@@ -42,10 +43,28 @@ const { address } = site;
     </div>
   </Section>
 
-  <Section tone="alt" spacing="md" labelledBy="canais">
-    <Heading level={2} id="canais">{contactChannels.heading}</Heading>
+  {/*
+    `tone="dark"` desde 13/09/2026. A página não tinha NENHUMA seção escura —
+    medido — e os canais de contato são o conteúdo mais importante dela: dar a
+    superfície principal ao bloco principal é o que a base de aço escuro do
+    CLAUDE.md pede. Os links já usam `--surface-link`, que o tom troca sozinho.
+  */}
+  <Section
+    tone="dark"
+    spacing="md"
+    labelledBy="canais"
+    class="relative overflow-hidden"
+  >
+    <SectionWatermark
+      variant="angle"
+      class="-right-20 top-1/2 w-[24rem] -translate-y-1/2 md:w-[30rem] lg:right-0"
+    />
+    <Heading level={2} id="canais" class="relative">{contactChannels.heading}</Heading>
 
-    <div class="mt-8 grid gap-8 lg:grid-cols-3 lg:gap-12">
+    {/* `relative` aqui e no Heading: o desenho ao fundo é POSICIONADO, e num
+        mesmo contexto de empilhamento ele pintaria por cima de irmão sem
+        posição. É o mesmo motivo do `relative` no Container do Hero. */}
+    <div class="relative mt-8 grid gap-8 lg:grid-cols-3 lg:gap-12">
       <div>
         <h3 class="text-sm font-semibold text-surface-fg">{contactChannels.phoneLabel}</h3>
         <p class="mt-2">
